@@ -1,0 +1,74 @@
+{
+ "sift_ransac": {
+  "val": {
+   "rank1": 0.9048991354466859,
+   "top5": 0.9293948126801153,
+   "correct_match": 0.9005763688760807,
+   "wrong_match_registered": 0.005763688760806916,
+   "unknown_fmr": 0.01444043321299639,
+   "threshold": 5.0
+  },
+  "test": {
+   "rank1": 0.9250513347022588,
+   "top5": 0.9250513347022588,
+   "correct_match": 0.9240246406570842,
+   "wrong_match_registered": 0.001026694045174538,
+   "unknown_fmr": 0.017045454545454544,
+   "threshold": 5.0
+  }
+ },
+ "zeroshot_vit_small_patch14_dinov2": {
+  "val": {
+   "rank1": 0.8487031700288185,
+   "top5": 0.9063400576368876,
+   "correct_match": 0.770893371757925,
+   "wrong_match_registered": 0.037463976945244955,
+   "unknown_fmr": 0.05054151624548736,
+   "threshold": 0.9108101725578308
+  },
+  "test": {
+   "rank1": 0.9250513347022588,
+   "top5": 0.9527720739219713,
+   "correct_match": 0.8264887063655031,
+   "wrong_match_registered": 0.007186858316221766,
+   "unknown_fmr": 0.1534090909090909,
+   "threshold": 0.9108101725578308
+  }
+ },
+ "zeroshot_vit_small_patch16_dinov3": {
+  "val": {
+   "rank1": 0.8933717579250721,
+   "top5": 0.946685878962536,
+   "correct_match": 0.7636887608069164,
+   "wrong_match_registered": 0.005763688760806916,
+   "unknown_fmr": 0.05054151624548736,
+   "threshold": 0.9597055315971375
+  },
+  "test": {
+   "rank1": 0.9394250513347022,
+   "top5": 0.9609856262833676,
+   "correct_match": 0.8429158110882957,
+   "wrong_match_registered": 0.002053388090349076,
+   "unknown_fmr": 0.14488636363636365,
+   "threshold": 0.9597055315971375
+  }
+ },
+ "dinov3_arcface": {
+  "val": {
+   "rank1": 0.9553314121037464,
+   "top5": 0.9812680115273775,
+   "correct_match": 0.9394812680115274,
+   "wrong_match_registered": 0.011527377521613832,
+   "unknown_fmr": 0.05054151624548736,
+   "threshold": 0.4797682762145996
+  },
+  "test": {
+   "rank1": 0.9661190965092402,
+   "top5": 0.9763860369609856,
+   "correct_match": 0.9517453798767967,
+   "wrong_match_registered": 0.00513347022587269,
+   "unknown_fmr": 0.32386363636363635,
+   "threshold": 0.4797682762145996
+  }
+ }
+}
