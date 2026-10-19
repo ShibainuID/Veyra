@@ -115,7 +115,7 @@ def marker_px_per_cm(image_bgr: np.ndarray, marker_cm: float) -> dict | None:
         return None
     c = corners[0].reshape(4, 2)
     side_px = float(np.mean([np.linalg.norm(c[i] - c[(i + 1) % 4]) for i in range(4)]))
-    return {"marker_id": int(ids[0][0]), "px_per_cm": side_px / marker_cm, "marker_cm": marker_cm}
+    return {"marker_id": int(np.asarray(ids).ravel()[0]), "px_per_cm": side_px / marker_cm, "marker_cm": marker_cm}
 
 
 def estimate_weight(
