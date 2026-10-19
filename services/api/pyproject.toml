@@ -1,0 +1,14 @@
+[project]
+name = "veyra-api"
+version = "0.1.0"
+description = "Veyra API service: perception adapters and background workers"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "numpy>=2.0",
+    "opencv-contrib-python-headless>=4.10",
+    "onnxruntime>=1.20",
+    "pillow>=10.4",
+    "torch>=2.5",
+    "ultralytics>=8.3",
+    "open_clip_torch>=2.26",
+]
