@@ -1,0 +1,7 @@
+.DS_Store
+ml/data/
+ml/runs/
+ml/.venv/
+__pycache__/
+ml/kaggle/dataset_li2022/*.zip
+ml/kaggle/kernel_muzzle/*.ipynb
