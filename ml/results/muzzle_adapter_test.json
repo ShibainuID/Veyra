@@ -1,0 +1,12 @@
+{
+ "group": "test",
+ "registered_queries": 974,
+ "unknown_queries": 352,
+ "correct_candidate": 0.9250513347022588,
+ "wrong_candidate_registered": 0.004106776180698152,
+ "uncertain_registered": 0.00513347022587269,
+ "unknown_false_candidate": 0.011363636363636364,
+ "unknown_uncertain": 0.0,
+ "unknown_new": 0.9886363636363636,
+ "seconds": 26
+}
