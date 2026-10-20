@@ -1,22 +1,25 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, Lock, RotateCw, Stamp as StampIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Button, ButtonLink } from "../../components/Button";
 import { Drawer } from "../../components/Drawer";
+import { EarTag } from "../../components/EarTag";
 import { EmptyState, ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { Mono } from "../../components/figures";
 import { PageHeader } from "../../components/layout";
 import { PassbookLine } from "../../components/PassbookLine";
 import { useToast } from "../../components/Toast";
+import { api } from "../../lib/api";
 import { tagStateFor } from "../../lib/animal";
+import { queryKeys } from "../../lib/query-keys";
 import { useRole } from "../../lib/role-store";
 import { Page } from "../../pages/Page";
 import { ActionReview, actionTitle, receiptRef, useActions, type AgentAction } from "../actions";
 import { formatDate } from "../finance/dates";
 import { refreshFinance, useAnimals, usePolicies, useReviseAction } from "../finance/api";
 import "./approvals.css";
-import { canPrepareAgain, groupActions, lineNumbers, toLine, voidReason, type QueueGroup } from "./queue";
+import { canPrepareAgain, groupActions, passbookLineNumbers, toLine, voidReason, type QueueGroup } from "./queue";
 import { WalletPanel } from "./WalletPanel";
 
 const DESKTOP = "(min-width: 64rem)";
@@ -91,6 +94,7 @@ function QueueSection({
               <PassbookLine
                 key={action.id}
                 {...line}
+                titleLead={action.animal_id ? <EarTag animalId={action.animal_id} state={tagStateFor(animal?.identity_status)} /> : undefined}
                 detail={
                   <>
                     <Link
@@ -255,7 +259,18 @@ export function ApprovalsPage() {
   );
   const all = actions.data ?? [];
   const groups = useMemo(() => groupActions(all), [all]);
-  const numbers = useMemo(() => lineNumbers(all), [all]);
+  // Print each line's number from its animal's passbook, so the queue and the passport agree.
+  const animalIds = useMemo(() => [...new Set(all.flatMap((a) => (a.animal_id ? [a.animal_id] : [])))].sort(), [all]);
+  const passports = useQueries({
+    queries: animalIds.map((id) => ({
+      queryKey: queryKeys.passport(id),
+      queryFn: async () => (await api.GET("/api/v1/animals/{animal_id}/passport", { params: { path: { animal_id: id } } })).data!,
+    })),
+  });
+  const numbers = passbookLineNumbers(
+    all,
+    passports.map((q) => q.data?.passbook.lines),
+  );
   const selected = all.find((a) => a.id === selectedId);
   const awaitingCount = groups[0]!.items.length;
 

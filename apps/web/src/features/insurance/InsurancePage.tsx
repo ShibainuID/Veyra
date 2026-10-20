@@ -76,6 +76,11 @@ interface ActionContext {
   onPrepare: (result: Recommendation) => void;
 }
 
+/** Printed once under the comparison when the animal already has cover: no product can be applied for. */
+function CoveredNote({ coverName }: { coverName?: string }) {
+  return <p className="text-sm text-muted">{coverName ? `Already covered under ${coverName}.` : "This animal already has cover."}</p>;
+}
+
 function ProductAction({ result, ctx }: { result: Recommendation; ctx: ActionContext }) {
   const pending = ctx.pendingApplication;
   if (pending) {
@@ -90,9 +95,7 @@ function ProductAction({ result, ctx }: { result: Recommendation; ctx: ActionCon
       </div>
     );
   }
-  if (ctx.hasCover) {
-    return <p className="text-sm text-muted">{ctx.coverName ? `Already covered under ${ctx.coverName}.` : "This animal already has cover."}</p>;
-  }
+  if (ctx.hasCover) return <CoveredNote coverName={ctx.coverName} />;
   if (result.outcome === "ineligible") return <p className="text-sm text-muted">Not available for this animal under the sample terms.</p>;
   if (result.outcome === "unknown") return <p className="text-sm text-muted">Resolve the review item above before applying.</p>;
   const closed = ctx.closedApplication;
@@ -244,7 +247,11 @@ export function InsurancePage() {
             }
             className="mt-10"
           >
-            <ComparisonTable results={recs.data.results} renderAction={(result) => <ProductAction result={result} ctx={ctx} />} />
+            <ComparisonTable
+              results={recs.data.results}
+              renderAction={(result) => <ProductAction result={result} ctx={ctx} />}
+              sharedAction={!ctx.pendingApplication && ctx.hasCover ? <CoveredNote coverName={ctx.coverName} /> : undefined}
+            />
           </Section>
           <Section title="Why these outcomes">
             <ExplanationPanel explanation={recs.data.explanation} results={recs.data.results} />

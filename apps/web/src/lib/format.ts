@@ -211,3 +211,27 @@ export function initials(name: string): string {
     .map((part) => `${part[0]!.toUpperCase()}.`)
     .join("");
 }
+
+/**
+ * The viewer's zone as the server prints it: "UTC", "UTC+8", "UTC-3:30". Taken from the offset at
+ * `at`, so a window across a daylight-saving change still reads right.
+ */
+export function zoneLabel(at: string | number | Date = Date.now()): string {
+  const offset = -toDate(at).getTimezoneOffset();
+  if (offset === 0) return "UTC";
+  const hours = Math.floor(Math.abs(offset) / 60);
+  const minutes = Math.abs(offset) % 60;
+  return `UTC${offset > 0 ? "+" : "-"}${hours}${minutes ? `:${String(minutes).padStart(2, "0")}` : ""}`;
+}
+
+const UTC_WINDOW = /\(\d{2}:\d{2}:\d{2}–\d{2}:\d{2}:\d{2} UTC\)/;
+
+/**
+ * Server-composed alert sentences print their window in UTC, "(07:32:54–07:33:24 UTC)". Restate it
+ * in the viewer's local time from the structured window, so every time on screen is local.
+ */
+export function localizeWindowText(text: string, start: string, end: string, timeZone?: string): string {
+  if (!UTC_WINDOW.test(text)) return text;
+  const zone = timeZone === "UTC" ? "UTC" : zoneLabel(start);
+  return text.replace(UTC_WINDOW, `(${formatClockSeconds(start, timeZone)}–${formatClockSeconds(end, timeZone)} ${zone})`);
+}

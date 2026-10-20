@@ -109,3 +109,21 @@ export function toMapPoint(camera: { map_x: number; map_y: number }, box: Box): 
     y: camera.map_y + (cy - 0.5) * FIELD_OF_VIEW.height,
   };
 }
+
+/**
+ * How far a tag's centre stays from its pen's edges, in pen-box units. A tag is about 36px tall on a pen box
+ * of about 150px (less on a narrow map), so half a tag plus its touch padding is ~0.22 of the box height; the
+ * top inset is larger to clear the pen's name printed inside the box.
+ */
+export const PEN_INSET = { x: 0.16, top: 0.36, bottom: 0.22 } as const;
+
+/** Clamp a map point so the tag drawn there sits wholly inside its camera's pen box. */
+export function insidePen(camera: { map_x: number; map_y: number }, point: { x: number; y: number }): { x: number; y: number } {
+  const left = camera.map_x - FIELD_OF_VIEW.width / 2;
+  const top = camera.map_y - FIELD_OF_VIEW.height / 2;
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  return {
+    x: clamp(point.x, left + PEN_INSET.x * FIELD_OF_VIEW.width, left + (1 - PEN_INSET.x) * FIELD_OF_VIEW.width),
+    y: clamp(point.y, top + PEN_INSET.top * FIELD_OF_VIEW.height, top + (1 - PEN_INSET.bottom) * FIELD_OF_VIEW.height),
+  };
+}

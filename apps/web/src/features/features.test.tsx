@@ -2,7 +2,10 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { eventTitle, genericTitle } from "./audit/event-title";
 import { matchesFilter, serverFilters } from "./herd/HerdPage";
+import type { AgentAction } from "./actions";
+import { passbookLineNumbers } from "./approvals/queue";
 import { usePressedLines } from "./passbook/lines";
+import { awaitingScrollTop } from "./passbook/scroll";
 import type { HerdItem, PassbookLineOut } from "./passport/api";
 import { parseKg, parsePriceMinor, valueRange } from "./passport/valuation";
 
@@ -107,5 +110,27 @@ describe("herd filters", () => {
     expect(matchesFilter(item({ awaiting_approval_count: 1 }), "awaiting")).toBe(true);
     expect(matchesFilter(item({}), "awaiting")).toBe(false);
     expect(matchesFilter(item({ identity_status: "pending_review" }), "identity")).toBe(true);
+  });
+});
+
+describe("awaitingScrollTop", () => {
+  it("seats the awaiting line's bottom at the list's bottom edge", () => {
+    expect(awaitingScrollTop({ lineOffset: 900, lineHeight: 140, listHeight: 400 })).toBe(900 + 140 + 8 - 400);
+  });
+  it("top-aligns a line taller than the list", () => {
+    expect(awaitingScrollTop({ lineOffset: 900, lineHeight: 420, listHeight: 400 })).toBe(892);
+  });
+  it("never scrolls above the top", () => {
+    expect(awaitingScrollTop({ lineOffset: 20, lineHeight: 100, listHeight: 400 })).toBe(0);
+  });
+});
+
+describe("passbookLineNumbers", () => {
+  const action = (id: string, created_at: string) => ({ id, created_at }) as unknown as AgentAction;
+  it("prints the animal passbook's number, falling back to the stable order", () => {
+    const actions = [action("act-a", "2026-10-20T01:00:00Z"), action("act-b", "2026-10-20T02:00:00Z")];
+    const numbers = passbookLineNumbers(actions, [[{ no: 8, action_id: "act-b" }, { no: 7, action_id: null }], undefined]);
+    expect(numbers.get("act-b")).toBe(8);
+    expect(numbers.get("act-a")).toBe(1);
   });
 });

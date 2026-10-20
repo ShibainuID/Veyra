@@ -10,7 +10,7 @@ import { EmptyState, ErrorNotice } from "../../components/feedback";
 import { Money, Mono, Timestamp } from "../../components/figures";
 import { FilterChips, type FilterOption } from "../../components/FilterChips";
 import { PageHeader } from "../../components/layout";
-import { Provenance } from "../../components/Provenance";
+import { Provenance, type Source } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { useShellSummary } from "../../app/use-shell-summary";
 import { asSource, coveragePill, identityPill, productName, tagStateFor } from "../../lib/animal";
@@ -85,7 +85,8 @@ const COLUMNS: readonly Column<HerdItem>[] = [
       <span className="flex min-w-0 flex-col">
         <span>{row.name}</span>
         <span className="flex flex-col text-sm font-regular text-muted">
-          <Mono className="whitespace-nowrap">{row.id}</Mono>
+          {/* Below xl the tag's printed number carries the ID, so the row keeps to 64px. */}
+          <Mono className="hidden whitespace-nowrap xl:inline">{row.id}</Mono>
           <span>{row.breed}</span>
         </span>
       </span>
@@ -101,31 +102,23 @@ const COLUMNS: readonly Column<HerdItem>[] = [
   {
     id: "exposure",
     header: "Exposure",
-    width: "140px",
+    width: "156px",
     sortValue: (row) => row.valuation?.value_high_minor ?? null,
-    cell: (row) =>
-      row.valuation ? (
-        <span className="flex flex-col items-start gap-1">
-          <Money low={row.valuation.value_low_minor} high={row.valuation.value_high_minor} currency={row.valuation.currency} className="font-bold" />
-          {row.weight && (
-            <span className="inline-flex items-center gap-1.5 text-sm text-muted">
-              <Provenance source={asSource(row.weight.source)} />
-            </span>
-          )}
-        </span>
-      ) : (
-        <span className="text-muted">Not valued</span>
-      ),
+    cell: (row) => <ExposureCell row={row} columnSource={null} />,
   },
   {
     id: "coverage",
     header: "Coverage",
-    width: "140px",
+    width: "136px",
     sortValue: (row) => row.coverage.status,
     cell: (row) => (
       <span className="flex flex-col items-start gap-1">
         <StatusPill {...coveragePill(row.coverage.status)} />
-        {row.coverage.product_id && <span className="text-sm text-muted">{productName(row.coverage.product_id)}</span>}
+        {row.coverage.product_id && (
+          <span className="max-w-28 truncate text-sm text-muted max-md:max-w-none max-md:whitespace-normal xl:max-w-none xl:whitespace-normal" title={productName(row.coverage.product_id) ?? undefined}>
+            {productName(row.coverage.product_id)}
+          </span>
+        )}
       </span>
     ),
   },
@@ -168,6 +161,37 @@ const COLUMNS: readonly Column<HerdItem>[] = [
   },
 ];
 
+/** The weight source most rows share: the Exposure column prints it once in its header. */
+export function columnSource(rows: readonly HerdItem[]): Source | null {
+  const counts = new Map<Source, number>();
+  for (const row of rows) {
+    if (!row.valuation || !row.weight) continue;
+    const source = asSource(row.weight.source);
+    counts.set(source, (counts.get(source) ?? 0) + 1);
+  }
+  let best: Source | null = null;
+  for (const [source, count] of counts) if (!best || count > (counts.get(best) ?? 0)) best = source;
+  return best;
+}
+
+function ExposureCell({ row, columnSource }: { row: HerdItem; columnSource: Source | null }) {
+  if (!row.valuation) return <span className="text-muted">Not valued</span>;
+  const source = row.weight ? asSource(row.weight.source) : null;
+  const differs = source !== null && source !== columnSource;
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <Money
+        low={row.valuation.value_low_minor}
+        high={row.valuation.value_high_minor}
+        currency={row.valuation.currency}
+        className="font-bold whitespace-nowrap"
+      />
+      {/* A row whose source differs from the column's carries its own chip; stacked rows (no header) always do. */}
+      {source && <Provenance source={source} className={differs ? undefined : "dt-stacked-only"} />}
+    </span>
+  );
+}
+
 function HerdMeta() {
   const { data: summary } = useShellSummary();
   if (!summary) return <span>Every tagged animal, its exposure, and its cover.</span>;
@@ -199,7 +223,8 @@ export function HerdPage() {
   const filter = asFilter(params.get("filter"));
   const q = params.get("q") ?? "";
   const selectedParam = params.get("animal");
-  const wide = useMediaQuery("(min-width: 80rem)");
+  const wide = useMediaQuery("(min-width: 64rem)");
+  const roomy = useMediaQuery("(min-width: 80rem)");
   const [draft, setDraft] = useState(q);
 
   // Debounce the search field into the URL, so a search can be shared and survives reload.
@@ -223,6 +248,23 @@ export function HerdPage() {
   const herd = useHerd(serverFilters(filter, q));
   const all = useHerd({});
   const rows = useMemo(() => (herd.data?.items ?? []).filter((item) => matchesFilter(item, filter)), [herd.data, filter]);
+  const source = columnSource(rows);
+  // Beside the passbook on a tablet, the tag's solid or dashed outline already says the identity
+  // state and the passbook carries the last observation, so those columns step aside below xl.
+  const columns = useMemo(
+    () =>
+      COLUMNS.filter((column) => roomy || (column.id !== "identity" && column.id !== "observed")).map((column) =>
+        column.id === "exposure" && source
+          ? {
+              ...column,
+              cell: (row: HerdItem) => <ExposureCell row={row} columnSource={source} />,
+              headerAddon: <Provenance source={source} />,
+              headerDescription: `Every exposure in this column is ${source} unless its row says otherwise`,
+            }
+          : column,
+      ),
+    [roomy, source],
+  );
 
   const options: FilterOption<HerdFilter>[] = FILTERS.map((value) => ({
     value,
@@ -278,7 +320,7 @@ export function HerdPage() {
 
   return (
     <div className="flex flex-1">
-      <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-6">
+      <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-4 lg:py-8 xl:px-6">
         <PageHeader
           title="Herd"
           meta={<HerdMeta />}
@@ -304,7 +346,8 @@ export function HerdPage() {
         </div>
         <DataTable
           caption="Herd: each animal's tag, identity, indicative exposure, cover, last observation, and alerts"
-          columns={COLUMNS}
+          columns={columns}
+          stack="narrow"
           rows={rows}
           rowKey={(row) => row.id}
           rowHref={(row) => hrefFor(row.id)}

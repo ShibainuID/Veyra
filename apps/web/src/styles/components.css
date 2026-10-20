@@ -327,47 +327,104 @@
   color: var(--ink);
 }
 
+/* Stacked rows: below 720px of container, or below 544px for a table that drops columns to fit. */
+.dt-stacked-only {
+  display: none;
+}
 @container (max-width: 44.9375rem) {
-  .dt,
-  .dt tbody,
-  .dt tr,
-  .dt td {
-    display: block;
+  .dt-wrap:not([data-stack="narrow"]) {
+    .dt-stacked-only {
+      display: inline-flex;
+    }
+    .dt,
+    .dt tbody,
+    .dt tr,
+    .dt td {
+      display: block;
+    }
+    /* Stacked rows label each value themselves (data-label), so the header row steps aside. */
+    .dt thead {
+      display: none;
+    }
+    .dt tbody tr {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: var(--space-4);
+      row-gap: var(--space-1);
+      padding: var(--space-4) var(--space-2);
+      border-bottom: 1px solid var(--line);
+    }
+    .dt td {
+      grid-column: 2;
+      height: auto;
+      padding: 0;
+      border: 0;
+      text-align: start;
+    }
+    .dt td[data-align="end"] {
+      text-align: start;
+    }
+    .dt td[data-lead] {
+      grid-column: 1;
+      grid-row: 1 / span 6;
+      align-self: start;
+    }
+    .dt td[data-label]:not([data-lead]):not([data-primary])::before {
+      content: attr(data-label);
+      display: block;
+      color: var(--muted);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
   }
-  /* Stacked rows label each value themselves (data-label), so the header row steps aside. */
-  .dt thead {
-    display: none;
-  }
-  .dt tbody tr {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: var(--space-4);
-    row-gap: var(--space-1);
-    padding: var(--space-4) var(--space-2);
-    border-bottom: 1px solid var(--line);
-  }
-  .dt td {
-    grid-column: 2;
-    height: auto;
-    padding: 0;
-    border: 0;
-    text-align: start;
-  }
-  .dt td[data-align="end"] {
-    text-align: start;
-  }
-  .dt td[data-lead] {
-    grid-column: 1;
-    grid-row: 1 / span 6;
-    align-self: start;
-  }
-  .dt td[data-label]:not([data-lead]):not([data-primary])::before {
-    content: attr(data-label);
-    display: block;
-    color: var(--muted);
-    font-family: var(--font-sans);
-    font-size: var(--text-sm);
-    font-weight: 700;
+}
+@container (max-width: 33.9375rem) {
+  .dt-wrap[data-stack="narrow"] {
+    .dt-stacked-only {
+      display: inline-flex;
+    }
+    .dt,
+    .dt tbody,
+    .dt tr,
+    .dt td {
+      display: block;
+    }
+    /* Stacked rows label each value themselves (data-label), so the header row steps aside. */
+    .dt thead {
+      display: none;
+    }
+    .dt tbody tr {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr);
+      column-gap: var(--space-4);
+      row-gap: var(--space-1);
+      padding: var(--space-4) var(--space-2);
+      border-bottom: 1px solid var(--line);
+    }
+    .dt td {
+      grid-column: 2;
+      height: auto;
+      padding: 0;
+      border: 0;
+      text-align: start;
+    }
+    .dt td[data-align="end"] {
+      text-align: start;
+    }
+    .dt td[data-lead] {
+      grid-column: 1;
+      grid-row: 1 / span 6;
+      align-self: start;
+    }
+    .dt td[data-label]:not([data-lead]):not([data-primary])::before {
+      content: attr(data-label);
+      display: block;
+      color: var(--muted);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: 700;
+    }
   }
 }
 

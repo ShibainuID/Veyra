@@ -17,7 +17,7 @@ inspection. Everything here is pure; `workers/replay.py` loads the samples and w
 import math
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, tzinfo
 
 REDUCED_MOVEMENT_RULE = "reduced_movement_v1"
 OBSERVATION_QUALITY_RULE = "observation_quality_v1"
@@ -158,15 +158,18 @@ def rule_json(assessment: Assessment, stats: WindowStats, window_s: float,
             "reasons": list(stats.reasons), **common}
 
 
-def _hhmm(at: datetime) -> str:
+def _hhmm(at: datetime, zone: tzinfo = UTC) -> str:
     # Seconds too: a 30 s window inside one minute would otherwise read 09:31–09:31.
-    return at.strftime("%H:%M:%S")
+    return at.astimezone(zone).strftime("%H:%M:%S")
 
 
 def alert_summary(*, kind: str, rule: dict, camera_name: str, window_start: datetime, window_end: datetime,
-                  animal_name: str | None = None, track_key: str | None = None) -> str:
-    """A plain, deterministic sentence for the alert drawer, the passbook, and the assistant."""
-    span = f"({_hhmm(window_start)}–{_hhmm(window_end)} UTC)"
+                  animal_name: str | None = None, track_key: str | None = None, zone: tzinfo = UTC) -> str:
+    """A plain, deterministic sentence for the alert drawer, the passbook, and the assistant.
+
+    Times print in `zone` (the asker's offset for the assistant; UTC elsewhere, which the web app
+    restates in the viewer's local time from the structured window)."""
+    span = f"({_hhmm(window_start, zone)}–{_hhmm(window_end, zone)} {window_start.astimezone(zone).tzname()})"
     if kind == "reduced_movement":
         score = rule.get("score") or 0
         who = f"{animal_name}'s" if animal_name else "this animal's"

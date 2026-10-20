@@ -1,17 +1,38 @@
 import { ArrowDownLeft, ArrowUpRight, FlaskConical, Lock, LockOpen, type LucideIcon } from "lucide-react";
-import { useId } from "react";
+import { Fragment, useId, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
-import { Money, Timestamp } from "../../components/figures";
+import { EarTag } from "../../components/EarTag";
+import { Money, Mono, Timestamp } from "../../components/figures";
+import { tagStateFor } from "../../lib/animal";
 import { cn } from "../../lib/cn";
 import { formatMoney } from "../../lib/format";
 import { useWallet } from "../actions";
-import type { WalletEntry } from "../finance/api";
+import { useAnimals, type WalletEntry } from "../finance/api";
 
 /** "Release hold · Premium payment" under a "Release" label reads "Premium payment", not the word twice. */
 function withoutLeadingWord(description: string, word: string): string {
   const [head, ...rest] = description.split(" · ");
   return rest.length && head!.toLowerCase().startsWith(word.toLowerCase()) ? rest.join(" · ") : description;
+}
+
+const ANIMAL_ID = /^animal-[\w-]+$/;
+
+/** Prints any animal ID in a ledger description as its tag chip and the mono ID. */
+function describe(text: string, identity: Map<string, string>): ReactNode {
+  return text.split(" · ").map((part, i) => (
+    <Fragment key={i}>
+      {i > 0 && " · "}
+      {ANIMAL_ID.test(part) ? (
+        <span className="inline-flex items-center gap-1.5 align-middle">
+          <EarTag animalId={part} state={tagStateFor(identity.get(part) ?? "confirmed")} />
+          <Mono>{part}</Mono>
+        </span>
+      ) : (
+        part
+      )}
+    </Fragment>
+  ));
 }
 
 const ENTRY: Record<WalletEntry["entry_type"], { icon: LucideIcon; word: string; sign: 1 | -1 | 0 }> = {
@@ -25,6 +46,8 @@ const ENTRY: Record<WalletEntry["entry_type"], { icon: LucideIcon; word: string;
 export function WalletPanel({ className }: { className?: string }) {
   const headingId = useId();
   const wallet = useWallet();
+  const animals = useAnimals();
+  const identity = new Map((animals.data?.items ?? []).map((a) => [a.id, a.identity_status]));
   return (
     <section aria-labelledby={headingId} className={cn("flex flex-col gap-4", className)}>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -85,7 +108,7 @@ export function WalletPanel({ className }: { className?: string }) {
                       <Icon aria-hidden="true" className="mt-0.5 size-5 text-muted" strokeWidth={2.25} />
                       <div className="flex min-w-0 flex-col gap-0.5">
                         <span>
-                          <span className="font-bold">{kind.word}</span> · {withoutLeadingWord(entry.description, kind.word)}
+                          <span className="font-bold">{kind.word}</span> · {describe(withoutLeadingWord(entry.description, kind.word), identity)}
                         </span>
                         <span className="text-sm text-muted">
                           <Timestamp value={entry.created_at} mode="absolute" />

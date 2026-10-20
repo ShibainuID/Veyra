@@ -2,7 +2,7 @@ import { ArrowRight, TriangleAlert } from "lucide-react";
 import { Link } from "react-router";
 import { Timestamp } from "../../components/figures";
 import { Provenance } from "../../components/Provenance";
-import { answerAnimal, factLink, factText, isInstant, missingCopy, type AssistantAnswer } from "./answer";
+import { answerAnimal, factLink, factText, isInstant, missingCallout, type AssistantAnswer } from "./answer";
 
 /**
  * One answer. The text and every fact come from the farm's records (the server builds them); the model, when
@@ -10,16 +10,30 @@ import { answerAnimal, factLink, factText, isInstant, missingCopy, type Assistan
  */
 export function AnswerCard({ answer }: { answer: AssistantAnswer }) {
   const animal = answerAnimal(answer);
+  // A gap the answer already states shows as its recovery instead of the same sentence twice.
+  const callouts = answer.missing.flatMap((code) => {
+    const callout = missingCallout(answer.answer, code, animal);
+    return callout ? [{ code, callout }] : [];
+  });
   return (
     <div className="flex flex-col gap-4">
       <p className="text-md">{answer.answer}</p>
 
-      {answer.missing.length > 0 && (
+      {callouts.length > 0 && (
         <ul className="flex flex-col gap-2" aria-label="Missing evidence">
-          {answer.missing.map((code) => (
-            <li key={code} className="flex items-start gap-2.5 rounded-control border-2 border-uncertain bg-uncertain-soft px-3 py-2.5">
-              <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 flex-none text-uncertain-ink" strokeWidth={2.25} />
-              <span className="font-bold text-uncertain-ink">{missingCopy(code, animal?.name ?? null)}</span>
+          {callouts.map(({ code, callout }) => (
+            <li key={code} className="flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-control border-2 border-uncertain bg-uncertain-soft px-3 py-2.5">
+              <TriangleAlert aria-hidden="true" className="size-5 flex-none text-uncertain-ink" strokeWidth={2.25} />
+              <span className="min-w-0 flex-1 font-bold text-uncertain-ink">{callout.text}</span>
+              {callout.link && (
+                <Link
+                  to={callout.link.to}
+                  className="inline-flex min-h-11 items-center gap-1 rounded-control px-2 text-sm font-bold whitespace-nowrap text-ink hover:bg-bg"
+                >
+                  {callout.link.label}
+                  <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2.5} />
+                </Link>
+              )}
             </li>
           ))}
         </ul>

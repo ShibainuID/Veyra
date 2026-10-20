@@ -9,6 +9,7 @@ import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { alertKindLabel, asSource, humanize } from "../../lib/animal";
 import { cn } from "../../lib/cn";
+import { localizeWindowText } from "../../lib/format";
 import type { Role } from "../../lib/role-store";
 import type { AgentAction } from "../actions";
 import { approvalsHref, isOpen, latestAction } from "../finance/actions";
@@ -256,7 +257,7 @@ export function ObservedAlerts({
                     <Provenance source={asSource(typeof alert.rule?.source === "string" ? alert.rule.source : undefined)} />
                     <span className="text-sm text-muted">· {alert.camera_name}</span>
                   </div>
-                  <p className="max-w-[65ch]">{alert.summary}</p>
+                  <p className="max-w-[65ch]">{localizeWindowText(alert.summary, alert.window_start, alert.window_end)}</p>
                   <p className="text-sm text-muted">
                     <TimeWindow start={alert.window_start} end={alert.window_end} /> ·{" "}
                     <Link to={`/alerts/${alert.id}`} className="figures">
