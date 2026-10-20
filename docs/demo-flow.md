@@ -115,7 +115,7 @@ Open `/agent?animal=animal-demo-001&intent=file_claim`, or **File a claim with t
    - **Vet assessment:** switch to **Vet**, open the claim (`/claims/<id>`), and use **Add assessment**. Only a vet can add it.
    - **Farmer declaration:** as **Manager**, confirm it with the button in the chat or on the claim page.
    - **Identity verified** (death claims only): see step 9. For the quick path, use **Use the sample re-scan (demo)**.
-4. Back in the agent, as Manager, click **Check again**, then **Prepare claim submission**, then **Approve and stamp**. **Expect:** "Submitted — Pending assessment" with a sandbox receipt.
+4. Back in the agent, as Manager, click **Check again**. Once the checklist is complete, the agent prepares the claim submission by itself (pending approval). **Approve and stamp** it as Manager, then **Check status**. **Expect:** "Submitted — Pending assessment" with a sandbox `SBX-CLM-…` receipt.
 5. **Track the claim** (`intent=track_claim`):
    - **Expect:** only insurer-reported status.
    - Use the demo insurer update (manager): under review, then approved with an insurer-stated amount. Disbursement shows as "scheduled by insurer" and is never shown as paid automatically.
