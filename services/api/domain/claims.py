@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from adapters.sandbox import insurer
-from domain import actions, audit, clock, evidence, premiums
+from domain import actions, audit, clock, evidence, insurer_updates, premiums
 from domain.auth import Principal
 from domain.catalog import get_product, load_catalog
 from domain.errors import DomainError
@@ -321,7 +321,8 @@ def claim_view(session: Session, claim: Claim) -> dict:
             "incident_kind": incident.kind if incident else None,
             "identity_check_required": bool(incident and incident.kind in IDENTITY_CHECK_KINDS),
             "identity_checks": [identity_check.check_view(session, c)
-                                for c in identity_check.checks_for(session, claim.id)]}
+                                for c in identity_check.checks_for(session, claim.id)],
+            "insurer_updates": [insurer_updates.update_view(u) for u in insurer_updates.updates_for(session, claim.id)]}
 
 
 # CLAIM_SUBMISSION ----------------------------------------------------------------------------------------------

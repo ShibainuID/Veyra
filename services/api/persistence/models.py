@@ -504,3 +504,57 @@ class GalleryPublication(Base):
     version: Mapped[int]
     published_by: Mapped[str]
     published_at: Mapped[datetime]
+
+
+class AgentConversation(Base):
+    """One guided conversation with the in-app VEYRA agent about one animal (domain/agent_chat.py). `state` holds
+    only what the farmer answered and which question is open; everything else is read again from the records."""
+
+    __tablename__ = "agent_conversations"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    intent: Mapped[str]
+    state: Mapped[dict] = mapped_column(default=dict)
+    created_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class AgentMessage(Base):
+    """A turn of an agent conversation: the farmer's words (data, never instructions) or the agent's text, its
+    data-backed cards, and the choices it offers."""
+
+    __tablename__ = "agent_messages"
+    __table_args__ = (UniqueConstraint("conversation_id", "seq"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(ForeignKey("agent_conversations.id"), index=True)
+    seq: Mapped[int]
+    role: Mapped[str]
+    text: Mapped[str]
+    cards: Mapped[list] = mapped_column(default=list)
+    choices: Mapped[list] = mapped_column(default=list)
+    source: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class ClaimInsurerUpdate(Base):
+    """An assessment update the (sandbox) insurer reported on a submitted claim. VEYRA records it; it never decides
+    it. A settlement amount and a disbursement state are the insurer's words, never VEYRA's."""
+
+    __tablename__ = "claim_insurer_updates"
+    __table_args__ = (Index("ix_claim_insurer_updates_claim_created", "claim_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    provider_id: Mapped[str]
+    status: Mapped[str]
+    note: Mapped[str | None]
+    settlement_minor: Mapped[int | None]
+    currency: Mapped[str]
+    disbursement: Mapped[str | None]
+    source: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
