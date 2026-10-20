@@ -15,7 +15,9 @@ job. Otherwise it runs on a module `ThreadPoolExecutor(max_workers=2)`.
 Status moves `queued → running → succeeded | failed` through guarded updates. A handler is
 `fn(job_id) -> dict | None`; its return value is the job `result`. A handler exception marks the job
 `failed` with `error = {code, message}` and never escapes into the pool. A demo reset cancels queued
-futures and waits briefly for running ones (`persistence.lifecycle` reset hook).
+futures and waits briefly for running ones (`persistence.lifecycle` reset hook). At startup,
+`recover_interrupted()` fails the jobs a previous process left `queued` or `running` (`error.code =
+"interrupted"`) and runs each kind's recovery hook (`register_recovery`) so their subjects are not stuck.
 """
 
 import logging
@@ -37,12 +39,16 @@ from persistence.models import Job
 JOB_STATUSES = ("queued", "running", "succeeded", "failed")
 MAX_WORKERS = 2
 RESET_WAIT_S = 10.0
+GENERIC_FAILURE = "Processing failed. Try again; if it keeps failing, check the server log."
+INTERRUPTED = {"code": "interrupted", "message": "The server restarted before this job finished."}
 
 Handler = Callable[[str], dict | None]
+RecoveryHook = Callable[[list[str]], None]
 
 logger = logging.getLogger("veyra.jobs")
 
 _handlers: dict[str, Handler] = {}
+_recovery_hooks: dict[str, RecoveryHook] = {}
 _lock = threading.Lock()
 _executor: ThreadPoolExecutor | None = None
 _futures: set[Future] = set()
@@ -56,6 +62,41 @@ def register_handler(kind: str, fn: Handler | None = None):
         return handler
 
     return register(fn) if fn is not None else register
+
+
+def register_recovery(kind: str, fn: RecoveryHook | None = None):
+    """Register `fn(subject_ids)` to repair the subjects of `kind` jobs interrupted by a restart."""
+
+    def register(hook: RecoveryHook) -> RecoveryHook:
+        _recovery_hooks[kind] = hook
+        return hook
+
+    return register(fn) if fn is not None else register
+
+
+def recover_interrupted() -> int:
+    """At startup: no job can still be running in a fresh process, so every `queued`/`running` job failed.
+
+    Marks them `failed` with `interrupted` (guarded on the status each was read in) and then lets each kind's
+    recovery hook repair its subjects (e.g. enrollments stuck in `processing`). Returns the number of jobs failed.
+    """
+    with read_session() as session:
+        stuck = session.execute(select(Job.id, Job.kind, Job.subject_id, Job.status)
+                                .where(Job.status.in_(("queued", "running")))).all()
+    by_kind: dict[str, list[str]] = {}
+    for job_id, kind, subject_id, status in stuck:
+        if _transition(job_id, status, "failed", error=dict(INTERRUPTED)):
+            by_kind.setdefault(kind, []).append(subject_id)
+    for kind, subject_ids in by_kind.items():
+        hook = _recovery_hooks.get(kind)
+        if hook is not None:
+            try:
+                hook(subject_ids)
+            except Exception:
+                logger.exception("recovery for %s jobs failed", kind)
+    if stuck:
+        logger.warning("marked %d interrupted job(s) failed at startup", sum(map(len, by_kind.values())))
+    return sum(map(len, by_kind.values()))
 
 
 def enqueue(session: Session, farm_id: str, kind: str, subject_id: str) -> Job:
@@ -85,6 +126,11 @@ def submit(job_id: str) -> None:
 def _forget(future: Future) -> None:
     with _lock:
         _futures.discard(future)
+    if future.cancelled():
+        return
+    exc = future.exception()
+    if exc is not None:  # run_job records handler errors itself; this is a failure to record (e.g. the database)
+        logger.error("job runner crashed", exc_info=(type(exc), exc, exc.__traceback__))
 
 
 def _transition(job_id: str, expected: str, status: str, **values) -> bool:
@@ -111,9 +157,9 @@ def run_job(job_id: str) -> str | None:
         result = handler(job_id)
     except DomainError as exc:
         error = {"code": exc.code, "message": exc.message}
-    except Exception as exc:  # a handler bug fails the job, never the pool
+    except Exception:  # a handler bug fails the job, never the pool; the details stay in the log
         logger.exception("job %s (%s) failed", job_id, kind)
-        error = {"code": "INTERNAL_ERROR", "message": f"{type(exc).__name__}: {exc}"}
+        error = {"code": "INTERNAL_ERROR", "message": GENERIC_FAILURE}
     else:
         _transition(job_id, "running", "succeeded", result=result or {}, error=None)
         return "succeeded"
@@ -136,6 +182,16 @@ def latest_job(session: Session, kind: str, subject_id: str) -> Job | None:
 def job_out(job: Job) -> dict:
     return {"id": job.id, "kind": job.kind, "subject_id": job.subject_id, "status": job.status,
             "result": job.result, "error": job.error}
+
+
+def wait_idle(timeout_s: float = RESET_WAIT_S) -> bool:
+    """Wait (without cancelling) until every submitted job has finished. True if the pool went idle in time."""
+    with _lock:
+        pending = list(_futures)
+    if not pending:
+        return True
+    _, not_done = wait(pending, timeout=timeout_s)
+    return not not_done
 
 
 def drain(timeout_s: float = RESET_WAIT_S) -> None:
