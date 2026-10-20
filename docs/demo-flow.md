@@ -101,31 +101,32 @@ Use **Manager** or **Operator**. Vets can't open agent conversations (403).
 2. "Show me animal-demo-002", then "Which animals have open alerts?"
 3. "Where is Dewi?" **Expect:** "No camera observation is on record" and a recovery hint.
 
-## 8. Claim for an already-insured cow with the VEYRA agent
+## 8. Claim with the VEYRA agent: sick on camera, then death, then the muzzle re-scan
 
-Open `/agent?animal=animal-demo-002&intent=file_claim`, or **File a claim with the VEYRA agent** on Bima's passport.
+This is the full story: the CCTV recorded the sickness, the cow died, the muzzle re-scan confirms it's the right cow, and the agent files the claim. Do it for **Sari** after step 5 (insured) and step 6 (the reduced-movement replay gave her a camera alert).
 
-1. **Expect:** the agent checks Bima's active policy and cover window, then asks what happened, offering the incident kinds; covered perils are highlighted. Answer: **accidental injury**, then the date, a short description, and the estimated loss (e.g. `600`). It records the incident and drafts the claim.
-2. **Expect:** a checklist of present and missing items, each missing one with its fix, so submission stays blocked until they are done:
-   - **Vet assessment:** only a vet can add it (next step).
-   - **Farmer declaration:** a manager confirms it, from a button right in the chat.
-   - **Identity verified:** click **Use the sample re-scan (demo)**, or re-scan on the claim page (see step 9).
-   - **Camera evidence:** Bima has no seeded camera alert, so this stays listed as missing and links to Monitor. It doesn't block a sandbox submission. Mention it while presenting: the agent never invents evidence.
-   - The Claims list has no "open the agent" button. Start from Bima's passport or the URL above.
-3. Switch to **Vet**, open the claim (`/claims/<id>`), and **Add assessment**.
-4. Switch to **Manager** and confirm the **declaration**. You can do this in the agent chat or on the claim page.
-5. Back in the agent: **Prepare claim submission**, then **Approve and stamp**. **Expect:** "Submitted — Pending assessment" with a sandbox receipt.
-6. **Track the claim** (`intent=track_claim`):
+Every sample plan requires a **linked camera observation**. Only Sari has one after step 6, so file the claim for her. Bima and Melati are insured but have no camera alert; see the negative test below.
+
+Open `/agent?animal=animal-demo-001&intent=file_claim`, or **File a claim with the VEYRA agent** on Sari's passport. The Claims list has no agent button.
+
+1. **Expect:** the agent checks Sari's active policy and its cover window, then asks what happened. Covered perils are highlighted.
+2. Answer **Death**, the date (**today**, so it falls inside the cover window), a short description, and an estimated loss (e.g. `2400`). **Expect:** the incident is recorded, the claim is drafted, and Sari's reduced-movement alert is linked automatically as camera evidence.
+3. **Expect:** a checklist with present and missing items, each missing one with its fix:
+   - **Vet assessment:** switch to **Vet**, open the claim (`/claims/<id>`), and use **Add assessment**. Only a vet can add it.
+   - **Farmer declaration:** as **Manager**, confirm it with the button in the chat or on the claim page.
+   - **Identity verified** (death claims only): see step 9. For the quick path, use **Use the sample re-scan (demo)**.
+4. Back in the agent, as Manager, click **Check again**, then **Prepare claim submission**, then **Approve and stamp**. **Expect:** "Submitted — Pending assessment" with a sandbox receipt.
+5. **Track the claim** (`intent=track_claim`):
    - **Expect:** only insurer-reported status.
    - Use the demo insurer update (manager): under review, then approved with an insurer-stated amount. Disbursement shows as "scheduled by insurer" and is never shown as paid automatically.
+6. **Negative test:** start a claim for **Bima** (`/agent?animal=animal-demo-002&intent=file_claim`, accidental injury). **Expect:** "Linked camera observation" stays **missing**, with a link to Monitor, and submission stays blocked. The agent never invents evidence.
 
-## 9. Death claim: the muzzle re-scan anti-fraud check
+## 9. Death claim: the real muzzle re-scan anti-fraud check
 
-1. First make sure Sari has active cover (step 5).
-2. Record a **death** incident for Sari (Claims, then Record incident, then **Use the sample death**), then draft the claim.
-3. **Verify identity:**
-   - Upload `demo/uploads/09_hp_muzzle.png`. **Expect:** **Match**, from the real muzzle model.
-   - Upload `demo/uploads/05_muzzle_closeup.jpg`, which is a different cow. **Expect:** **Mismatch**, and submission is blocked with the reason kept.
+Instead of the sample re-scan in step 8.3, open the claim page (`/claims/<id>#verify-identity`):
+
+1. Upload `demo/uploads/05_muzzle_closeup.jpg`, a different cow. **Expect:** **Mismatch**. Submission is blocked and the reason is kept.
+2. Upload `demo/uploads/09_hp_muzzle.png`. **Expect:** **Match**, from the real muzzle model (hundreds of inliers). The identity item turns present.
 
 ## 10. Audit: `/audit`
 
