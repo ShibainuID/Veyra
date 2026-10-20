@@ -39,7 +39,6 @@ export const CAPTURE_PROMPTS = [
   },
 ] as const;
 
-export type CaptureView = (typeof CAPTURE_PROMPTS)[number]["view"];
 
 /** Which prompt applies after `elapsedS` seconds of recording, if the operator has not tapped ahead. */
 export function promptIndexAt(elapsedS: number): number {

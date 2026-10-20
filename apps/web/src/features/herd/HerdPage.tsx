@@ -84,7 +84,7 @@ const COLUMNS: readonly Column<HerdItem>[] = [
     cell: (row) => (
       <span className="flex min-w-0 flex-col">
         <span>{row.name}</span>
-        <span className="flex flex-col text-sm font-normal text-muted">
+        <span className="flex flex-col text-sm font-regular text-muted">
           <Mono className="whitespace-nowrap">{row.id}</Mono>
           <span>{row.breed}</span>
         </span>

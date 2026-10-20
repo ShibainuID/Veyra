@@ -167,7 +167,7 @@ export function PassbookPanel({
       </div>
 
       {awaiting && decisionSlot && (
-        <div className={cn("passbook-decision border-t-2 border-ink bg-bg px-5 pt-4 pb-5", decisionSlotClassName)}>{decisionSlot}</div>
+        <div className={cn("border-t-2 border-ink bg-bg px-5 pt-4 pb-5", decisionSlotClassName)}>{decisionSlot}</div>
       )}
       {awaiting && decision && !decisionSlot && (
         <DecisionBar line={awaiting} decision={decision} currency={decision.currency ?? currency} />

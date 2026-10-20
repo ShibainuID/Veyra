@@ -13,7 +13,7 @@ import { alertKindLabel, asSource, humanize, identityPill, productName, sexWord,
 import { toApiError } from "../../lib/errors";
 import { formatMoney, lineNumber } from "../../lib/format";
 import { useNow } from "../../lib/use-now";
-import { NotFoundPage } from "../../pages/placeholders";
+import { NotFoundPage } from "../../pages/NotFoundPage";
 import { Page } from "../../pages/Page";
 import { actionTitle } from "../actions/types";
 import { AnimalPassbook } from "../passbook/AnimalPassbook";

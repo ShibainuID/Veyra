@@ -8,7 +8,6 @@ export type Passport = Schemas["Passport"];
 export type PassportAnimal = Schemas["PassportAnimal"];
 export type PassbookLineOut = Schemas["PassbookLine"];
 export type HerdItem = Schemas["AnimalListItem"];
-export type HerdList = Schemas["AnimalList"];
 export type AnimalObservations = Schemas["AnimalObservations"];
 export type ValuationRequest = Schemas["ValuationRequest"];
 export type ValuationOut = Schemas["ValuationOut"];

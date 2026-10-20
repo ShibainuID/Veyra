@@ -6,7 +6,7 @@ import { Page } from "../pages/Page";
 import { AuditPage } from "../features/audit/AuditPage";
 import { HerdPage } from "../features/herd/HerdPage";
 import { PassportPage } from "../features/passport/PassportPage";
-import { NotFoundPage } from "../pages/placeholders";
+import { NotFoundPage } from "../pages/NotFoundPage";
 import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
 import { AskPage } from "../features/assistant/Ask";
 import { ClaimPage } from "../features/claims/ClaimPage";
