@@ -7,7 +7,7 @@ from the product's `claim_requirements`. Proposing `CLAIM_SUBMISSION` with anyth
 `EVIDENCE_INCOMPLETE`, and the missing keys are kept on the claim (`blocked_reason`).
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -62,6 +62,9 @@ def record_incident(session: Session, principal: Principal, *, animal_id: str, k
     animal = farm_animal(session, principal.farm_id, animal_id)
     if occurred_at.tzinfo is None:
         raise DomainError("VALIDATION_FAILED", "occurred_at needs a timezone (UTC, ending in Z).")
+    if occurred_at > clock.now():
+        raise DomainError("VALIDATION_FAILED", "An incident cannot be recorded in the future.",
+                          {"occurred_at": clock.isoformat(occurred_at)})
     alert_ids = list(dict.fromkeys(linked_alert_ids or []))
     for alert_id in alert_ids:
         alert = session.get(Alert, alert_id)
@@ -70,7 +73,8 @@ def record_incident(session: Session, principal: Principal, *, animal_id: str, k
         if alert.animal_id != animal.id:
             raise DomainError("VALIDATION_FAILED", "A linked alert must be about the same animal.",
                               {"alert_id": alert_id, "alert_animal_id": alert.animal_id})
-    policy = actions.active_policy(session, principal.farm_id, animal.id)
+    policy = next((p for p in _active_policies(session, principal.farm_id, animal.id) if in_cover(p, occurred_at)),
+                  None)
     incident = Incident(id=new_id("inc"), farm_id=principal.farm_id, animal_id=animal.id,
                         policy_id=policy.id if policy else None, kind=kind, occurred_at=occurred_at,
                         description=description, estimated_loss_minor=estimated_loss_minor, currency="USD",
@@ -115,16 +119,27 @@ def incident_view(incident: Incident) -> dict:
 
 # Checklist -----------------------------------------------------------------------------------------------------
 
+def in_cover(policy: Policy, when: datetime) -> bool:
+    """Whether `when` falls inside the policy's cover window (effective date to expiry date, inclusive)."""
+    if policy.effective_date is None or policy.expiry_date is None:
+        return False
+    return policy.effective_date <= when.astimezone(UTC).date() <= policy.expiry_date
+
+
+def _active_policies(session: Session, farm_id: str, animal_id: str) -> list[Policy]:
+    return list(session.scalars(select(Policy).where(Policy.farm_id == farm_id, Policy.animal_id == animal_id,
+                                                     Policy.status == "active")
+                                .order_by(Policy.created_at.desc(), Policy.id)))
+
+
 def _covering_policy(session: Session, incident: Incident) -> tuple[Policy, dict] | None:
+    """An active policy whose window contains the incident date and whose perils include its kind."""
     catalog = load_catalog()
-    candidates = session.scalars(select(Policy).where(Policy.farm_id == incident.farm_id,
-                                                      Policy.animal_id == incident.animal_id,
-                                                      Policy.status == "active")
-                                 .order_by(Policy.created_at.desc(), Policy.id)).all()
-    candidates = sorted(candidates, key=lambda p: p.id != incident.policy_id)
+    candidates = sorted(_active_policies(session, incident.farm_id, incident.animal_id),
+                        key=lambda p: p.id != incident.policy_id)
     for policy in candidates:
         product = get_product(catalog, policy.product_id)
-        if incident.kind in product["covered_perils"]:
+        if incident.kind in product["covered_perils"] and in_cover(policy, incident.occurred_at):
             return policy, product
     return None
 
@@ -153,7 +168,7 @@ def compute_checklist(session: Session, claim: Claim) -> list[dict]:
     health = _finding(incident, "vet_health_record")
     sources = {
         "identity_reference": muzzle,
-        "active_policy": policy.id if policy.status == "active" else None,
+        "active_policy": policy.id if policy.status == "active" and in_cover(policy, incident.occurred_at) else None,
         "incident_facts": incident.id if incident.description else None,
         "farmer_declaration": claim.declaration_by if claim.declaration_confirmed else None,
         "observation_evidence": alert.id if alert else None,
@@ -200,7 +215,7 @@ def draft_claim(session: Session, principal: Principal, incident_id: str) -> Cla
         return existing
     covering = _covering_policy(session, incident)
     if covering is None:
-        raise DomainError("INVALID_STATE", "No active policy for this animal covers this kind of incident.",
+        raise DomainError("INVALID_STATE", "No active policy for this animal covers this kind of incident on that date.",
                           {"incident_id": incident.id, "kind": incident.kind,
                            "reason": "no_active_policy_covering_incident"})
     policy, _ = covering
