@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from domain import clock
 from persistence.db import SessionLocal
-from persistence.models import Alert, AuditEvent, Claim
+from persistence.models import Alert, AuditEvent, Claim, Policy
 from tests.integration.test_financial_flow import approved, decide, error_code, execute, propose, propose_ok
 from tests.support import ASSESSOR, MANAGER, OPERATOR, OTHER_FARM, VET
 
@@ -26,7 +26,8 @@ def _alert(animal_id=BIMA, alert_id="alr-bima"):
 
 
 def _incident(client, animal_id=BIMA, kind="accidental_injury", headers=OPERATOR, **extra):
-    body = {"animal_id": animal_id, "kind": kind, "occurred_at": "2026-10-20T06:30:00Z",
+    occurred = clock.isoformat((clock.now() - timedelta(hours=2)).replace(microsecond=0))
+    body = {"animal_id": animal_id, "kind": kind, "occurred_at": occurred,
             "description": "Left hind lameness found at the morning check after a reduced-movement alert.",
             "estimated_loss_minor": 60000, "facts": {"location": "Pen A"}, **extra}
     return client.post(f"{API}/incidents", json=body, headers=headers)
@@ -55,7 +56,7 @@ def test_incident_links_active_policy_and_keeps_fields_distinct(client):
     assert response.status_code == 201, response.text
     incident = response.json()
     assert incident["policy_id"] is not None and incident["linked_alert_ids"] == ["alr-bima"]
-    assert incident["occurred_at"] == "2026-10-20T06:30:00Z"
+    assert incident["occurred_at"].endswith("Z")
     finding = _finding(client, incident["id"]).json()["professional_findings"][0]
     assert (finding["finding_type"], finding["author_id"], finding["author_role"]) == (
         "vet_assessment", "user-vet", "vet")
@@ -165,3 +166,30 @@ def test_claim_submission_decision_is_manager_only(client):
     claim = _ready_claim(client)
     action = propose_ok(client, action_type="CLAIM_SUBMISSION", claim_id=claim["id"])
     assert decide(client, action, headers=OPERATOR).status_code == 403
+
+
+def test_incident_in_the_future_is_rejected(client):
+    future = clock.isoformat(clock.now() + timedelta(hours=1))
+    response = _incident(client, occurred_at=future)
+    assert response.status_code == 422 and error_code(response) == "VALIDATION_FAILED"
+
+
+def test_incident_before_cover_cannot_be_claimed(client):
+    incident = _incident(client, occurred_at="2019-01-01T00:00:00Z").json()
+    assert incident["policy_id"] is None  # the active policy did not cover that date
+    response = _draft(client, incident["id"])
+    assert response.status_code == 409 and error_code(response) == "INVALID_STATE"
+
+
+def test_cover_moved_after_approval_blocks_submission(client):
+    claim = _ready_claim(client)
+    action = approved(client, action_type="CLAIM_SUBMISSION", claim_id=claim["id"])
+    with SessionLocal() as session:
+        policy = session.get(Policy, claim["policy_id"])
+        policy.effective_date = clock.now().date() + timedelta(days=1)
+        session.commit()
+
+    assert error_code(execute(client, action["id"], "claim-key")) == "APPROVAL_STALE"
+    response = propose(client, action_type="CLAIM_SUBMISSION", claim_id=claim["id"])
+    assert error_code(response) == "EVIDENCE_INCOMPLETE"
+    assert response.json()["error"]["details"]["missing"] == ["active_policy"]

@@ -44,6 +44,14 @@ logger = logging.getLogger("veyra.actions")
 
 ACTION_TYPES = tuple(ACTION_TITLES)
 APPROVAL_TTL = timedelta(minutes=30)
+EXECUTION_LEASE = timedelta(minutes=2)  # a same-key retry may reconcile a record-less `executing` row after this
+REF_KEYS = ("animal_id", "product_id", "policy_application_id", "alert_id", "claim_id")
+REVISABLE_STATUSES = ("pending_approval", "approved", "expired", "cancelled", "declined", "failed")
+UNKNOWN_ERRORS = {
+    "PROVIDER_TIMEOUT": "No answer from the provider in time.",
+    "PROVIDER_ERROR": "The provider call failed before an answer arrived.",
+    "PROCESS_RESTARTED": "The API restarted while this execution was in flight.",
+}
 OPEN_STATUSES = ("pending_approval", "approved")
 IN_FLIGHT_STATUSES = ("executing", "unknown", "succeeded")
 SUCCESS_RESPONSES = ("accepted", "succeeded", "received")
@@ -365,7 +373,8 @@ def _expire(session: Session, action: AgentAction) -> None:
         _audit(session, action, "action.expired", "system", "veyra", {"expires_at": clock.isoformat(action.expires_at)})
 
 
-def propose(session: Session, principal: Principal, refs: dict, rationale: str | None = None) -> AgentAction:
+def propose(session: Session, principal: Principal, refs: dict, rationale: str | None = None,
+            revises: AgentAction | None = None) -> AgentAction:
     action_type = refs.get("action_type")
     spec = SPECS.get(action_type)
     if spec is None:
@@ -394,10 +403,11 @@ def propose(session: Session, principal: Principal, refs: dict, rationale: str |
         AgentAction.subject_type == built.subject_type, AgentAction.subject_id == built.subject_id)
         .order_by(AgentAction.version.desc()).limit(1))
     now = clock.now()
+    supersedes = prior[0] if prior else revises
     action = AgentAction(
         id=new_id("act"), farm_id=principal.farm_id, action_type=action_type, animal_id=built.animal_id,
         subject_type=built.subject_type, subject_id=built.subject_id,
-        version=(latest_version or 0) + 1 if prior else 1, supersedes_id=prior[0].id if prior else None,
+        version=(latest_version or 0) + 1 if supersedes else 1, supersedes_id=supersedes.id if supersedes else None,
         payload=built.payload, payload_hash=payload_hash(built.payload), evidence_manifest_id=manifest.id,
         evidence_manifest_version=manifest.version, status="pending_approval", rationale=rationale,
         proposed_by_type="agent", proposed_by_id=principal.user_id, expires_at=now + APPROVAL_TTL,
@@ -455,6 +465,16 @@ def cancel(session: Session, principal: Principal, action_id: str) -> AgentActio
     return action
 
 
+def revise(session: Session, principal: Principal, action_id: str) -> AgentAction:
+    """Prepare the action again from its own references and current records; an open original is superseded."""
+    action = farm_action(session, principal.farm_id, action_id)
+    if action.status not in REVISABLE_STATUSES:
+        raise DomainError("INVALID_STATE", "An action that ran or is running cannot be revised.",
+                          {"status": action.status})
+    refs = {"action_type": action.action_type, **{key: action.payload.get(key) for key in REF_KEYS}}
+    return propose(session, principal, refs, action.rationale, revises=action)
+
+
 # Execute -------------------------------------------------------------------------------------------------------
 
 @dataclass(frozen=True)
@@ -476,6 +496,8 @@ def _start(principal: Principal, action_id: str, key: str) -> _Started:
         if by_key is not None:
             if by_key.action_id != action.id:
                 raise DomainError("DUPLICATE_EXECUTION", "This Idempotency-Key was already used for another action.")
+            if by_key.status == "executing" and _stranded(session, action, by_key):
+                return _Started(by_key.id, "unknown", call_provider=False)
             return _Started(by_key.id, by_key.status, call_provider=False)
         if session.scalar(select(ActionExecution.id).where(ActionExecution.action_id == action.id)):
             raise DomainError("DUPLICATE_EXECUTION", "This action was already executed under another key.")
@@ -494,9 +516,11 @@ def _start(principal: Principal, action_id: str, key: str) -> _Started:
 
         spec = SPECS[action.action_type]
         stale_reason, rebuilt = None, None
+        rebuild_error = None
         try:
             rebuilt = spec.build(session, action.farm_id, action.payload)
         except DomainError as error:
+            rebuild_error = error
             stale_reason = {"code": error.code, "message": error.message}
         if rebuilt is None or payload_hash(rebuilt.payload) != action.payload_hash:
             changed = _changed_fields(action.payload, rebuilt.payload) if rebuilt else []
@@ -504,6 +528,8 @@ def _start(principal: Principal, action_id: str, key: str) -> _Started:
                 _audit(session, action, "action.cancelled", "system", "veyra",
                        {"cancel_reason": "approval_stale", "changed_fields": changed, "reason": stale_reason})
             session.commit()
+            if rebuild_error is not None and rebuild_error.code == "IDENTITY_UNCONFIRMED":
+                raise rebuild_error
             raise DomainError("APPROVAL_STALE", "The records changed since approval; prepare and approve it again.",
                               {"changed_fields": changed, "reason": stale_reason})
 
@@ -531,24 +557,35 @@ def _start(principal: Principal, action_id: str, key: str) -> _Started:
         return _Started(execution.id, "executing", call_provider=True)
 
 
-def _call_provider(spec: ActionSpec, farm_id: str, key: str, payload: dict) -> dict | None:
-    """Run the provider in its own short session. None means the outcome is unknown (timeout or error)."""
+def _stranded(session: Session, action: AgentAction, execution: ActionExecution) -> bool:
+    """An `executing` row whose result was never applied: the provider already answered (its record exists), or
+    the lease ran out with no record. Inside the lease and without a record, another request may still be
+    calling the provider, so the row is left alone."""
+    spec = SPECS[action.action_type]
+    if lookup(session, spec.provider, spec.operation, execution.idempotency_key) is not None:
+        return True
+    return clock.now() - execution.started_at >= EXECUTION_LEASE
+
+
+def _call_provider(spec: ActionSpec, farm_id: str, key: str, payload: dict) -> tuple[dict | None, str | None]:
+    """Run the provider in its own short session: (response, None), or (None, why the outcome is unknown)."""
     with SessionLocal() as session:
         try:
             response = spec.call(session, key, payload, farm_id)
             session.commit()
-            return response
+            return response, None
         except ProviderTimeout:
             session.commit()
-            return None
+            return None, "PROVIDER_TIMEOUT"
         except Exception:
             session.rollback()
             logger.exception("sandbox provider %s.%s failed", spec.provider, spec.operation)
-            return None
+            return None, "PROVIDER_ERROR"
 
 
-def _finish(execution_id: str, response: dict | None, executed_by: str) -> bool:
-    """tx2: apply a provider result exactly once. Returns True when the action succeeded."""
+def _finish(execution_id: str, response: dict | None, executed_by: str,
+            unknown_code: str = "PROVIDER_TIMEOUT") -> bool:
+    """tx2: apply a provider result exactly once. Returns True only when this call applied a success."""
     with SessionLocal() as session:
         execution = session.get(ActionExecution, execution_id)
         action = session.get(AgentAction, execution.action_id)
@@ -558,12 +595,13 @@ def _finish(execution_id: str, response: dict | None, executed_by: str) -> bool:
         if response is None:
             rows = session.execute(update(ActionExecution).where(
                 ActionExecution.id == execution.id, ActionExecution.status == "executing").values(
-                status="unknown", error={"code": "PROVIDER_TIMEOUT", "message": "No answer from the provider."})).rowcount
+                status="unknown", error={"code": unknown_code, "message": UNKNOWN_ERRORS[unknown_code]})).rowcount
             if rows == 1:
                 _transition(session, action, ("executing",), status="unknown")
                 _audit(session, action, "action.executed", "provider", spec.provider, {
                     "status": "unknown", "execution_id": execution.id, "idempotency_key": execution.idempotency_key,
-                    "executed_by": executed_by, "amount_minor": amount, "currency": action.payload.get("currency")})
+                    "executed_by": executed_by, "amount_minor": amount, "currency": action.payload.get("currency"),
+                    "error": {"code": unknown_code}})
             session.commit()
             return False
         succeeded = response.get("status") in SUCCESS_RESPONSES
@@ -574,9 +612,9 @@ def _finish(execution_id: str, response: dict | None, executed_by: str) -> bool:
             ActionExecution.id == execution.id, ActionExecution.status.in_(("executing", "unknown"))).values(
             status=status, provider_receipt=dict(response) if succeeded else None, error=error,
             completed_at=now)).rowcount
-        if rows != 1:
+        if rows != 1:  # another request already applied the result and runs the follow-up
             session.rollback()
-            return execution.status == "succeeded"
+            return False
         _transition(session, action, ("executing", "unknown"), status=status)
         if amount is not None:
             title = ACTION_TITLES[action.action_type]
@@ -621,8 +659,8 @@ def execute(principal: Principal, action_id: str, key: str | None) -> str:
     with read_session() as session:
         action = farm_action(session, principal.farm_id, action_id)
         spec, payload, farm_id = SPECS[action.action_type], dict(action.payload), action.farm_id
-    response = _call_provider(spec, farm_id, key, payload)
-    if _finish(started.execution_id, response, principal.user_id):
+    response, unknown_code = _call_provider(spec, farm_id, key, payload)
+    if _finish(started.execution_id, response, principal.user_id, unknown_code or "PROVIDER_TIMEOUT"):
         _after_success(started.execution_id)
     return action_id
 
@@ -635,6 +673,28 @@ def _after_success(execution_id: str) -> None:
             execution.idempotency_key
     if action_type == "PREMIUM_PAYMENT":
         activate_policy(farm_id, payload["policy_id"], f"{key}:activation")
+
+
+def recover_stranded() -> int:
+    """Startup: the API is one process, so any `executing` row is an orphan of a previous run. Mark it `unknown`
+    (its hold stays) so a same-key retry reconciles it from the provider record. Returns how many were marked."""
+    with SessionLocal() as session:
+        stranded = session.scalars(select(ActionExecution).where(ActionExecution.status == "executing")).all()
+        marked = 0
+        for execution in stranded:
+            rows = session.execute(update(ActionExecution).where(
+                ActionExecution.id == execution.id, ActionExecution.status == "executing").values(
+                status="unknown", error={"code": "PROCESS_RESTARTED",
+                                         "message": UNKNOWN_ERRORS["PROCESS_RESTARTED"]})).rowcount
+            if rows != 1:
+                continue
+            action = session.get(AgentAction, execution.action_id)
+            _transition(session, action, ("executing",), status="unknown")
+            _audit(session, action, "action.execution_orphaned", "system", "veyra",
+                   {"execution_id": execution.id, "idempotency_key": execution.idempotency_key})
+            marked += 1
+        session.commit()
+        return marked
 
 
 # Activation ----------------------------------------------------------------------------------------------------
@@ -734,6 +794,12 @@ def _executed(event: AuditEvent, ctx: PassbookContext) -> dict:
     detail = ref or (event.data.get("error") or {}).get("code")
     return {"title": f"{_label(event)} {word}", "detail": detail, "stamp": {"kind": _EXECUTED_WORDS.get(status, "unknown")},
             "status": "void" if status == "failed" else "posted", **_amount_fields(event)}
+
+
+@register_formatter("action.execution_orphaned")
+def _orphaned(event: AuditEvent, ctx: PassbookContext) -> dict:
+    return {"title": f"{_label(event)} outcome unknown", "detail": "Interrupted by a restart; retry to reconcile",
+            "stamp": {"kind": "unknown"}}
 
 
 @register_formatter("policy.activated")

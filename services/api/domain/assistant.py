@@ -50,12 +50,27 @@ FALLBACK_ANSWER = (
     "and open alerts (\"Which animals have open alerts?\").")
 
 
+MAX_ECHO = 40
+
+
 @dataclass
 class ParsedQuery:
     intent: QueryIntent
-    unmatched_refs: list[str] = field(default_factory=list)
+    unmatched_refs: list[str] = field(default_factory=list)  # safe to echo: typed by the user, at most 40 chars
     parsed_by: str = "simulated"
     fallback_reason: str | None = None
+    dropped_refs: int = 0  # refs not in the farm that are not echoed (e.g. a model ref absent from the text)
+
+    @property
+    def has_unmatched(self) -> bool:
+        return bool(self.unmatched_refs) or self.dropped_refs > 0
+
+
+def _echoable(refs: list[str], text: str) -> tuple[list[str], int]:
+    """Only echo refs the user actually typed (case-insensitively), cut to `MAX_ECHO` characters."""
+    lowered = text.lower()
+    echo = [ref[:MAX_ECHO] for ref in refs if ref and ref.lower() in lowered]
+    return echo, len(refs) - len(echo)
 
 
 def _match_ref(ref: str, animals: list[dict]) -> str | None:
@@ -134,9 +149,11 @@ def parse(settings: Settings, text: str, animals: list[dict], *, client: Any | N
         ids, dropped = validate_refs(live.output.animal_refs, animals)
         wants = [w for w in WANT_ORDER if w in live.output.wants] or DEFAULT_WANTS.get(live.output.intent, [])
         intent = QueryIntent(intent=live.output.intent, animal_refs=ids, wants=wants)
-        return ParsedQuery(intent, dropped, "live", None)
+        echo, silent = _echoable(dropped, text)
+        return ParsedQuery(intent, echo, "live", None, silent)
     intent, unmatched = parse_offline(text, animals)
-    return ParsedQuery(intent, unmatched, "simulated", live.fallback_reason)
+    echo, silent = _echoable(unmatched, text)
+    return ParsedQuery(intent, echo, "simulated", live.fallback_reason, silent)
 
 
 # --- resolution ---------------------------------------------------------------------------------------------
@@ -321,15 +338,17 @@ def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetim
     out = _Answer()
     for ref in parsed.unmatched_refs:
         out.sentences.append(f"I couldn't find an animal matching '{ref}' in this farm.")
+    if parsed.dropped_refs and not parsed.unmatched_refs:
+        out.sentences.append("I couldn't find a matching animal in this farm.")
     cards = {card["id"]: card for card in list_herd(session, farm_id)["items"]}
     cameras = dict(session.execute(select(Camera.id, Camera.name).where(Camera.farm_id == farm_id)).all())
     targets = [cards[ref] for ref in intent.animal_refs if ref in cards]
     wants = [w for w in WANT_ORDER if w in intent.wants]
     if intent.intent == "unknown" or not wants:
-        if not parsed.unmatched_refs:
+        if not parsed.has_unmatched:
             out.sentences.append(FALLBACK_ANSWER)
     elif not targets:
-        if parsed.unmatched_refs:
+        if parsed.has_unmatched:
             pass
         elif "alerts" in wants:
             _alerts(out, session, farm_id, None)
