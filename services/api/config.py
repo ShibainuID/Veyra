@@ -1,40 +1,84 @@
-"""Service settings from environment variables, with local defaults for the hackathon."""
+"""Service settings from the environment (plan Section 0: run, tests, auth).
+
+Every value has a demo-safe default so `uv run uvicorn main:app` works with no setup. Tests set the
+environment and call `get_settings.cache_clear()` to pick up the change.
+"""
 
 import os
+import secrets
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
-SERVICE_ROOT = Path(__file__).resolve().parent
+API_DIR = Path(__file__).resolve().parent
+REPO_ROOT = API_DIR.parents[1]
+
+PERCEPTION_MODES = ("auto", "prototype", "fixture")
+LLM_MODES = ("auto", "live", "offline")
+
+# Without VEYRA_MEDIA_SECRET, signed media URLs use a per-process secret: they stop working after a restart.
+_PROCESS_MEDIA_SECRET = secrets.token_hex(32)
 
 
 @dataclass(frozen=True)
 class Settings:
+    data_dir: Path
     database_url: str
-    media_root: Path
-    max_upload_bytes: int
-    job_poll_seconds: float
-    job_max_attempts: int
+    media_dir: Path
+    media_secret: str
+    service_token: str
+    sync_jobs: bool
+    replay_speed: float
+    perception_mode: str
+    llm_mode: str
+    llm_model: str
+    demo_mode: bool
+    repo_root: Path = REPO_ROOT
+    fixtures_dir: Path = REPO_ROOT / "demo" / "fixtures"
+    scenarios_dir: Path = REPO_ROOT / "demo" / "scenarios"
+    # Ultralytics name (downloaded on first use) or a local path, e.g. pre-fetched weights on an offline demo machine.
     yolo_weights: str = "yolov8x-seg.pt"
-    # Fine-tuned barn camera detector (models/MODEL_CARD.md).
-    calf_detector_weights: str = str(SERVICE_ROOT / "models" / "calf_detector_v1.pt")
-    # Enables /demo endpoints that replay labelled fixture scenarios.
-    demo_mode: bool = False
-    fixtures_root: Path = SERVICE_ROOT.parents[1] / "demo" / "fixtures"
-    # Illustrative demo price, not a market quote (USD 4.00/kg).
-    demo_price_minor_per_kg: int = 400
 
-    @classmethod
-    def from_env(cls) -> "Settings":
-        var = SERVICE_ROOT / "var"
-        return cls(
-            database_url=os.getenv("VEYRA_DATABASE_URL", "postgresql+psycopg://veyra:veyra@localhost:5432/veyra"),
-            media_root=Path(os.getenv("VEYRA_MEDIA_ROOT", str(var / "media"))),
-            max_upload_bytes=int(os.getenv("VEYRA_MAX_UPLOAD_MB", "500")) * 1024 * 1024,
-            job_poll_seconds=float(os.getenv("VEYRA_JOB_POLL_SECONDS", "1.0")),
-            job_max_attempts=int(os.getenv("VEYRA_JOB_MAX_ATTEMPTS", "2")),
-            yolo_weights=os.getenv("VEYRA_YOLO_WEIGHTS", str(var / "models" / "yolov8x-seg.pt")),
-            demo_price_minor_per_kg=int(os.getenv("VEYRA_DEMO_PRICE_MINOR_PER_KG", "400")),
-            calf_detector_weights=os.getenv("VEYRA_CALF_DETECTOR_WEIGHTS", str(SERVICE_ROOT / "models" / "calf_detector_v1.pt")),
-            demo_mode=os.getenv("VEYRA_DEMO_MODE", "0") == "1",
-            fixtures_root=Path(os.getenv("VEYRA_FIXTURES_ROOT", str(SERVICE_ROOT.parents[1] / "demo" / "fixtures"))),
-        )
+
+def _env_bool(name: str, default: bool) -> bool:
+    value = os.environ.get(name)
+    if value is None or value.strip() == "":
+        return default
+    return value.strip().lower() in ("1", "true", "yes")
+
+
+def _env_choice(name: str, default: str, choices: tuple[str, ...]) -> str:
+    value = os.environ.get(name, default).strip().lower() or default
+    if value not in choices:
+        raise ValueError(f"{name} must be one of {', '.join(choices)}, got {value!r}")
+    return value
+
+
+def _env_replay_speed() -> float:
+    raw = os.environ.get("VEYRA_REPLAY_SPEED") or "10.0"
+    try:
+        value = float(raw)
+    except ValueError:
+        raise ValueError(f"VEYRA_REPLAY_SPEED must be a number, got {raw!r}") from None
+    if value < 0:
+        raise ValueError(f"VEYRA_REPLAY_SPEED must be >= 0 (0 = instant), got {raw!r}")
+    return value
+
+
+@lru_cache
+def get_settings() -> Settings:
+    data_dir = Path(os.environ.get("VEYRA_DATA_DIR") or API_DIR / ".data").resolve()
+    return Settings(
+        data_dir=data_dir,
+        database_url=os.environ.get("VEYRA_DATABASE_URL") or f"sqlite:///{(data_dir / 'veyra.db').as_posix()}",
+        media_dir=data_dir / "media",
+        media_secret=os.environ.get("VEYRA_MEDIA_SECRET") or _PROCESS_MEDIA_SECRET,
+        service_token=os.environ.get("VEYRA_SERVICE_TOKEN") or "demo-worker-token",
+        sync_jobs=_env_bool("VEYRA_SYNC_JOBS", False),
+        replay_speed=_env_replay_speed(),
+        perception_mode=_env_choice("VEYRA_PERCEPTION_MODE", "auto", PERCEPTION_MODES),
+        llm_mode=_env_choice("VEYRA_LLM_MODE", "auto", LLM_MODES),
+        llm_model=os.environ.get("VEYRA_LLM_MODEL") or "claude-opus-5-5",
+        demo_mode=_env_bool("VEYRA_DEMO_MODE", True),
+        yolo_weights=os.environ.get("VEYRA_YOLO_WEIGHTS") or "yolov8x-seg.pt",
+    )

@@ -1,167 +1,175 @@
-"""Enrollment endpoints (PRD Section 6): create, upload video, process, review, confirm, reject."""
+"""Guided-video enrollment (plan Section 5: `/enrollments`). Managers and operators only; farm-scoped.
 
-import uuid
-from datetime import date, datetime
+Writes use explicit `SessionLocal()` blocks instead of the `get_session` dependency where a job is submitted:
+the job may run inline in this thread (`VEYRA_SYNC_JOBS=1`), so the request's writing session must be
+committed and closed before `jobs.submit`. Large uploads are streamed to a temp file before any writing
+transaction opens.
+"""
+
+import hashlib
+import tempfile
 from pathlib import Path
-from typing import Annotated, Literal
 
-from fastapi import APIRouter, Depends, Request, UploadFile
-from pydantic import BaseModel, Field
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi.routing import APIRoute
+from sqlalchemy.orm import Session
 
-from domain import audit, enrollment as flow, jobs
-from domain.errors import APIError, ErrorCode
-from persistence.models import Enrollment, Job, Media, User
-from persistence.storage import MediaTooLarge
-from routes.deps import SessionDep, UserDep, get_owned, require_roles
+import workers.enrollment_job  # noqa: F401  (registers the `enrollment.process` handler)
+from config import get_settings
+from domain import enrollment as enrollments
+from domain.auth import ENROLLERS, Principal
+from domain.errors import DomainError
+from persistence.db import SessionLocal, get_read_session, read_session
+from persistence.media import media_path, place_file
+from routes.deps import require_roles
+from schemas import error_responses
+from schemas_enrollment import (
+    ConfirmBody,
+    EnrollmentCreate,
+    EnrollmentCreated,
+    EnrollmentList,
+    EnrollmentOut,
+    EnrollmentStatus,
+    JobAccepted,
+)
+from workers import jobs
 
 router = APIRouter(prefix="/enrollments", tags=["enrollments"])
-Capturer = Annotated[User, Depends(require_roles("manager", "operator"))]
+enroller = require_roles(*ENROLLERS)
+_CHUNK = 1 << 20
+MULTIPART_OVERHEAD = 1 << 20  # boundaries and part headers on top of the file itself
 
 
-class CaptureInputs(BaseModel):
-    sex: Literal["female", "male"] | None = None
-    breed: str | None = Field(default=None, max_length=100)
-    documented_birth_date: date | None = None
-    tape_heart_girth_cm: float | None = Field(default=None, gt=50, lt=350)
-    marker_cm: float = Field(default=15.0, gt=1, lt=100)
-    sample_key: str | None = Field(default=None, max_length=100, description="Demo fixture key for the age adapter")
+def _created(enrollment) -> dict:
+    return {"id": enrollment.id, "status": enrollment.status, "sample_key": enrollment.sample_key,
+            "retry_of_id": enrollment.retry_of_id,
+            "upload": {"method": "PUT", "url": f"/api/v1/enrollments/{enrollment.id}/video"}}
 
 
-class EnrollmentOut(BaseModel):
-    id: uuid.UUID
-    status: str
-    capture_inputs: dict
-    video_media_id: uuid.UUID | None
-    process_job_id: uuid.UUID | None
-    processing_mode: str | None
-    manifest: dict | None
-    identity_result: dict | None
-    estimate_results: dict | None
-    review_reasons: list
-    animal_id: uuid.UUID | None
-    created_at: datetime
-    reviewed_at: datetime | None
+def _detail(farm_id: str, enrollment_id: str) -> dict:
+    with read_session() as session:
+        return enrollments.get_enrollment(session, farm_id, enrollment_id)
 
 
-class JobAccepted(BaseModel):
-    job_id: uuid.UUID
-    status: str
+@router.post("", status_code=201, response_model=EnrollmentCreated, responses=error_responses(401, 403, 422))
+def create_enrollment(body: EnrollmentCreate | None = None, principal: Principal = Depends(enroller)) -> dict:
+    with SessionLocal() as session:
+        enrollment = enrollments.create(session, principal, body.sample_key if body else None)
+        session.commit()
+        return _created(enrollment)
 
 
-class ConfirmIn(BaseModel):
-    decision: Literal["new_animal", "existing_animal"]
-    animal_id: uuid.UUID | None = None
-    acknowledge_review: bool = False
-    notes: str | None = Field(default=None, max_length=1000)
+@router.get("", response_model=EnrollmentList, responses=error_responses(401, 403, 422))
+def list_enrollments(status: EnrollmentStatus | None = None, principal: Principal = Depends(enroller),
+                     session: Session = Depends(get_read_session)) -> dict:
+    return {"items": enrollments.list_enrollments(session, principal.farm_id, status)}
 
 
-class ConfirmOut(BaseModel):
-    enrollment_id: uuid.UUID
-    animal_id: uuid.UUID
-    display_id: str
+@router.get("/{enrollment_id}", response_model=EnrollmentOut, responses=error_responses(401, 403, 404))
+def get_enrollment(enrollment_id: str, principal: Principal = Depends(enroller),
+                   session: Session = Depends(get_read_session)) -> dict:
+    return enrollments.get_enrollment(session, principal.farm_id, enrollment_id)
 
 
-class RejectIn(BaseModel):
-    reason: str = Field(min_length=3, max_length=500)
+def _spool(upload: UploadFile, ext: str) -> tuple[Path, str, int]:
+    """Copy the upload to `<data_dir>/uploads/*.ext`, hashing as it goes and enforcing the cap.
 
-
-def _out(e: Enrollment) -> EnrollmentOut:
-    # The muzzle reference embedding is internal; strip it from API responses.
-    identity = dict(e.identity_result) if e.identity_result else None
-    if identity:
-        identity.pop("reference", None)
-    return EnrollmentOut(id=e.id, status=e.status, capture_inputs=e.capture_inputs or {}, video_media_id=e.video_media_id,
-                         process_job_id=e.process_job_id, processing_mode=e.processing_mode, manifest=e.manifest,
-                         identity_result=identity, estimate_results=e.estimate_results, review_reasons=e.review_reasons or [],
-                         animal_id=e.animal_id, created_at=e.created_at, reviewed_at=e.reviewed_at)
-
-
-def _sync_failed_processing(session, e: Enrollment) -> None:
-    """A processing job that exhausted its retries leaves the enrollment failed, so the operator can re-record."""
-    if e.status == "processing" and e.process_job_id:
-        job = session.get(Job, e.process_job_id)
-        if job is not None and job.status == "failed":
-            e.status = "failed"
-            audit.record(session, e.farm_id, "enrollment.processing_failed", "enrollment", e.id, actor_type="system",
-                         details={"job_id": str(job.id)})
-            session.commit()
-
-
-@router.post("", response_model=EnrollmentOut, status_code=201)
-def create_enrollment(body: CaptureInputs, session: SessionDep, user: Capturer) -> EnrollmentOut:
-    e = Enrollment(farm_id=user.farm_id, created_by=user.id, capture_inputs=body.model_dump(mode="json", exclude_none=True))
-    session.add(e)
-    session.flush()
-    audit.record(session, user.farm_id, "enrollment.created", "enrollment", e.id, actor_id=user.id)
-    session.commit()
-    return _out(e)
-
-
-@router.get("", response_model=list[EnrollmentOut])
-def list_enrollments(session: SessionDep, user: UserDep, status: str | None = None) -> list[EnrollmentOut]:
-    q = select(Enrollment).where(Enrollment.farm_id == user.farm_id)
-    if status:
-        q = q.where(Enrollment.status == status)
-    rows = list(session.scalars(q.order_by(Enrollment.created_at.desc())))
-    for e in rows:
-        _sync_failed_processing(session, e)
-    return [_out(e) for e in rows]
-
-
-@router.get("/{enrollment_id}", response_model=EnrollmentOut)
-def get_enrollment(enrollment_id: uuid.UUID, session: SessionDep, user: UserDep) -> EnrollmentOut:
-    e = get_owned(session, Enrollment, enrollment_id, user)
-    _sync_failed_processing(session, e)
-    return _out(e)
-
-
-@router.post("/{enrollment_id}/video", response_model=EnrollmentOut)
-def upload_video(enrollment_id: uuid.UUID, request: Request, file: UploadFile, session: SessionDep,
-                 user: Capturer) -> EnrollmentOut:
-    e = get_owned(session, Enrollment, enrollment_id, user)
-    if e.status not in ("created", "uploaded"):
-        raise APIError(ErrorCode.CONFLICT, f"Cannot replace the video of a '{e.status}' enrollment.")
+    The spool sits on the same volume as the media dir, so `place_file` can move it in with `os.replace`.
+    """
+    upload_dir = get_settings().data_dir / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    handle = tempfile.NamedTemporaryFile(dir=upload_dir, suffix=f".{ext}", delete=False)  # noqa: SIM115
+    digest, size = hashlib.sha256(), 0
     try:
-        key, size, sha = request.app.state.media.save(user.farm_id, file.file, Path(file.filename or ".mp4").suffix)
-    except MediaTooLarge:
-        raise APIError(ErrorCode.PAYLOAD_TOO_LARGE, "Upload exceeds the configured size limit.") from None
-    media = Media(farm_id=user.farm_id, kind="video", storage_key=key, original_filename=file.filename,
-                  content_type=file.content_type, size_bytes=size, sha256=sha, uploaded_by=user.id)
-    session.add(media)
-    session.flush()
-    e.video_media_id = media.id
-    e.status = "uploaded"
-    audit.record(session, user.farm_id, "enrollment.video_uploaded", "enrollment", e.id, actor_id=user.id,
-                 details={"media_id": str(media.id), "sha256": sha, "size_bytes": size})
-    session.commit()
-    return _out(e)
+        with handle:
+            while chunk := upload.file.read(_CHUNK):
+                size += len(chunk)
+                if size > enrollments.MAX_VIDEO_BYTES:
+                    raise _too_large()
+                digest.update(chunk)
+                handle.write(chunk)
+        if size == 0:
+            raise DomainError("VALIDATION_FAILED", "The uploaded video is empty.", {"bytes": 0})
+    except BaseException:
+        Path(handle.name).unlink(missing_ok=True)
+        raise
+    return Path(handle.name), digest.hexdigest(), size
 
 
-@router.post("/{enrollment_id}/process", response_model=JobAccepted, status_code=202)
-def process_enrollment(enrollment_id: uuid.UUID, session: SessionDep, user: Capturer) -> JobAccepted:
-    e = get_owned(session, Enrollment, enrollment_id, user)
-    if e.status != "uploaded":
-        raise APIError(ErrorCode.CONFLICT, f"Enrollment is '{e.status}'; upload a video before processing.")
-    job = jobs.enqueue(session, user.farm_id, flow.PROCESS_JOB, {"enrollment_id": str(e.id)}, user.id)
-    e.status = "processing"
-    e.process_job_id = job.id
-    session.commit()
-    return JobAccepted(job_id=job.id, status=job.status)
+def _too_large() -> DomainError:
+    return DomainError("VALIDATION_FAILED", "The video is larger than 200 MB.",
+                       {"max_bytes": enrollments.MAX_VIDEO_BYTES})
 
 
-@router.post("/{enrollment_id}/confirm", response_model=ConfirmOut)
-def confirm_enrollment(enrollment_id: uuid.UUID, body: ConfirmIn, session: SessionDep, user: Capturer) -> ConfirmOut:
-    e = get_owned(session, Enrollment, enrollment_id, user)
-    animal = flow.confirm(session, e, user, body.decision, body.animal_id, body.acknowledge_review, body.notes)
-    session.commit()
-    return ConfirmOut(enrollment_id=e.id, animal_id=animal.id, display_id=animal.display_id)
+class _UploadLimitRoute(APIRoute):
+    """Refuses an oversize video upload from its `Content-Length` before the multipart body is read."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+        if self.name != "upload_video":
+            return handler
+
+        async def limited(request: Request):
+            length = request.headers.get("content-length", "")
+            if length.isdigit() and int(length) > enrollments.MAX_VIDEO_BYTES + MULTIPART_OVERHEAD:
+                raise _too_large()
+            return await handler(request)
+
+        return limited
 
 
-@router.post("/{enrollment_id}/reject", response_model=EnrollmentOut)
-def reject_enrollment(enrollment_id: uuid.UUID, body: RejectIn, session: SessionDep, user: Capturer) -> EnrollmentOut:
-    e = get_owned(session, Enrollment, enrollment_id, user)
-    flow.reject(session, e, user, body.reason)
-    session.commit()
-    return _out(e)
+router.route_class = _UploadLimitRoute
+
+
+@router.put("/{enrollment_id}/video", response_model=EnrollmentOut,
+            responses=error_responses(401, 403, 404, 409, 422))
+def upload_video(enrollment_id: str, file: UploadFile = File(...), principal: Principal = Depends(enroller)) -> dict:
+    with read_session() as session:
+        enrollments.check_uploadable(session, principal.farm_id, enrollment_id)
+    content_type, ext = enrollments.resolve_video_type(file.content_type, file.filename)
+    spooled, sha256, size = _spool(file, ext)
+    # Move the file into the media dir before the writing transaction: only the row insert holds the lock.
+    try:
+        media = place_file(principal.farm_id, "video", spooled, content_type, sha256, size)
+    finally:
+        spooled.unlink(missing_ok=True)
+    try:
+        with SessionLocal() as session:
+            replaced = enrollments.attach_video(session, principal, enrollment_id, media)
+            session.commit()
+    except BaseException:
+        media_path(media).unlink(missing_ok=True)
+        raise
+    if replaced is not None:
+        replaced.unlink(missing_ok=True)
+    return _detail(principal.farm_id, enrollment_id)
+
+
+@router.post("/{enrollment_id}/process", status_code=202, response_model=JobAccepted,
+             responses=error_responses(401, 403, 404, 409, 422))
+def process_enrollment(enrollment_id: str, principal: Principal = Depends(enroller)) -> dict:
+    with SessionLocal() as session:
+        job = enrollments.start_processing(session, principal, enrollment_id)
+        session.commit()
+        job_id = job.id
+    jobs.submit(job_id)  # after the writing session closed: a sync job runs in this thread
+    return {"job_id": job_id}
+
+
+@router.post("/{enrollment_id}/confirm", response_model=EnrollmentOut,
+             responses=error_responses(401, 403, 404, 409, 422))
+def confirm_enrollment(enrollment_id: str, body: ConfirmBody, principal: Principal = Depends(enroller)) -> dict:
+    with SessionLocal() as session:
+        enrollments.confirm(session, principal, enrollment_id, body.model_dump())
+        session.commit()
+    return _detail(principal.farm_id, enrollment_id)
+
+
+@router.post("/{enrollment_id}/retry", status_code=201, response_model=EnrollmentCreated,
+             responses=error_responses(401, 403, 404, 409))
+def retry_enrollment(enrollment_id: str, principal: Principal = Depends(enroller)) -> dict:
+    with SessionLocal() as session:
+        enrollment = enrollments.retry(session, principal, enrollment_id)
+        session.commit()
+        return _created(enrollment)
 

@@ -1,0 +1,43 @@
+{
+  "title": "Choose the pitch page's structure",
+  "question": "The world is settled (Ear Tag + Passbook). Pick how the landing page tells VEYRA's story, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "landing-tag",
+      "kind": "assigned",
+      "label": "The traveling tag",
+      "kicker": "THE ROLL",
+      "thesis": "One giant ear tag carries the pitch: its face holds the hook, and as you scroll it collects a stamp for every step VEYRA proves.",
+      "palette": ["#f6c800", "#111111", "#ffffff", "#1f7a4d", "#c4281c"],
+      "materials": ["molded ear tag", "rubber stamps", "white ground"],
+      "viewport": "Black nav with Open the live demo. A tag-yellow ear tag fills the left half with the hook set on it; beside it the first stamp (MUZZLE MATCH · 92.5% correct on held-out animals) and the black/yellow demo button.",
+      "risk": "If the tag is drawn as a picture the hook stops reading as text; it must stay real type on a real shape.",
+      "html": ".impeccable/mocks/decision/landing-tag.html"
+    },
+    {
+      "id": "landing-records",
+      "kind": "dealt",
+      "label": "Four records, one passport",
+      "thesis": "The problem made visible: identity, value, camera, and policy records scattered as slips, assembling into one passport with a stamp.",
+      "palette": ["#f6c800", "#111111", "#ffffff", "#e9eaee", "#1f7a4d"],
+      "materials": ["paper slips", "passport card", "rubber stamp"],
+      "viewport": "Headline across the top. Left: four tilted record slips (ear-tag register, valuation sheet, CCTV still, policy schedule) on a grey ground. Right: the assembled passport for animal-demo-001 with a stamped line. Demo button under the headline.",
+      "risk": "Tilted slips can read as clutter; the passport side must clearly win the eye.",
+      "html": ".impeccable/mocks/decision/landing-records.html"
+    },
+    {
+      "id": "landing-passbook",
+      "kind": "dealt",
+      "label": "The passbook is the pitch",
+      "thesis": "The page is one open passbook: the left page introduces VEYRA, the right page lists the journey as numbered lines, and the last line awaits your stamp: open the live demo.",
+      "palette": ["#f6c800", "#111111", "#ffffff", "#1e2a5e", "#1f7a4d"],
+      "materials": ["open passbook spread", "dot-matrix lines", "dashed stamp slot"],
+      "viewport": "One open book, two pages on one gutter. Left page: tag logo, hook, one-line pitch, audiences. Right page: lines 001 Enrolled to 005 Claim submitted, then line 006 awaiting: the stamp slot is the demo button.",
+      "risk": "A book object can feel slow to scan for judges; every line must carry a real fact.",
+      "html": ".impeccable/mocks/decision/landing-passbook.html"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code"},
+  "steer": true
+}

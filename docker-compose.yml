@@ -1,19 +1,25 @@
+# docker compose up --build   →   http://localhost:8000
+# Set ANTHROPIC_API_KEY in your shell or a .env file to turn on Claude's explanations and query parsing;
+# without it the app runs fully offline with labeled template answers.
 services:
-  postgres:
-    image: postgres:18
-    environment:
-      POSTGRES_USER: veyra
-      POSTGRES_PASSWORD: veyra
-      POSTGRES_DB: veyra
+  veyra:
+    build:
+      context: .
+      args:
+        PERCEPTION: ${VEYRA_PERCEPTION_BUILD:-false}
+    image: veyra:latest
     ports:
-      - "5432:5432"
+      - "${VEYRA_PORT:-8000}:8000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      VEYRA_LLM_MODE: ${VEYRA_LLM_MODE:-auto}
+      VEYRA_LLM_MODEL: ${VEYRA_LLM_MODEL:-claude-opus-5-5}
+      VEYRA_PERCEPTION_MODE: ${VEYRA_PERCEPTION_MODE:-auto}
+      VEYRA_REPLAY_SPEED: ${VEYRA_REPLAY_SPEED:-10}
+      VEYRA_MEDIA_SECRET: ${VEYRA_MEDIA_SECRET:-}
     volumes:
-      - veyra-pg:/var/lib/postgresql
-      - ./services/api/scripts/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U veyra -d veyra"]
-      interval: 5s
-      retries: 10
+      - veyra-data:/data
+    restart: unless-stopped
 
 volumes:
-  veyra-pg:
+  veyra-data:

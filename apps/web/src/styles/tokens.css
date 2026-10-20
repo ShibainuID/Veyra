@@ -1,0 +1,216 @@
+/*
+ * VEYRA world tokens: the Ear Tag world.
+ * White ground, near-black ink, a black shell bar, and tag yellow for brand, the current
+ * place, and identity. Light only: the scene is a tablet in a bright barn aisle.
+ *
+ * Contrast (WCAG 2.x, computed from these OKLCH values):
+ *   ink on bg 18.8   ink on surface-2 16.3   muted on bg 8.5   muted on surface-2 7.3
+ *   ink on tag 12.3  ink on tag-pressed 10.0  await-ink on tag-soft 7.9  muted on tag-soft 7.7
+ *   on-shell on shell 19.1  on-shell-muted on shell 11.0  tag on shell 12.5  tag on shell-2 9.8
+ *   ok on ok-soft 5.6  white on ok 6.4  danger on danger-soft 5.6  danger on bg 6.6
+ *   uncertain-ink on uncertain-soft 5.9  uncertain on bg 4.9 (icons, borders)
+ *   line-strong on bg 4.0 (control borders)  tag-edge on bg 4.0 (tag outline)
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Ground and ink */
+  --bg: oklch(1 0 0);
+  --ink: oklch(0.18 0.005 260);
+  --muted: oklch(0.42 0.01 260);
+  --line: oklch(0.82 0.006 260);
+  --line-strong: oklch(0.6 0.01 260);
+  --surface: oklch(0.975 0.002 260);
+  --surface-2: oklch(0.95 0.003 260);
+
+  /* Shell (black top bar and bottom tabs) */
+  --shell: oklch(0.17 0 0);
+  --shell-2: oklch(0.27 0 0);
+  --on-shell: oklch(1 0 0);
+  --on-shell-muted: oklch(0.82 0 0);
+  --shell-line: oklch(0.36 0 0);
+
+  /* Tag yellow: brand, the current nav item, identity. Only ever carries ink. */
+  --tag: oklch(0.86 0.17 92);
+  --tag-pressed: oklch(0.8 0.16 88);
+  --tag-edge: oklch(0.6 0.12 80);
+  --tag-soft: oklch(0.97 0.06 95);
+  --await-ink: oklch(0.42 0.09 75);
+
+  /* States: green posted/active, red failed/declined, orange uncertain */
+  --ok: oklch(0.47 0.12 155);
+  --ok-soft: oklch(0.95 0.04 155);
+  --danger: oklch(0.5 0.19 28);
+  --danger-soft: oklch(0.95 0.03 25);
+  --danger-pressed: oklch(0.42 0.17 28);
+  --uncertain: oklch(0.56 0.15 50);
+  --uncertain-ink: oklch(0.48 0.13 50);
+  --uncertain-soft: oklch(0.95 0.04 65);
+
+  --focus: var(--ink);
+  --focus-on-shell: var(--tag);
+
+  /* Space: 4 8 12 16 24 32 48 64 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Touch targets */
+  --target-min: 44px;
+  --target-primary: 48px;
+  --target-decision: 52px;
+
+  /* Layers */
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-drawer-backdrop: 30;
+  --z-drawer: 40;
+  --z-toast: 50;
+  --z-tooltip: 60;
+
+  /* Motion */
+  --dur-fast: 160ms;
+  --dur-base: 200ms;
+  --dur-slow: 220ms;
+  --dur-stamp: 180ms;
+
+  /* Layout */
+  --shell-height: 72px;
+  --tabbar-height: 56px;
+  --passbook-width: 440px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-stamp: 0ms;
+  }
+}
+
+/* Map the world into Tailwind 4 utilities. Defaults are cleared so only world tokens exist. */
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--bg);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-shell: var(--shell);
+  --color-shell-2: var(--shell-2);
+  --color-on-shell: var(--on-shell);
+  --color-on-shell-muted: var(--on-shell-muted);
+  --color-shell-line: var(--shell-line);
+  --color-tag: var(--tag);
+  --color-tag-pressed: var(--tag-pressed);
+  --color-tag-edge: var(--tag-edge);
+  --color-tag-soft: var(--tag-soft);
+  --color-await-ink: var(--await-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-pressed: var(--danger-pressed);
+  --color-uncertain: var(--uncertain);
+  --color-uncertain-ink: var(--uncertain-ink);
+  --color-uncertain-soft: var(--uncertain-soft);
+  --color-white: var(--bg);
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --default-transition-duration: var(--dur-fast);
+  --default-transition-timing-function: var(--ease-out-quart);
+
+  --breakpoint-*: initial;
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 45rem; /* 720px: tables stack below */
+  --breakpoint-tab: 56.25rem; /* 900px: passbook decision bar becomes sticky below */
+  --breakpoint-lg: 64rem; /* 1024px: full top bar from here, bottom tabs below */
+  --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 90rem; /* 1440px: the herd table shows every column beside the passbook */
+}
+
+/* Type, radii, depth, and easing are emitted on :root by Tailwind (static) and double as utilities. */
+@theme static {
+  --font-*: initial;
+  --font-sans: "Atkinson Hyperlegible Next Variable", "Atkinson Hyperlegible Next", system-ui, sans-serif;
+  --font-mono: "Atkinson Hyperlegible Mono Variable", "Atkinson Hyperlegible Mono", ui-monospace, monospace;
+
+  /* Fixed rem scale, ratio 1.2, base 17px */
+  --text-*: initial;
+  --text-xs: 0.8125rem; /* 13px: stamps and dense mono only */
+  --text-xs--line-height: 1.35;
+  --text-sm: 0.875rem; /* 14px */
+  --text-sm--line-height: 1.4;
+  --text-base: 1.0625rem; /* 17px */
+  --text-base--line-height: 1.5;
+  --text-md: 1.275rem; /* 20.4px */
+  --text-md--line-height: 1.35;
+  --text-lg: 1.53rem; /* 24.5px */
+  --text-lg--line-height: 1.25;
+  --text-xl: 1.836rem; /* 29.4px */
+  --text-xl--line-height: 1.15;
+  --text-2xl: 2.203rem; /* 35.2px */
+  --text-2xl--line-height: 1.1;
+  /* Pitch surface only (the landing page at /): a display headline and a lead size beyond the app ramp. */
+  --text-display: clamp(2.5rem, 1rem + 4.4vw, 4.75rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.03em;
+  --text-lead: 1.375rem;
+  --text-lead--line-height: 1.45;
+
+  --font-weight-*: initial;
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-heavy: 800; /* pitch display headline and wordmark only */
+
+  --radius-*: initial;
+  --radius-control: 10px;
+  --radius-panel: 14px;
+  --radius-pill: 999px;
+  /* The pitch page's ear tag (hero and its sticky companion): rounded shoulders and a heavier
+     rounded bottom, as on the molded tag, in proportion to the tag's own size. */
+  --radius-hero-tag: 11% 11% 18% 18% / 10% 10% 16% 16%;
+
+  /* Depth: offset plus soft blur, never a hard block */
+  --shadow-*: initial;
+  --shadow-raised: 0 1px 2px oklch(0.18 0.005 260 / 0.08), 0 4px 12px oklch(0.18 0.005 260 / 0.08);
+  --shadow-drawer: -8px 0 32px oklch(0.18 0.005 260 / 0.18);
+
+  --ease-*: initial;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@utility z-sticky {
+  z-index: var(--z-sticky);
+}
+@utility z-dropdown {
+  z-index: var(--z-dropdown);
+}
+@utility z-drawer-backdrop {
+  z-index: var(--z-drawer-backdrop);
+}
+@utility z-drawer {
+  z-index: var(--z-drawer);
+}
+@utility z-toast {
+  z-index: var(--z-toast);
+}
+@utility z-tooltip {
+  z-index: var(--z-tooltip);
+}
+@utility figures {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1;
+}

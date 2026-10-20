@@ -1,81 +1,92 @@
-"""Demo-only endpoints (PRD Section 6): start a labelled, simulated camera replay. Absent unless demo mode is on."""
+"""Demo controls: reset to a scenario and the sandbox provider switches (plan Section 5: `/demo/*`).
 
-import uuid
-from datetime import UTC, datetime, timedelta
-from typing import Annotated
+Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on; that check runs before auth. Reset (which reseeds every farm)
+needs a manager of the demo farm; changing the settings needs a manager; any signed-in user may read their farm's
+settings.
+"""
 
-from fastapi import APIRouter, Depends, Request
-from pydantic import BaseModel, Field
-from sqlalchemy import select
+from datetime import datetime
+from typing import Literal
 
-from domain import audit, monitoring, replays
-from domain.errors import APIError, ErrorCode
-from persistence.models import Animal, Camera, CameraRecording, CameraZone, User, ZoneScan
-from routes.cameras import queue_recording
-from routes.deps import SessionDep, get_owned, require_roles
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
-router = APIRouter(prefix="/demo", tags=["demo"])
-Manager = Annotated[User, Depends(require_roles("manager"))]
+from config import get_settings
+from domain import clock
+from domain.auth import APPROVERS, Principal
+from domain.errors import DomainError
+from persistence.db import get_read_session, get_session
+from persistence.models import DemoSettings
+from persistence.seed import DEMO_FARM_ID, reset_database
+from routes.deps import current_principal, require_roles
+from schemas import error_responses
 
-
-class ReplayIn(BaseModel):
-    animal_ids: list[uuid.UUID] | None = Field(default=None, description="Animals handed over through the scan zone, "
-                                                                         "in scan order; defaults to confirmed animals")
-
-
-def _demo_camera(session, user: User, fixture: dict) -> tuple[Camera, CameraZone]:
-    camera = session.scalars(select(Camera).where(Camera.farm_id == user.farm_id,
-                                                  Camera.name == fixture["camera"]["name"])).first()
-    if camera is None:
-        camera = Camera(farm_id=user.farm_id, **fixture["camera"])
-        session.add(camera)
-        session.flush()
-    zone = session.scalars(select(CameraZone).where(CameraZone.camera_id == camera.id,
-                                                    CameraZone.name == fixture["scan_zone"]["name"])).first()
-    if zone is None:
-        zone = CameraZone(farm_id=user.farm_id, camera_id=camera.id, kind="scan", created_by=user.id,
-                          **fixture["scan_zone"])
-        session.add(zone)
-        session.flush()
-    return camera, zone
+Scenario = Literal["fresh", "post-enrollment"]
+PaymentMode = Literal["succeed", "fail", "timeout"]
+InsurerActivation = Literal["confirm", "withhold"]
 
 
-@router.post("/replays/{scenario}/start", status_code=202)
-def start_replay(scenario: str, body: ReplayIn, request: Request, session: SessionDep, user: Manager) -> dict:
-    settings = request.app.state.settings
-    if not settings.demo_mode:
-        raise APIError(ErrorCode.NOT_FOUND, "Not found.")
-    fixture = replays.load_fixture(settings.fixtures_root)
-    try:
-        replay = replays.generate(scenario, fixture)
-    except KeyError:
-        raise APIError(ErrorCode.NOT_FOUND, f"Unknown replay scenario '{scenario}'.",
-                       {"scenarios": sorted(fixture["scenarios"])}) from None
-    if body.animal_ids is not None:
-        animals = [get_owned(session, Animal, a, user) for a in body.animal_ids]
-    else:
-        animals = list(session.scalars(select(Animal).where(Animal.farm_id == user.farm_id,
-                                                            Animal.identity_status == "confirmed")
-                                       .order_by(Animal.display_id)))
-    animals = [a for a in animals if a.identity_status == "confirmed"][:len(replay.scans)]
-    if not animals:
-        raise APIError(ErrorCode.IDENTITY_UNCONFIRMED, "Enroll and confirm at least one animal before a replay.")
+def require_demo_mode() -> None:
+    if not get_settings().demo_mode:
+        raise DomainError("NOT_FOUND", "Resource not found.")
 
-    camera, zone = _demo_camera(session, user, fixture)
-    duration = replay.tracks["frames"][-1][0]
-    # The replay ends now, so its observations and alerts read as recent.
-    started_at = datetime.now(UTC) - timedelta(seconds=duration)
-    recording = CameraRecording(farm_id=user.farm_id, camera_id=camera.id, started_at=started_at, source="simulated",
-                                scenario=scenario, created_by=user.id)
-    session.add(recording)
-    session.flush()
-    monitoring.store_tracks(session, request.app.state.media, recording, replay.tracks)
-    for animal, (_, scan_t) in zip(animals, replay.scans):
-        session.add(ZoneScan(farm_id=user.farm_id, camera_id=camera.id, zone_id=zone.id, animal_id=animal.id,
-                             scanned_at=started_at + timedelta(seconds=scan_t), created_by=user.id))
-    out = queue_recording(session, recording, user)
-    audit.record(session, user.farm_id, "demo.replay_started", "camera_recording", recording.id, actor_id=user.id,
-                 details={"scenario": scenario, "animal_ids": [str(a.id) for a in animals]})
+
+router = APIRouter(prefix="/demo", tags=["demo"], dependencies=[Depends(require_demo_mode)])
+
+
+class ResetResult(BaseModel):
+    status: Literal["reset"]
+    scenario: Scenario
+    animals: int
+
+
+class DemoSettingsUpdate(BaseModel):
+    payment_mode: PaymentMode
+    insurer_activation: InsurerActivation
+
+
+class DemoSettingsOut(DemoSettingsUpdate):
+    farm_id: str
+    updated_at: datetime
+
+
+def _settings_row(session: Session, farm_id: str) -> DemoSettings:
+    row = session.get(DemoSettings, farm_id)
+    if row is None:
+        raise DomainError("NOT_FOUND", "Demo settings are not seeded; reset the demo first.")
+    return row
+
+
+def _out(row: DemoSettings) -> DemoSettingsOut:
+    return DemoSettingsOut(farm_id=row.farm_id, payment_mode=row.payment_mode,
+                           insurer_activation=row.insurer_activation, updated_at=row.updated_at)
+
+
+def require_demo_farm_manager(principal: Principal = Depends(require_roles(*APPROVERS))) -> Principal:
+    if principal.farm_id != DEMO_FARM_ID:
+        raise DomainError("FORBIDDEN_ROLE", "Only a manager of the demo farm can reset the demo.",
+                          {"required": list(APPROVERS), "role": principal.role, "farm_id": DEMO_FARM_ID})
+    return principal
+
+
+@router.post("/reset", dependencies=[Depends(require_demo_farm_manager)], responses=error_responses(401, 403, 404, 422))
+def reset(scenario: Scenario = "fresh") -> ResetResult:
+    return ResetResult(status="reset", scenario=scenario, animals=reset_database(scenario))
+
+
+@router.get("/settings", responses=error_responses(401, 404))
+def get_demo_settings(principal: Principal = Depends(current_principal),
+                      session: Session = Depends(get_read_session)) -> DemoSettingsOut:
+    return _out(_settings_row(session, principal.farm_id))
+
+
+@router.put("/settings", responses=error_responses(401, 403, 404, 422))
+def put_demo_settings(body: DemoSettingsUpdate, principal: Principal = Depends(require_roles(*APPROVERS)),
+                      session: Session = Depends(get_session)) -> DemoSettingsOut:
+    row = _settings_row(session, principal.farm_id)
+    row.payment_mode = body.payment_mode
+    row.insurer_activation = body.insurer_activation
+    row.updated_at = clock.now()
     session.commit()
-    return {**out, "scenario": scenario, "label": replay.label, "source": "simulated", "camera_id": str(camera.id),
-            "zone_id": str(zone.id), "animal_ids": [str(a.id) for a in animals]}
+    return _out(row)

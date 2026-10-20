@@ -1,114 +1,141 @@
-"""Evidence packs for observation alerts (PRD M08, M10 health-risk notification, M11 claim preparation).
+"""Evidence manifests (plan Section 4: a matching evidence manifest version is created or reused).
 
-A pack is an immutable, versioned manifest of everything behind one alert: who the animal is and how the camera
-track got that identity, the observation windows and the rule that fired, the clip and source files with their
-SHA-256, and any review or veterinary assessment. Each change to the alert adds a version. Agent actions and
-claims bind to (`version`, `manifest_sha256`), so an approval given on one version does not carry over to another.
-
-The pack states what was observed. It is not a diagnosis, and on its own it cannot initiate a claim submission.
+A manifest lists the records an agent action relies on: `{type, ref, label, sha256?}` items, hashed as canonical
+JSON. Each subject keeps its own version sequence. Proposing reuses the latest version when the hash is
+unchanged, else writes version + 1. `resolve_version` computes the same number without writing, which is how an
+execution detects that the evidence changed since approval (for example a new valuation).
 """
 
-import hashlib
-import json
-
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from domain.canonical import sha256_hex
+from domain.eligibility import latest_estimate
+from domain.ids import new_id
+from domain.passbook import product_name
+from domain.valuation import latest_valuation, money
 from persistence.models import (
-    Alert,
-    Animal,
-    CameraRecording,
-    EvidencePack,
-    Media,
-    MuzzleReference,
-    Observation,
-    TrackLink,
-    ZoneScan,
+    Alert, Animal, AnimalReference, Camera, EvidenceManifest, Incident, Media, Policy, PolicyApplication,
 )
 
-SCHEMA = "veyra.evidence/v1"
-STATEMENT = ("Camera observation for inspection. It is not a diagnosis, and it does not by itself establish a "
-             "covered incident or start a claim.")
+
+def item(type_: str, ref: str, label: str, sha256: str | None = None) -> dict:
+    entry = {"type": type_, "ref": ref, "label": label}
+    if sha256:
+        entry["sha256"] = sha256
+    return entry
 
 
-def canonical_sha256(manifest: dict) -> str:
-    return hashlib.sha256(json.dumps(manifest, sort_keys=True, separators=(",", ":"), default=str).encode()).hexdigest()
+def manifest_hash(items: list[dict]) -> str:
+    return sha256_hex(items)
 
 
-def _media(session: Session, media_id, role: str) -> dict | None:
-    row = media_id and session.get(Media, media_id)
-    if row is None:
-        return None
-    return {"role": role, "media_id": str(row.id), "kind": row.kind, "content_type": row.content_type,
-            "size_bytes": row.size_bytes, "sha256": row.sha256}
+def latest(session: Session, farm_id: str, subject_type: str, subject_id: str) -> EvidenceManifest | None:
+    return session.scalar(select(EvidenceManifest).where(
+        EvidenceManifest.farm_id == farm_id, EvidenceManifest.subject_type == subject_type,
+        EvidenceManifest.subject_id == subject_id).order_by(EvidenceManifest.version.desc()).limit(1))
 
 
-def build_manifest(session: Session, alert: Alert, version: int, reason: str) -> dict:
-    animal = session.get(Animal, alert.animal_id)
-    window_end = alert.window_end
-    observations = list(session.scalars(
-        select(Observation).where(Observation.animal_id == alert.animal_id, Observation.association_status == "confirmed",
-                                  Observation.observed_at >= alert.window_start, Observation.observed_at < window_end)
-        .order_by(Observation.observed_at)))
-    link_ids = sorted({o.track_link_id for o in observations if o.track_link_id}, key=str)
-    links = [session.get(TrackLink, i) for i in link_ids]
-    recordings = sorted({o.recording_id for o in observations if o.recording_id}, key=str)
-    media = [m for m in (_media(session, mid, "clip") for mid in alert.evidence_media_ids) if m]
-    for rid in recordings:
-        rec = session.get(CameraRecording, rid)
-        media += [m for m in (_media(session, rec.video_media_id, "recording_video"),
-                              _media(session, rec.tracks_media_id, "tracks")) if m]
-    identity_links = []
-    for link in links:
-        scan = session.get(ZoneScan, link.scan_id)
-        identity_links.append({
-            "track_link_id": str(link.id), "camera_id": str(link.camera_id), "recording_id": str(link.recording_id),
-            "track_id": link.track_id, "method": "scan_zone_handoff", "policy_version": link.policy_version,
-            "scan": {"scan_id": str(scan.id), "zone_id": str(scan.zone_id), "scanned_at": scan.scanned_at,
-                     "enrollment_id": scan.enrollment_id and str(scan.enrollment_id)},
-            "linked_from": link.linked_from, "linked_until": link.linked_until, "release_reason": link.release_reason})
-    return {
-        "schema": SCHEMA,
-        "version": version,
-        "reason": reason,
-        "statement": STATEMENT,
-        "source": alert.source,
-        "alert": {"id": str(alert.id), "kind": alert.kind, "status": alert.status, "window_start": alert.window_start,
-                  "window_end": window_end, "created_at": alert.created_at},
-        "animal": {
-            "id": str(animal.id), "display_id": animal.display_id, "identity_status": animal.identity_status,
-            "muzzle_reference_ids": [str(r) for r in session.scalars(
-                select(MuzzleReference.id).where(MuzzleReference.animal_id == animal.id))],
-        },
-        "identity_links": identity_links,
-        "rule": alert.rule,
-        "observations": [{"id": str(o.id), "observed_at": o.observed_at, "window_seconds": float(o.window_seconds),
-                          "movement_score": float(o.movement_score), "visible_fraction": o.quality.get("visible_fraction"),
-                          "track_id": o.track_id} for o in observations],
-        "media": media,
-        # Kept apart, as the PRD requires: camera observation above, human review and professional findings here.
-        "review": {"status": alert.status, "notes": alert.review_notes,
-                   "reviewed_by": alert.reviewed_by and str(alert.reviewed_by), "reviewed_at": alert.reviewed_at},
-        "veterinary_assessment": alert.assessment,
-        "completeness": {
-            "identity_confirmed": animal.identity_status == "confirmed" and bool(identity_links),
-            "clip_attached": any(m["role"] == "clip" for m in media),
-            "veterinary_assessment": alert.assessment is not None,
-        },
-    }
+def resolve_version(session: Session, farm_id: str, subject: tuple[str, str], items: list[dict]) -> int:
+    current = latest(session, farm_id, *subject)
+    if current is not None and current.manifest_hash == manifest_hash(items):
+        return current.version
+    return (current.version if current else 0) + 1
 
 
-def snapshot(session: Session, alert: Alert, reason: str) -> EvidencePack:
-    version = (session.scalar(select(func.max(EvidencePack.version)).where(EvidencePack.alert_id == alert.id)) or 0) + 1
-    manifest = build_manifest(session, alert, version, reason)
-    manifest = json.loads(json.dumps(manifest, default=str))
-    pack = EvidencePack(farm_id=alert.farm_id, animal_id=alert.animal_id, alert_id=alert.id, version=version,
-                        manifest=manifest, manifest_sha256=canonical_sha256(manifest))
-    session.add(pack)
+def ensure(session: Session, farm_id: str, subject: tuple[str, str], items: list[dict]) -> EvidenceManifest:
+    current = latest(session, farm_id, *subject)
+    digest = manifest_hash(items)
+    if current is not None and current.manifest_hash == digest:
+        return current
+    manifest = EvidenceManifest(id=new_id("man"), farm_id=farm_id, subject_type=subject[0], subject_id=subject[1],
+                                version=(current.version if current else 0) + 1, items=list(items),
+                                manifest_hash=digest)
+    session.add(manifest)
     session.flush()
-    return pack
+    return manifest
 
 
-def latest(session: Session, alert_id) -> EvidencePack | None:
-    return session.scalars(select(EvidencePack).where(EvidencePack.alert_id == alert_id)
-                           .order_by(EvidencePack.version.desc()).limit(1)).first()
+def _media_sha(session: Session, media_id: str | None) -> str | None:
+    media = session.get(Media, media_id) if media_id else None
+    return media.sha256 if media else None
+
+
+def _num(value) -> str:
+    """A range bound without a trailing `.0` (480, not 480.0)."""
+    return f"{value:g}" if isinstance(value, float) else str(value)
+
+
+def identity_items(session: Session, animal: Animal) -> list[dict]:
+    references = session.scalars(select(AnimalReference).where(AnimalReference.animal_id == animal.id)
+                                 .order_by(AnimalReference.view, AnimalReference.id)).all()
+    return [item("identity_reference", ref.id, f"Passport {ref.view} reference",
+                 _media_sha(session, ref.crop_media_id or ref.media_id)) for ref in references]
+
+
+def animal_items(session: Session, animal: Animal) -> list[dict]:
+    """Passport identity references, the latest estimates and valuation, and ownership documents."""
+    items = identity_items(session, animal)
+    for kind in ("weight", "age"):
+        estimate = latest_estimate(session, animal.id, kind)
+        if estimate is not None:
+            items.append(item(f"{kind}_estimate", estimate.id,
+                              f"{kind.title()} estimate {_num(estimate.range_low)}–{_num(estimate.range_high)} {estimate.unit} "
+                              f"({estimate.source})"))
+    valuation = latest_valuation(session, animal.id)
+    if valuation is not None:
+        items.append(item("valuation", valuation.id,
+                          f"Valuation v{valuation.version} · {money(valuation.value_low_minor)}–"
+                          f"{money(valuation.value_high_minor)} {valuation.currency}"))
+    items += ownership_items(animal)
+    return items
+
+
+def ownership_items(animal: Animal) -> list[dict]:
+    return [item("ownership_document", ref, "Ownership document") for ref in animal.ownership_doc_refs or []]
+
+
+def application_items(application: PolicyApplication, policy: Policy) -> list[dict]:
+    return [item("policy_application", application.id, f"Accepted application {application.provider_ref or ''}".strip()),
+            item("policy", policy.id, f"{policy_item(policy)['label']}, {policy.status.replace('_', ' ')}")]
+
+
+def policy_item(policy: Policy) -> dict:
+    return item("policy", policy.id, f"Policy {product_name(policy.product_id)} ({policy.terms_version})")
+
+
+def alert_items(session: Session, alert: Alert) -> list[dict]:
+    camera = session.get(Camera, alert.camera_id) if alert.camera_id else None
+    kind = alert.kind.replace("_", " ").capitalize()
+    items = [item("alert", alert.id, f"{kind} alert on {camera.name if camera else alert.camera_id}")]
+    clip = alert.clip or {}
+    if clip.get("media_id"):
+        items.append(item("clip", clip["media_id"], "Alert clip", _media_sha(session, clip["media_id"])))
+    elif clip:  # a replay window: {scenario_id, camera_id, start_s, end_s, video}
+        ref = f"{clip.get('scenario_id')}:{clip.get('camera_id')}:{clip.get('start_s')}-{clip.get('end_s')}"
+        items.append(item("clip", ref, f"Replay clip {clip.get('start_s')}–{clip.get('end_s')} s"))
+    return items
+
+
+def alert_review_item(alert: Alert) -> dict:
+    """The alert's review state: its status and a digest of its notes, so a review after approval changes the
+    manifest (an acknowledgement or a vet assessment makes an approved insurer notification stale)."""
+    notes = list(alert.notes or [])
+    assessments = sum(1 for note in notes if note.get("kind") == "assessment")
+    label = f"Alert review: {alert.status}, {len(notes)} note(s), {assessments} assessment(s)"
+    return item("alert_review", alert.id, label, sha256_hex({"status": alert.status, "notes": notes}))
+
+
+_FINDING_WORDS = {"vet_assessment": "Vet assessment", "vet_health_record": "Vet health record"}
+
+
+def incident_items(incident: Incident) -> list[dict]:
+    items = [item("incident", incident.id, f"Incident: {incident.kind.replace('_', ' ')}")]
+    for document in incident.documents or []:
+        ref = document.get("media_id") or document.get("ref") if isinstance(document, dict) else str(document)
+        if ref:
+            items.append(item("incident_document", ref, "Incident document",
+                              document.get("sha256") if isinstance(document, dict) else None))
+    for finding in incident.professional_findings or []:
+        items.append(item("professional_finding", finding["id"], f"{_FINDING_WORDS.get(finding['finding_type'], finding['finding_type'])} by {finding['author_name']}"))
+    return items

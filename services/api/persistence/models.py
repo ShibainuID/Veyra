@@ -1,524 +1,444 @@
-"""Core records from PRD Section 4.4, as PostgreSQL tables.
+"""Every ORM table (plan Section 2: data model).
 
-Conventions: UUID primary keys, timezone-aware UTC timestamps, explicit units in column names,
-integer minor units plus an ISO currency code for money, JSONB for adapter outputs and manifests,
-and status columns guarded by CHECK constraints. Every farm-owned row carries `farm_id` so access
-can be scoped on the server.
+Status and kind columns are plain strings; the domain modules validate them. `Mapped[datetime]` is stored
+as `UTCDateTime` and `Mapped[dict]`/`Mapped[list]` as mutation-tracked JSON through `Base.type_annotation_map`.
+Inserts are not ordered by foreign key (there are no `relationship()`s): flush parents before children.
+Money is integer minor units plus a currency code.
 """
 
-import uuid
-from datetime import UTC, datetime
+from datetime import date, datetime
 
-from sqlalchemy import (
-    BigInteger,
-    Boolean,
-    CheckConstraint,
-    DateTime,
-    ForeignKey,
-    Index,
-    Integer,
-    Numeric,
-    String,
-    Text,
-    UniqueConstraint,
-    text,
-)
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import ForeignKey, Index, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from .db import Base
+from domain import clock
+from persistence.db import Base
 
 
-def utcnow() -> datetime:
-    return datetime.now(UTC)
+def _farm_fk():
+    return mapped_column(ForeignKey("farms.id"), index=True)
 
 
-def _id() -> Mapped[uuid.UUID]:
-    return mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+def _animal_fk(nullable: bool = False):
+    return mapped_column(ForeignKey("animals.id"), index=True, nullable=nullable)
 
 
-def _fk(table: str, nullable: bool = False, index: bool = True) -> Mapped:
-    return mapped_column(UUID(as_uuid=True), ForeignKey(f"{table}.id"), nullable=nullable, index=index)
+def _created_at():
+    return mapped_column(default=clock.now)
 
 
-def _created() -> Mapped[datetime]:
-    return mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-
-def _status_check(column: str, values: tuple[str, ...], name: str) -> CheckConstraint:
-    quoted = ", ".join(f"'{v}'" for v in values)
-    return CheckConstraint(f"{column} IN ({quoted})", name=name)
-
-
-# `service` is the camera worker identity for internal observation ingestion (PRD Section 6).
-ROLES = ("manager", "operator", "veterinarian", "assessor", "service")
-SOURCES = ("live", "prototype", "simulated", "documented", "measured", "manual")
+def _updated_at():
+    return mapped_column(default=clock.now, onupdate=clock.now)
 
 
 class Farm(Base):
     __tablename__ = "farms"
-    id: Mapped[uuid.UUID] = _id()
-    name: Mapped[str] = mapped_column(String(200))
-    currency: Mapped[str] = mapped_column(String(3), default="USD")
-    created_at: Mapped[datetime] = _created()
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    name: Mapped[str]
 
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (_status_check("role", ROLES, "ck_users_role"),)
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    name: Mapped[str] = mapped_column(String(200))
-    role: Mapped[str] = mapped_column(String(20))
-    # SHA-256 of an opaque API token; the token itself is never stored.
-    token_sha256: Mapped[str] = mapped_column(String(64), unique=True)
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = _created()
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    name: Mapped[str]
+    role: Mapped[str]
+    token: Mapped[str] = mapped_column(unique=True)
+
+
+class Animal(Base):
+    __tablename__ = "animals"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    name: Mapped[str]
+    breed: Mapped[str]
+    breed_category: Mapped[str]
+    sex: Mapped[str]
+    birth_date: Mapped[date | None]
+    identity_status: Mapped[str]
+    confirmed_by: Mapped[str | None]
+    confirmed_at: Mapped[datetime | None]
+    ownership_doc_refs: Mapped[list] = mapped_column(default=list)
+    enrollment_id: Mapped[str | None]
+    created_at: Mapped[datetime] = _created_at()
 
 
 class Media(Base):
     __tablename__ = "media"
-    __table_args__ = (_status_check("kind", ("video", "image", "document", "clip"), "ck_media_kind"),)
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    kind: Mapped[str] = mapped_column(String(20))
-    storage_key: Mapped[str] = mapped_column(String(500), unique=True)
-    original_filename: Mapped[str | None] = mapped_column(String(300))
-    content_type: Mapped[str | None] = mapped_column(String(100))
-    size_bytes: Mapped[int] = mapped_column(BigInteger)
-    sha256: Mapped[str] = mapped_column(String(64), index=True)
-    uploaded_by: Mapped[uuid.UUID] = _fk("users")
-    created_at: Mapped[datetime] = _created()
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    kind: Mapped[str]
+    path: Mapped[str]
+    sha256: Mapped[str]
+    content_type: Mapped[str]
+    bytes: Mapped[int]
+    created_at: Mapped[datetime] = _created_at()
 
 
-class Animal(Base):
-    """The persistent passport anchor. A visual track ID is never an animal ID."""
+class AnimalReference(Base):
+    __tablename__ = "animal_references"
 
-    __tablename__ = "animals"
-    __table_args__ = (
-        _status_check("identity_status", ("pending_review", "confirmed", "disputed"), "ck_animals_identity_status"),
-        UniqueConstraint("farm_id", "display_id", name="uq_animals_farm_display_id"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    display_id: Mapped[str] = mapped_column(String(50))
-    identity_status: Mapped[str] = mapped_column(String(20), default="pending_review")
-    confirmed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    sex: Mapped[str | None] = mapped_column(String(10))
-    breed: Mapped[str | None] = mapped_column(String(100))
-    ownership_document_ids: Mapped[list] = mapped_column(JSONB, default=list)
-    created_at: Mapped[datetime] = _created()
-
-
-class MuzzleReference(Base):
-    """Gallery entry used by the muzzle adapter: embedding plus SIFT features of one reference crop."""
-
-    __tablename__ = "muzzle_references"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    media_id: Mapped[uuid.UUID] = _fk("media")
-    model_version: Mapped[str] = mapped_column(String(50))
-    embedding: Mapped[list] = mapped_column(JSONB)
-    sift_storage_key: Mapped[str] = mapped_column(String(500))
-    created_at: Mapped[datetime] = _created()
+    id: Mapped[str] = mapped_column(primary_key=True)
+    animal_id: Mapped[str] = _animal_fk()
+    view: Mapped[str]
+    media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    crop_media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    enrollment_id: Mapped[str | None] = mapped_column(ForeignKey("enrollments.id"))
+    frame_time_s: Mapped[float | None]
+    quality: Mapped[dict] = mapped_column(default=dict)
+    created_at: Mapped[datetime] = _created_at()
 
 
 class Enrollment(Base):
     __tablename__ = "enrollments"
-    __table_args__ = (
-        _status_check("status", ("created", "uploaded", "processing", "needs_review", "ready", "confirmed", "rejected", "failed"),
-                      "ck_enrollments_status"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    status: Mapped[str] = mapped_column(String(20), default="created")
-    video_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True)
-    processing_mode: Mapped[str | None] = mapped_column(String(20))
-    # Operator-entered context: sex, breed, documented birth date, tape heart girth, marker size, demo sample key.
-    capture_inputs: Mapped[dict] = mapped_column(JSONB, default=dict)
-    manifest: Mapped[dict | None] = mapped_column(JSONB)
-    identity_result: Mapped[dict | None] = mapped_column(JSONB)
-    # Age and weight adapter outputs before an animal exists; persisted as Estimate rows on confirmation.
-    estimate_results: Mapped[dict | None] = mapped_column(JSONB)
-    process_job_id: Mapped[uuid.UUID | None] = _fk("jobs", nullable=True, index=False)
-    review_reasons: Mapped[list] = mapped_column(JSONB, default=list)
-    animal_id: Mapped[uuid.UUID | None] = _fk("animals", nullable=True)
-    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
-    reviewed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = _created()
 
-
-class Estimate(Base):
-    """Age or weight estimate with provenance; original estimates and confirmed overrides are separate rows."""
-
-    __tablename__ = "estimates"
-    __table_args__ = (
-        _status_check("kind", ("age", "weight"), "ck_estimates_kind"),
-        _status_check("source", SOURCES, "ck_estimates_source"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    enrollment_id: Mapped[uuid.UUID | None] = _fk("enrollments", nullable=True)
-    kind: Mapped[str] = mapped_column(String(10))
-    range_low: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    range_high: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    unit: Mapped[str] = mapped_column(String(10))
-    source: Mapped[str] = mapped_column(String(20))
-    method_version: Mapped[str] = mapped_column(String(50))
-    details: Mapped[dict] = mapped_column(JSONB, default=dict)
-    review_required: Mapped[bool] = mapped_column(Boolean, default=False)
-    supersedes_id: Mapped[uuid.UUID | None] = _fk("estimates", nullable=True, index=False)
-    confirmed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = _created()
-
-
-class Valuation(Base):
-    __tablename__ = "valuations"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    weight_estimate_id: Mapped[uuid.UUID] = _fk("estimates", index=False)
-    currency: Mapped[str] = mapped_column(String(3))
-    unit_price_minor_per_kg: Mapped[int] = mapped_column(BigInteger)
-    price_source: Mapped[str] = mapped_column(String(200))
-    price_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    value_low_minor: Mapped[int] = mapped_column(BigInteger)
-    value_high_minor: Mapped[int] = mapped_column(BigInteger)
-    confirmed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = _created()
-
-
-class Camera(Base):
-    __tablename__ = "cameras"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    name: Mapped[str] = mapped_column(String(100))
-    location: Mapped[str | None] = mapped_column(String(200))
-    created_at: Mapped[datetime] = _created()
-
-
-class CameraZone(Base):
-    """An area the farmer marks in the camera view. A `scan` zone is where a scanned animal hands its identity to a track."""
-
-    __tablename__ = "camera_zones"
-    __table_args__ = (_status_check("kind", ("scan",), "ck_camera_zones_kind"),)
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    camera_id: Mapped[uuid.UUID] = _fk("cameras")
-    name: Mapped[str] = mapped_column(String(100))
-    kind: Mapped[str] = mapped_column(String(20), default="scan")
-    # Polygon in normalised image coordinates: [[x, y], ...] with 0 <= x, y <= 1.
-    polygon: Mapped[list] = mapped_column(JSONB)
-    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
-    created_at: Mapped[datetime] = _created()
-
-
-class CameraRecording(Base):
-    """One stretch of camera footage (or worker-supplied tracks) processed into tracks, links, and observations."""
-
-    __tablename__ = "camera_recordings"
-    __table_args__ = (
-        _status_check("status", ("uploaded", "processing", "processed", "failed"), "ck_camera_recordings_status"),
-        _status_check("source", SOURCES, "ck_camera_recordings_source"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    camera_id: Mapped[uuid.UUID] = _fk("cameras")
-    video_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
-    tracks_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
-    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    duration_s: Mapped[float | None] = mapped_column(Numeric(10, 2))
-    status: Mapped[str] = mapped_column(String(20), default="uploaded")
-    source: Mapped[str] = mapped_column(String(20))
-    scenario: Mapped[str | None] = mapped_column(String(50))
-    job_id: Mapped[uuid.UUID | None] = _fk("jobs", nullable=True, index=False)
-    summary: Mapped[dict | None] = mapped_column(JSONB)
-    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
-    created_at: Mapped[datetime] = _created()
-
-
-class ZoneScan(Base):
-    """A confirmed animal scanned in a scan zone at a known time: the identity evidence a track can inherit."""
-
-    __tablename__ = "zone_scans"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    camera_id: Mapped[uuid.UUID] = _fk("cameras")
-    zone_id: Mapped[uuid.UUID] = _fk("camera_zones", index=False)
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    enrollment_id: Mapped[uuid.UUID | None] = _fk("enrollments", nullable=True, index=False)
-    scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
-    created_at: Mapped[datetime] = _created()
-
-
-class TrackLink(Base):
-    """Outcome of one scan handoff in one recording. Only `confirmed` links attach observations to an animal."""
-
-    __tablename__ = "track_links"
-    __table_args__ = (
-        _status_check("status", ("confirmed", "uncertain", "unresolved"), "ck_track_links_status"),
-        UniqueConstraint("recording_id", "scan_id", name="uq_track_links_recording_scan"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    camera_id: Mapped[uuid.UUID] = _fk("cameras", index=False)
-    recording_id: Mapped[uuid.UUID] = _fk("camera_recordings")
-    scan_id: Mapped[uuid.UUID] = _fk("zone_scans", index=False)
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    track_id: Mapped[str | None] = mapped_column(String(100))
-    status: Mapped[str] = mapped_column(String(20))
-    reason: Mapped[str | None] = mapped_column(String(100))
-    policy_version: Mapped[str] = mapped_column(String(50))
-    linked_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # When the continuity policy stopped trusting the track (crowding, loss); null means it held to the end.
-    linked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    release_reason: Mapped[str | None] = mapped_column(String(100))
-    details: Mapped[dict] = mapped_column(JSONB, default=dict)
-    created_at: Mapped[datetime] = _created()
-
-
-class Observation(Base):
-    __tablename__ = "observations"
-    __table_args__ = (
-        _status_check("association_status", ("unassociated", "candidate", "confirmed", "uncertain"),
-                      "ck_observations_association"),
-        Index("ix_observations_animal_time", "animal_id", "observed_at"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    camera_id: Mapped[uuid.UUID] = _fk("cameras")
-    recording_id: Mapped[uuid.UUID | None] = _fk("camera_recordings", nullable=True)
-    track_link_id: Mapped[uuid.UUID | None] = _fk("track_links", nullable=True, index=False)
-    track_id: Mapped[str] = mapped_column(String(100))
-    animal_id: Mapped[uuid.UUID | None] = _fk("animals", nullable=True, index=False)
-    association_status: Mapped[str] = mapped_column(String(20), default="unassociated")
-    # Start of the observation window.
-    observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    window_seconds: Mapped[float] = mapped_column(Numeric(8, 2))
-    # Body diagonals moved per visible minute; see domain/tracks.py.
-    movement_score: Mapped[float | None] = mapped_column(Numeric(10, 4))
-    quality: Mapped[dict] = mapped_column(JSONB, default=dict)
-    media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
-    source: Mapped[str] = mapped_column(String(20))
-    created_at: Mapped[datetime] = _created()
-
-
-class Alert(Base):
-    """An observation alert asks for inspection. It is not a diagnosis and cannot by itself start a claim."""
-
-    __tablename__ = "alerts"
-    __table_args__ = (
-        _status_check("kind", ("reduced_movement", "observation_quality"), "ck_alerts_kind"),
-        _status_check("status", ("open", "acknowledged", "resolved"), "ck_alerts_status"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID | None] = _fk("animals", nullable=True)
-    track_id: Mapped[str | None] = mapped_column(String(100))
-    kind: Mapped[str] = mapped_column(String(30))
-    rule: Mapped[dict] = mapped_column(JSONB)
-    window_start: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    window_end: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    evidence_media_ids: Mapped[list] = mapped_column(JSONB, default=list)
-    status: Mapped[str] = mapped_column(String(20), default="open")
-    review_notes: Mapped[str | None] = mapped_column(Text)
-    reviewed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # Professional findings from a veterinarian, kept apart from the camera observation.
-    assessment: Mapped[dict | None] = mapped_column(JSONB)
-    source: Mapped[str] = mapped_column(String(20), default="prototype")
-    created_at: Mapped[datetime] = _created()
-
-
-class EvidencePack(Base):
-    """Versioned evidence manifest for an alert. Approvals and claims bind to (`version`, `manifest_sha256`)."""
-
-    __tablename__ = "evidence_packs"
-    __table_args__ = (UniqueConstraint("alert_id", "version", name="uq_evidence_packs_alert_version"),)
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    alert_id: Mapped[uuid.UUID] = _fk("alerts")
-    version: Mapped[int] = mapped_column(Integer)
-    manifest: Mapped[dict] = mapped_column(JSONB)
-    manifest_sha256: Mapped[str] = mapped_column(String(64))
-    created_at: Mapped[datetime] = _created()
-
-
-class PolicyProduct(Base):
-    """A fictional catalog entry. Terms are versioned and immutable once published."""
-
-    __tablename__ = "policy_products"
-    __table_args__ = (UniqueConstraint("code", "terms_version", name="uq_policy_products_code_version"),)
-    id: Mapped[uuid.UUID] = _id()
-    provider_id: Mapped[str] = mapped_column(String(100))
-    code: Mapped[str] = mapped_column(String(50))
-    terms_version: Mapped[str] = mapped_column(String(20))
-    terms: Mapped[dict] = mapped_column(JSONB)
-    created_at: Mapped[datetime] = _created()
-
-
-class Policy(Base):
-    __tablename__ = "policies"
-    __table_args__ = (
-        _status_check("status", ("draft", "applied", "payment_pending", "paid", "active", "rejected", "expired", "cancelled"),
-                      "ck_policies_status"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    product_id: Mapped[uuid.UUID] = _fk("policy_products", index=False)
-    status: Mapped[str] = mapped_column(String(20), default="draft")
-    eligibility_inputs: Mapped[dict] = mapped_column(JSONB, default=dict)
-    currency: Mapped[str] = mapped_column(String(3))
-    insured_value_minor: Mapped[int] = mapped_column(BigInteger)
-    premium_minor: Mapped[int] = mapped_column(BigInteger)
-    deductible_minor: Mapped[int] = mapped_column(BigInteger)
-    coverage_limit_minor: Mapped[int] = mapped_column(BigInteger)
-    effective_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    effective_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    provider_reference: Mapped[str | None] = mapped_column(String(100))
-    created_at: Mapped[datetime] = _created()
-
-
-class Incident(Base):
-    __tablename__ = "incidents"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    # Farmer-reported facts, observed behaviour, and professional findings are kept apart (PRD Section 8).
-    reported_facts: Mapped[dict] = mapped_column(JSONB)
-    professional_findings: Mapped[dict | None] = mapped_column(JSONB)
-    related_alert_ids: Mapped[list] = mapped_column(JSONB, default=list)
-    document_media_ids: Mapped[list] = mapped_column(JSONB, default=list)
-    reported_by: Mapped[uuid.UUID] = _fk("users", index=False)
-    created_at: Mapped[datetime] = _created()
-
-
-class Claim(Base):
-    __tablename__ = "claims"
-    __table_args__ = (
-        _status_check("status", ("draft", "pending_approval", "submitted", "assessment_pending", "accepted", "rejected"),
-                      "ck_claims_status"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    policy_id: Mapped[uuid.UUID] = _fk("policies")
-    incident_id: Mapped[uuid.UUID] = _fk("incidents")
-    status: Mapped[str] = mapped_column(String(20), default="draft")
-    evidence_checklist: Mapped[list] = mapped_column(JSONB, default=list)
-    farmer_declaration: Mapped[str | None] = mapped_column(Text)
-    submission_receipt: Mapped[dict | None] = mapped_column(JSONB)
-    created_at: Mapped[datetime] = _created()
-
-
-class AgentAction(Base):
-    """An immutable proposal version. Approval binds to `payload_sha256` and `evidence_manifest_version`."""
-
-    __tablename__ = "agent_actions"
-    __table_args__ = (
-        _status_check("action_type", ("POLICY_APPLICATION", "PREMIUM_PAYMENT", "INSURER_NOTIFICATION", "CLAIM_SUBMISSION"),
-                      "ck_agent_actions_type"),
-        _status_check("status", ("draft", "pending_approval", "approved", "executing", "succeeded", "failed", "unknown",
-                                 "declined", "cancelled", "expired"), "ck_agent_actions_status"),
-        UniqueConstraint("lineage_id", "version", name="uq_agent_actions_lineage_version"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    lineage_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), index=True)
-    version: Mapped[int] = mapped_column(Integer, default=1)
-    action_type: Mapped[str] = mapped_column(String(30))
-    animal_id: Mapped[uuid.UUID] = _fk("animals")
-    payload: Mapped[dict] = mapped_column(JSONB)
-    payload_sha256: Mapped[str] = mapped_column(String(64))
-    evidence_manifest_version: Mapped[int] = mapped_column(Integer)
-    status: Mapped[str] = mapped_column(String(20), default="pending_approval")
-    proposed_by: Mapped[str] = mapped_column(String(100))
-    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
-    decided_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    decision: Mapped[str | None] = mapped_column(String(10))
-    created_at: Mapped[datetime] = _created()
-
-
-class Execution(Base):
-    """One provider dispatch. The unique idempotency key stops a retried request from executing twice."""
-
-    __tablename__ = "executions"
-    __table_args__ = (
-        _status_check("status", ("executing", "succeeded", "failed", "unknown"), "ck_executions_status"),
-        UniqueConstraint("farm_id", "idempotency_key", name="uq_executions_idempotency"),
-        # At most one successful or in-flight execution per approved action.
-        Index("uq_executions_one_live_per_action", "action_id", unique=True,
-              postgresql_where=text("status IN ('executing', 'succeeded', 'unknown')")),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    action_id: Mapped[uuid.UUID] = _fk("agent_actions")
-    idempotency_key: Mapped[str] = mapped_column(String(200))
-    status: Mapped[str] = mapped_column(String(20), default="executing")
-    provider_receipt: Mapped[dict | None] = mapped_column(JSONB)
-    error: Mapped[str | None] = mapped_column(Text)
-    started_at: Mapped[datetime] = _created()
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
-class WalletEntry(Base):
-    """Append-only sandbox ledger. The balance is the sum of entries; no real funds are held."""
-
-    __tablename__ = "wallet_entries"
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    execution_id: Mapped[uuid.UUID | None] = _fk("executions", nullable=True)
-    amount_minor: Mapped[int] = mapped_column(BigInteger)
-    currency: Mapped[str] = mapped_column(String(3))
-    memo: Mapped[str] = mapped_column(String(300))
-    created_at: Mapped[datetime] = _created()
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    status: Mapped[str]
+    sample_key: Mapped[str | None]
+    video_media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    processing_mode: Mapped[str | None]
+    manifest: Mapped[dict | None]
+    identity: Mapped[dict | None]
+    estimates: Mapped[dict | None]
+    review_reasons: Mapped[list] = mapped_column(default=list)
+    decision: Mapped[dict | None]
+    reviewer_id: Mapped[str | None]
+    animal_id: Mapped[str | None] = _animal_fk(nullable=True)
+    retry_of_id: Mapped[str | None]
+    created_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
 
 
 class Job(Base):
     __tablename__ = "jobs"
-    __table_args__ = (
-        _status_check("status", ("queued", "running", "succeeded", "failed"), "ck_jobs_status"),
-        Index("ix_jobs_queue", "status", "created_at"),
-    )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms")
-    job_type: Mapped[str] = mapped_column(String(50))
-    status: Mapped[str] = mapped_column(String(20), default="queued")
-    payload: Mapped[dict] = mapped_column(JSONB, default=dict)
-    result: Mapped[dict | None] = mapped_column(JSONB)
-    error: Mapped[str | None] = mapped_column(Text)
-    attempts: Mapped[int] = mapped_column(Integer, default=0)
-    created_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
-    created_at: Mapped[datetime] = _created()
-    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    __table_args__ = (Index("ix_jobs_subject", "kind", "subject_id"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    kind: Mapped[str]
+    subject_id: Mapped[str]
+    status: Mapped[str] = mapped_column(index=True)
+    result: Mapped[dict | None]
+    error: Mapped[dict | None]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class Estimate(Base):
+    __tablename__ = "estimates"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    animal_id: Mapped[str] = _animal_fk()
+    kind: Mapped[str]
+    range_low: Mapped[float | None]
+    range_high: Mapped[float | None]
+    point: Mapped[float | None]
+    unit: Mapped[str]
+    source: Mapped[str]
+    method_version: Mapped[str]
+    evidence: Mapped[dict] = mapped_column(default=dict)
+    review_required: Mapped[bool] = mapped_column(default=False)
+    review_reason: Mapped[str | None]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class Valuation(Base):
+    __tablename__ = "valuations"
+    __table_args__ = (UniqueConstraint("animal_id", "version"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    animal_id: Mapped[str] = _animal_fk()
+    version: Mapped[int]
+    weight_low_kg: Mapped[float]
+    weight_high_kg: Mapped[float]
+    weight_basis: Mapped[str]
+    estimate_id: Mapped[str | None] = mapped_column(ForeignKey("estimates.id"))
+    unit_price_minor_per_kg: Mapped[int]
+    currency: Mapped[str]
+    price_source: Mapped[str]
+    price_date: Mapped[date]
+    value_low_minor: Mapped[int]
+    value_high_minor: Mapped[int]
+    confirmed_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class PolicyApplication(Base):
+    __tablename__ = "policy_applications"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    product_id: Mapped[str]
+    provider_id: Mapped[str]
+    terms_version: Mapped[str]
+    insured_value_minor: Mapped[int]
+    premium_minor: Mapped[int]
+    deductible_minor: Mapped[int]
+    currency: Mapped[str]
+    coverage_start: Mapped[date]
+    coverage_end: Mapped[date]
+    status: Mapped[str]
+    provider_ref: Mapped[str | None]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class Policy(Base):
+    __tablename__ = "policies"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    application_id: Mapped[str | None] = mapped_column(ForeignKey("policy_applications.id"))
+    product_id: Mapped[str]
+    provider_id: Mapped[str]
+    terms_version: Mapped[str]
+    insured_value_minor: Mapped[int]
+    premium_minor: Mapped[int]
+    deductible_minor: Mapped[int]
+    currency: Mapped[str]
+    status: Mapped[str] = mapped_column(index=True)
+    effective_date: Mapped[date | None]
+    expiry_date: Mapped[date | None]
+    activation_receipt: Mapped[dict | None]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class EvidenceManifest(Base):
+    __tablename__ = "evidence_manifests"
+    __table_args__ = (UniqueConstraint("subject_type", "subject_id", "version"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    subject_type: Mapped[str]
+    subject_id: Mapped[str]
+    version: Mapped[int]
+    items: Mapped[list] = mapped_column(default=list)
+    manifest_hash: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class AgentAction(Base):
+    __tablename__ = "agent_actions"
+    __table_args__ = (Index("ix_agent_actions_subject", "action_type", "subject_type", "subject_id"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    action_type: Mapped[str]
+    animal_id: Mapped[str | None] = _animal_fk(nullable=True)
+    subject_type: Mapped[str | None]
+    subject_id: Mapped[str | None]
+    version: Mapped[int] = mapped_column(default=1)
+    supersedes_id: Mapped[str | None]
+    payload: Mapped[dict]
+    payload_hash: Mapped[str]
+    evidence_manifest_id: Mapped[str | None] = mapped_column(ForeignKey("evidence_manifests.id"))
+    evidence_manifest_version: Mapped[int | None]
+    status: Mapped[str] = mapped_column(index=True)
+    rationale: Mapped[str | None]
+    proposed_by_type: Mapped[str]
+    proposed_by_id: Mapped[str]
+    expires_at: Mapped[datetime]
+    decided_by: Mapped[str | None]
+    decided_at: Mapped[datetime | None]
+    decision: Mapped[str | None]
+    decision_note: Mapped[str | None]
+    cancel_reason: Mapped[str | None]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class ActionExecution(Base):
+    __tablename__ = "action_executions"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    action_id: Mapped[str] = mapped_column(ForeignKey("agent_actions.id"), unique=True)
+    idempotency_key: Mapped[str] = mapped_column(unique=True)
+    status: Mapped[str]
+    provider_id: Mapped[str]
+    provider_receipt: Mapped[dict | None]
+    error: Mapped[dict | None]
+    started_at: Mapped[datetime] = mapped_column(default=clock.now)
+    completed_at: Mapped[datetime | None]
+
+
+class WalletEntry(Base):
+    __tablename__ = "wallet_entries"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    entry_type: Mapped[str]
+    amount_minor: Mapped[int]
+    currency: Mapped[str]
+    action_id: Mapped[str | None] = mapped_column(ForeignKey("agent_actions.id"), index=True)
+    description: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class ProviderRecord(Base):
+    __tablename__ = "provider_records"
+    __table_args__ = (UniqueConstraint("provider", "operation", "idempotency_key"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    provider: Mapped[str]
+    operation: Mapped[str]
+    idempotency_key: Mapped[str]
+    request: Mapped[dict]
+    response: Mapped[dict]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class DemoSettings(Base):
+    __tablename__ = "demo_settings"
+
+    farm_id: Mapped[str] = mapped_column(ForeignKey("farms.id"), primary_key=True)
+    payment_mode: Mapped[str] = mapped_column(default="succeed")
+    insurer_activation: Mapped[str] = mapped_column(default="confirm")
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class Camera(Base):
+    __tablename__ = "cameras"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    name: Mapped[str]
+    location: Mapped[str]
+    map_x: Mapped[float]
+    map_y: Mapped[float]
+
+
+class Replay(Base):
+    __tablename__ = "replays"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    scenario_id: Mapped[str]
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"))
+    status: Mapped[str]
+    speed: Mapped[float]
+    started_at: Mapped[datetime] = mapped_column(default=clock.now)
+    finished_at: Mapped[datetime | None]
+
+
+class Track(Base):
+    __tablename__ = "tracks"
+    __table_args__ = (UniqueConstraint("replay_id", "camera_id", "track_key"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    replay_id: Mapped[str | None] = mapped_column(ForeignKey("replays.id"), index=True)
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"))
+    track_key: Mapped[str]
+    animal_id: Mapped[str | None] = _animal_fk(nullable=True)
+    association_status: Mapped[str]
+    association_method: Mapped[str | None]
+    association_evidence: Mapped[dict | None]
+    first_seen: Mapped[datetime]
+    last_seen: Mapped[datetime]
+
+
+class Observation(Base):
+    __tablename__ = "observations"
+    __table_args__ = (Index("ix_observations_animal_time", "animal_id", "observed_at"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"))
+    track_id: Mapped[str] = mapped_column(ForeignKey("tracks.id"), index=True)
+    animal_id: Mapped[str | None] = mapped_column(ForeignKey("animals.id"))
+    association_status: Mapped[str]
+    observed_at: Mapped[datetime]
+    bbox: Mapped[list]
+    visibility: Mapped[float]
+    event: Mapped[str]
+    media_ref: Mapped[str | None]
+    source: Mapped[str]
+
+
+class Alert(Base):
+    __tablename__ = "alerts"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    kind: Mapped[str]
+    animal_id: Mapped[str | None] = _animal_fk(nullable=True)
+    track_id: Mapped[str | None] = mapped_column(ForeignKey("tracks.id"))
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"))
+    window_start: Mapped[datetime]
+    window_end: Mapped[datetime]
+    baseline_start: Mapped[datetime | None]
+    baseline_end: Mapped[datetime | None]
+    rule: Mapped[dict]
+    clip: Mapped[dict | None]
+    status: Mapped[str] = mapped_column(index=True)
+    notes: Mapped[list] = mapped_column(default=list)
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class Incident(Base):
+    __tablename__ = "incidents"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    policy_id: Mapped[str | None] = mapped_column(ForeignKey("policies.id"))
+    kind: Mapped[str]
+    occurred_at: Mapped[datetime]
+    description: Mapped[str]
+    estimated_loss_minor: Mapped[int]
+    currency: Mapped[str]
+    reported_by: Mapped[str]
+    facts: Mapped[dict] = mapped_column(default=dict)
+    documents: Mapped[list] = mapped_column(default=list)
+    professional_findings: Mapped[list] = mapped_column(default=list)
+    linked_alert_ids: Mapped[list] = mapped_column(default=list)
+    created_at: Mapped[datetime] = _created_at()
+
+
+class Claim(Base):
+    __tablename__ = "claims"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    policy_id: Mapped[str] = mapped_column(ForeignKey("policies.id"))
+    incident_id: Mapped[str] = mapped_column(ForeignKey("incidents.id"), index=True)
+    animal_id: Mapped[str] = _animal_fk()
+    status: Mapped[str]
+    checklist: Mapped[list] = mapped_column(default=list)
+    blocked_reason: Mapped[dict | None]
+    declaration_confirmed: Mapped[bool] = mapped_column(default=False)
+    declaration_by: Mapped[str | None]
+    claimed_amount_minor: Mapped[int]
+    currency: Mapped[str]
+    evidence_manifest_id: Mapped[str | None] = mapped_column(ForeignKey("evidence_manifests.id"))
+    receipt: Mapped[dict | None]
+    assessment_status: Mapped[str | None]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
 
 
 class AuditEvent(Base):
-    """Append-only history of identity, review, approval, and execution events."""
-
     __tablename__ = "audit_events"
     __table_args__ = (
-        _status_check("actor_type", ("user", "agent", "system", "worker"), "ck_audit_actor_type"),
-        Index("ix_audit_farm_time", "farm_id", "created_at"),
-        Index("ix_audit_entity", "entity_type", "entity_id"),
+        Index("ix_audit_events_farm_created", "farm_id", "created_at"),
+        Index("ix_audit_events_animal_created", "animal_id", "created_at"),
+        Index("ix_audit_events_subject", "subject_type", "subject_id"),
     )
-    id: Mapped[uuid.UUID] = _id()
-    farm_id: Mapped[uuid.UUID] = _fk("farms", index=False)
-    actor_type: Mapped[str] = mapped_column(String(10))
-    actor_id: Mapped[str | None] = mapped_column(String(100))
-    action: Mapped[str] = mapped_column(String(100))
-    entity_type: Mapped[str] = mapped_column(String(50))
-    entity_id: Mapped[str] = mapped_column(String(100))
-    details: Mapped[dict] = mapped_column(JSONB, default=dict)
-    created_at: Mapped[datetime] = _created()
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = mapped_column(ForeignKey("farms.id"))
+    actor_type: Mapped[str]
+    actor_id: Mapped[str]
+    event_type: Mapped[str]
+    subject_type: Mapped[str]
+    subject_id: Mapped[str]
+    animal_id: Mapped[str | None]
+    data: Mapped[dict] = mapped_column(default=dict)
+    created_at: Mapped[datetime] = _created_at()

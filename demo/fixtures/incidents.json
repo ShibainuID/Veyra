@@ -1,0 +1,14 @@
+{
+  "demo-incident-001": {
+    "animal_id": "animal-demo-001",
+    "kind": "accidental_injury",
+    "description": "Left hind lameness found at the morning check after a reduced-movement alert. Animal is standing and eating.",
+    "estimated_loss_minor": 60000,
+    "currency": "USD",
+    "facts": {
+      "location": "Pen A",
+      "discovered_by": "A. Pratama",
+      "treatment": "Vet called; leg examined"
+    }
+  }
+}
