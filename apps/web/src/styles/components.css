@@ -157,6 +157,10 @@
   margin: 0;
   padding: 0;
 }
+/* Once lines scroll under the list's top edge, fade it so the cut-off earlier line reads as "more above". */
+.pb-list[data-scrolled] {
+  mask-image: linear-gradient(to bottom, transparent 0, #000 24px);
+}
 
 .pb-line {
   display: grid;
@@ -338,19 +342,22 @@
     padding-inline: 0.625rem;
   }
 }
-/* Beside the 440px passbook a two-word status ("Observation gap", "Not covered") may take two lines
-   inside its pill rather than be cut: every word stays visible and the row still keeps to 64px. */
+/* Status pills never wrap. Beside the 440px passbook (a 552px table at 1024) a long status shows its
+   short word; the full label stays in the accessible name. */
+.pill-label-short {
+  display: none;
+}
 @container (min-width: 34rem) and (max-width: 39.9375rem) {
-  .dt-wrap[data-stack="narrow"] .dt td .rounded-pill {
-    height: auto;
-    min-height: 2rem;
-    padding-block: 0.125rem;
-    line-height: 1.2;
-    white-space: normal;
+  .dt-wrap[data-stack="narrow"] .dt td .pill-label-short {
+    display: inline;
   }
-  .dt-wrap[data-stack="narrow"] .dt td .rounded-pill > .truncate {
-    overflow: visible;
-    white-space: normal;
+  .dt-wrap[data-stack="narrow"] .dt td .pill-label-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
 

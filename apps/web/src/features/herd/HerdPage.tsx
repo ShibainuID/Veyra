@@ -14,6 +14,7 @@ import { Provenance, type Source } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { useShellSummary } from "../../app/use-shell-summary";
 import { asSource, coveragePill, healthPill, identityPill, productName, tagStateFor } from "../../lib/animal";
+import { cn } from "../../lib/cn";
 import { formatMoney, formatMoneyRange } from "../../lib/format";
 import type { HerdFilters } from "../../lib/query-keys";
 import { useMediaQuery } from "../../lib/use-media-query";
@@ -232,20 +233,21 @@ function HerdMeta() {
   if (!summary) return <span>Every tagged animal, its exposure, and its cover.</span>;
   const { currency } = summary;
   return (
+    // Each segment keeps to one line and carries its own trailing separator, so a wrap never strands a "·".
     <span className="flex flex-wrap gap-x-2 gap-y-1">
-      <span>
+      <span className="whitespace-nowrap">
         <Mono className="text-ink">{summary.animal_count}</Mono> {summary.animal_count === 1 ? "animal" : "animals"}
+        <span aria-hidden="true"> ·</span>
       </span>
-      <span aria-hidden="true">·</span>
-      <span>
+      <span className="whitespace-nowrap">
         indicative exposure <Mono className="text-ink">{formatMoneyRange(summary.exposure_low_minor, summary.exposure_high_minor, currency)}</Mono>
+        <span aria-hidden="true"> ·</span>
       </span>
-      <span aria-hidden="true">·</span>
-      <span>
+      <span className="whitespace-nowrap">
         insured <Mono className="text-ink">{formatMoney(summary.insured_minor, currency, { whole: true })}</Mono>
+        <span aria-hidden="true"> ·</span>
       </span>
-      <span aria-hidden="true">·</span>
-      <span className={summary.uncovered_count > 0 ? "font-bold text-danger" : undefined}>
+      <span className={cn("whitespace-nowrap", summary.uncovered_count > 0 && "font-bold text-danger")}>
         <Mono>{summary.uncovered_count}</Mono> uncovered
       </span>
     </span>

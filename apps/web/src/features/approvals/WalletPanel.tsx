@@ -1,9 +1,9 @@
 import { ArrowDownLeft, ArrowUpRight, FlaskConical, Lock, LockOpen, type LucideIcon } from "lucide-react";
-import { Fragment, useId, type ReactNode } from "react";
+import { useId } from "react";
 import { Link } from "react-router";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { EarTag } from "../../components/EarTag";
-import { Money, Mono, Timestamp } from "../../components/figures";
+import { Money, Timestamp } from "../../components/figures";
 import { tagStateFor } from "../../lib/animal";
 import { cn } from "../../lib/cn";
 import { formatMoney } from "../../lib/format";
@@ -18,21 +18,11 @@ function withoutLeadingWord(description: string, word: string): string {
 
 const ANIMAL_ID = /^animal-[\w-]+$/;
 
-/** Prints any animal ID in a ledger description as its tag chip and the mono ID. */
-function describe(text: string, identity: Map<string, string>): ReactNode {
-  return text.split(" · ").map((part, i) => (
-    <Fragment key={i}>
-      {i > 0 && " · "}
-      {ANIMAL_ID.test(part) ? (
-        <span className="inline-flex items-center gap-1.5 align-middle">
-          <EarTag animalId={part} state={tagStateFor(identity.get(part) ?? "confirmed")} />
-          <Mono>{part}</Mono>
-        </span>
-      ) : (
-        part
-      )}
-    </Fragment>
-  ));
+/** Splits a ledger description into the animal it names (shown as the row's tag) and the remaining words. */
+function splitAnimal(text: string): { animalId: string | null; rest: string } {
+  const parts = text.split(" · ");
+  const animalId = parts.find((part) => ANIMAL_ID.test(part)) ?? null;
+  return { animalId, rest: parts.filter((part) => part !== animalId).join(" · ") };
 }
 
 const ENTRY: Record<WalletEntry["entry_type"], { icon: LucideIcon; word: string; sign: 1 | -1 | 0 }> = {
@@ -99,16 +89,23 @@ export function WalletPanel({ className }: { className?: string }) {
                 .map((entry) => {
                   const kind = ENTRY[entry.entry_type];
                   const Icon = kind.icon;
+                  const { animalId, rest } = splitAnimal(withoutLeadingWord(entry.description, kind.word));
+                  const fullText = [kind.word, rest, animalId].filter(Boolean).join(" · ");
                   const figure =
                     kind.sign === 0
                       ? formatMoney(entry.amount_minor, entry.currency)
                       : formatMoney(kind.sign * entry.amount_minor, entry.currency, { signed: true });
                   return (
-                    <li key={entry.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-3 border-b border-line py-3">
+                    // The tag sits in its own leading column so the description keeps to one line.
+                    <li key={entry.id} className="grid grid-cols-[auto_3.25rem_minmax(0,1fr)_auto] items-start gap-x-3 border-b border-line py-3">
                       <Icon aria-hidden="true" className="mt-0.5 size-5 text-muted" strokeWidth={2.25} />
+                      <span className="flex min-h-6 items-start">
+                        {animalId && <EarTag animalId={animalId} state={tagStateFor(identity.get(animalId) ?? "confirmed")} />}
+                      </span>
                       <div className="flex min-w-0 flex-col gap-0.5">
-                        <span>
-                          <span className="font-bold">{kind.word}</span> · {describe(withoutLeadingWord(entry.description, kind.word), identity)}
+                        <span className="truncate" title={fullText}>
+                          <span className="font-bold">{kind.word}</span>
+                          {rest && <> · {rest}</>}
                         </span>
                         <span className="text-sm text-muted">
                           <Timestamp value={entry.created_at} mode="absolute" />
