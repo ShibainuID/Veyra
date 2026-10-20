@@ -1,8 +1,10 @@
-import { MessageSquareText, Wallet } from "lucide-react";
+import { Ellipsis, MessageSquareText, Wallet } from "lucide-react";
+import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
 import { buttonClasses } from "../components/Button";
 import { cn } from "../lib/cn";
 import { formatMoney } from "../lib/format";
+import { inMore, MoreSheet } from "./MoreSheet";
 import { NAV_ITEMS, type NavItem } from "./nav";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { TagLogo } from "./TagLogo";
@@ -95,7 +97,11 @@ function TopBar({ pathname, summary }: { pathname: string; summary: HerdSummary 
 }
 
 function BottomTabs({ pathname, count }: { pathname: string; count: number | undefined }) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreActive = inMore(pathname);
   return (
+    <>
+    <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} pathname={pathname} />
     <nav
       aria-label="Primary"
       data-surface="shell"
@@ -132,8 +138,25 @@ function BottomTabs({ pathname, count }: { pathname: string; count: number | und
             </li>
           );
         })}
+        <li className="min-w-0">
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={moreOpen}
+            onClick={() => setMoreOpen(true)}
+            className={cn(
+              "relative flex h-full w-full flex-col items-center justify-center gap-0.5 rounded-control text-xs font-bold",
+              moreActive ? "bg-tag text-ink" : "text-on-shell hover:bg-shell-2",
+            )}
+          >
+            <Ellipsis aria-hidden="true" className="size-5" strokeWidth={2.25} />
+            <span className="truncate">More</span>
+            {moreActive && <span className="sr-only">, current section</span>}
+          </button>
+        </li>
       </ul>
     </nav>
+    </>
   );
 }
 
