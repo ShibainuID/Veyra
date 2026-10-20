@@ -5,6 +5,19 @@ import { matchesFilter, serverFilters } from "./herd/HerdPage";
 import { usePressedLines } from "./passbook/lines";
 import type { HerdItem, PassbookLineOut } from "./passport/api";
 import { parseKg, parsePriceMinor, valueRange } from "./passport/valuation";
+import { healthPill } from "../lib/animal";
+
+describe("health pill", () => {
+  it("names each monitoring state in plain words with the world's tones", () => {
+    expect(healthPill("needs_inspection")).toMatchObject({ tone: "danger", label: "Needs inspection" });
+    expect(healthPill("under_review")).toMatchObject({ tone: "uncertain", label: "Under review" });
+    expect(healthPill("observation_gap")).toMatchObject({ tone: "uncertain", label: "Observation gap" });
+    expect(healthPill("veterinary_reviewed")).toMatchObject({ tone: "ok", label: "Vet reviewed" });
+    expect(healthPill("normal")).toMatchObject({ tone: "ok", label: "Normal" });
+    expect(healthPill("not_monitored")).toMatchObject({ tone: "neutral", label: "Not monitored" });
+    expect(healthPill(undefined).label).toBe("Not monitored");
+  });
+});
 
 describe("eventTitle", () => {
   it("uses the passbook's words for agent actions and their results", () => {

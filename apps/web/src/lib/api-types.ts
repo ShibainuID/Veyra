@@ -592,6 +592,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/actions/{action_id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reconcile
+         * @description Re-ask the sandbox provider about an `unknown` action under its stored Idempotency-Key and apply the answer.
+         */
+        post: operations["reconcile_api_v1_agent_actions__action_id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/agent/actions/{action_id}/revise": {
         parameters: {
             query?: never;
@@ -1046,6 +1066,7 @@ export interface components {
             coverage: components["schemas"]["Coverage"];
             alerts: components["schemas"]["AlertCounts"];
             last_observation: components["schemas"]["LastObservation"] | null;
+            health: components["schemas"]["HealthStatus"];
             /** Awaiting Approval Count */
             awaiting_approval_count: number;
         };
@@ -1769,6 +1790,21 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HealthStatus
+         * @description A monitoring state from records (alerts, review notes, observations); never a diagnosis.
+         */
+        HealthStatus: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "needs_inspection" | "under_review" | "observation_gap" | "veterinary_reviewed" | "normal" | "not_monitored";
+            /** Reason */
+            reason: string;
+            /** Since */
+            since: string | null;
+        };
         /** HerdSummary */
         HerdSummary: {
             /** Animal Count */
@@ -2190,6 +2226,7 @@ export interface components {
             coverage: components["schemas"]["Coverage"];
             alerts: components["schemas"]["AlertCounts"];
             last_observation: components["schemas"]["LastObservation"] | null;
+            health: components["schemas"]["HealthStatus"];
             /** Awaiting Approval Count */
             awaiting_approval_count: number;
             /** Birth Date */
@@ -4772,6 +4809,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_api_v1_agent_actions__action_id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
                 };
             };
             /** @description Unauthorized */
