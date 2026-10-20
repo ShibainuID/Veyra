@@ -1,0 +1,16 @@
+{
+  "name": "VEYRA",
+  "short_name": "VEYRA",
+  "description": "One Digital Livestock Passport for every animal, and nothing financial without the manager's stamp.",
+  "start_url": "/herd",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0f0f0f",
+  "background_color": "#ffffff",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
