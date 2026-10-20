@@ -5,3 +5,12 @@ ml/.venv/
 __pycache__/
 ml/kaggle/dataset_li2022/*.zip
 ml/kaggle/kernel_muzzle/*.ipynb
+
+# app
+services/api/.data/
+.venv/
+node_modules/
+dist/
+.env
+.impeccable/questions/
+.impeccable/hook.cache.json
