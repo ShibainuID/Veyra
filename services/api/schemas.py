@@ -100,7 +100,7 @@ class AnimalListItem(BaseModel):
     coverage: Coverage
     alerts: AlertCounts
     last_observation: LastObservation | None
-    pending_actions: int
+    awaiting_approval_count: int
 
 
 class HerdSummary(BaseModel):

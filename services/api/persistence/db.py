@@ -13,9 +13,12 @@ savepoints roll back with their outer transaction. Two kinds of session:
 - `read_session()` / `get_read_session` (read-only) start with a deferred `BEGIN`: they read a WAL snapshot,
   never block writers, and raise if asked to flush changes or to execute an INSERT, UPDATE, or DELETE.
 
-A thread holds at most one writing transaction: starting a second one while the first is open raises
-`RuntimeError` at once instead of waiting on itself until the busy timeout. The slot is released when that
-transaction commits, rolls back, or its connection returns to the pool, from whichever thread does it.
+One flow of work holds at most one writing transaction: starting a second one while the first is open raises
+`RuntimeError` at once instead of waiting on itself until the busy timeout. A flow is an HTTP request (the app
+enters `writer_scope()` per request, and the scope follows the request into every worker thread it uses, since
+FastAPI may run a route and its dependency teardown on different threads), or else the current thread (workers,
+scripts). The slot is released when that transaction commits, rolls back, or its connection returns to the pool,
+from whichever thread does it.
 
 JSON columns track in-place changes to the top-level dict or list (`notes.append(...)` is saved), but not
 changes nested deeper; reassign the attribute for those. A JSON `None` is stored as SQL `NULL`.
@@ -33,6 +36,8 @@ Session rules (the API runs as a single uvicorn worker process):
 
 import threading
 from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -89,16 +94,30 @@ def _sqlite_connect(dbapi_connection, connection_record) -> None:
 
 
 class _WriterSlot:
-    """Whether one thread holds a writing transaction. The holding connection keeps a reference, so the slot
-    is released wherever that transaction ends."""
+    """Whether one flow (a request or a thread) holds a writing transaction. The holding connection keeps a
+    reference, so the slot is released wherever that transaction ends."""
 
     held = False
 
 
 _threads = threading.local()
+_scope_slot: ContextVar[_WriterSlot | None] = ContextVar("veyra_writer_scope", default=None)
+
+
+@contextmanager
+def writer_scope() -> Iterator[None]:
+    """Give the enclosed flow (and every thread that runs with a copy of its context) its own writer slot."""
+    token = _scope_slot.set(_WriterSlot())
+    try:
+        yield
+    finally:
+        _scope_slot.reset(token)
 
 
 def _thread_slot() -> _WriterSlot:
+    scoped = _scope_slot.get()
+    if scoped is not None:
+        return scoped
     slot = getattr(_threads, "writer", None)
     if slot is None:
         slot = _threads.writer = _WriterSlot()
@@ -112,8 +131,8 @@ def _sqlite_begin(connection) -> None:
         return
     slot = _thread_slot()
     if slot.held:
-        raise RuntimeError("this thread already holds a writing transaction; commit or close that session before "
-                           "opening another writing session, or read with read_session()")
+        raise RuntimeError("this request or thread already holds a writing transaction; commit or close that "
+                           "session before opening another writing session, or read with read_session()")
     connection.exec_driver_sql("BEGIN IMMEDIATE")
     slot.held = True
     connection.info[_WRITER_KEY] = slot
