@@ -40,34 +40,51 @@ This is a hackathon prototype. Every insurer, payment, and claim is a sandbox. S
 | --- | --- |
 | `services/api/` | FastAPI backend on SQLite: passport and passbook, enrollment, valuation, insurance, agent wallet (approvals and sandbox execution), the VEYRA agent, monitoring replays and alerts, camera galleries, assistant, claims and identity checks, audit. See `services/api/README.md`. |
 | `apps/web/` | React 19 + Vite + Tailwind 4 web app: the pitch page and the app. |
-| `demo/` | `fixtures/` (herd, policies, enrollment samples), `scenarios/` (camera replays), `media/veo/` (the phone enrollment video and the Pen A barn footage), and `uploads/` (the files to upload during the demo; see its README). |
+| `demo/` | `fixtures/` (herd, policies, enrollment samples), `scenarios/` (camera replays), `media/veo/` (the phone enrollment video and the Pen A barn footage), and `uploads/` (the files to upload during the demo, described in its README). |
 | `ml/` | Training and evaluation for the muzzle matcher, weight, and tracking. The API calls it only through `services/api/adapters/perception.py`. |
 | `shared/schemas/openapi.json` | The API contract. The web app generates its types from it. |
 | `docs/technical-document/` | The technical paper (PDF and LaTeX source). |
 
-### Run with Docker
+### How to run
 
-One image runs everything: the web app is built in a Node stage and served by the API on the same port. You need Docker and Git LFS. Run `git lfs pull` first, so the models, videos, and images are real files.
+There are two ways to run VEYRA. Docker is the quickest: one command builds and serves everything. Development mode runs the backend and the web app separately, with hot reload, for working on the code.
 
-```bash
-docker compose up --build                # http://localhost:8000
-```
+#### Option 1: Docker (recommended)
 
-`/` is the pitch page. The app opens at `/herd`.
+You need Docker Desktop and Git LFS.
 
-- **Language model:** put `OPENAI_API_KEY` in the root `.env` (copy `.env.example`) to turn on GPT-6 Luna's explanations and question parsing. Without a key, every answer is a labeled offline template. Restart after adding it (`docker compose up -d --force-recreate`).
+1. Get the code and the large files (models, videos, images):
+
+   ```bash
+   git clone https://github.com/ShibainuID/Veyra.git
+   cd Veyra
+   git lfs pull
+   ```
+
+2. Optional: turn on the language model. Copy `.env.example` to `.env` and set `OPENAI_API_KEY`. Without a key, every explanation is a labeled offline template and the rest of the app works the same.
+3. Build and start:
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. Open http://localhost:8000 for the pitch page, or http://localhost:8000/herd for the app.
+
+Stop it with `Ctrl+C`, or with `docker compose down` from another terminal.
+
 - **Full ML path:** `VEYRA_PERCEPTION_BUILD=true docker compose up --build` adds torch, Ultralytics, and OpenCLIP, so real video frame picks and the weight model run. The image grows by several GB. The default image already includes the real muzzle matcher (ONNX).
-- **Port:** `VEYRA_PORT=8090 docker compose up` serves on another port.
-- **Data:** the database and media live in the `veyra-data` volume. `docker compose down -v` deletes them. The Demo button resets them without a restart.
+- **Another port:** `VEYRA_PORT=8090 docker compose up`.
+- **Data:** the database and media live in the `veyra-data` volume. `docker compose down -v` deletes them. The Demo button in the app resets them without a restart.
+- **After changing `.env`:** run `docker compose up -d --force-recreate`.
 - **Without compose:** `docker build -t veyra .`, then `docker run -p 8000:8000 -v veyra-data:/data veyra`.
 
-The container runs one uvicorn worker on purpose: background jobs and camera replays live in the API process.
+The container runs one uvicorn worker on purpose, because background jobs and camera replays live in the API process.
 
-### Quick start (development)
+#### Option 2: Development mode
 
-Requirements: Python 3.12 with [uv](https://docs.astral.sh/uv/), and Node 22 with pnpm 10. The commands are the same on Windows (PowerShell or Git Bash) and macOS.
+You need Python 3.12 with [uv](https://docs.astral.sh/uv/), Node 22 with pnpm 10, and Git LFS (`git lfs pull` after cloning). The commands are the same on Windows (PowerShell or Git Bash) and macOS.
 
-Backend (terminal 1):
+Backend, in terminal 1:
 
 ```bash
 cd services/api
@@ -75,16 +92,16 @@ uv sync                                  # add --extra perception for the full M
 uv run uvicorn main:app --port 8000      # http://localhost:8000/api/v1/health
 ```
 
-Web (terminal 2):
+Web app, in terminal 2:
 
 ```bash
 pnpm -C apps/web install
 pnpm -C apps/web dev                     # http://localhost:5173, proxies /api to port 8000
 ```
 
-If port 8000 is taken, start the API on another port and point the web app at it: `VEYRA_API_TARGET=http://127.0.0.1:8010 pnpm -C apps/web dev`. In PowerShell: `$env:VEYRA_API_TARGET="http://127.0.0.1:8010"; pnpm -C apps/web dev`.
+Open http://localhost:5173. The backend reads the root `.env` too, so the same `OPENAI_API_KEY` works here. The database is created and seeded on first start under `services/api/.data/`.
 
-The database is created and seeded on first start under `services/api/.data/`.
+If port 8000 is taken, start the API on another port and point the web app at it with `VEYRA_API_TARGET=http://127.0.0.1:8010 pnpm -C apps/web dev`. In PowerShell, use `$env:VEYRA_API_TARGET="http://127.0.0.1:8010"; pnpm -C apps/web dev`.
 
 ### Demo walkthrough
 
@@ -99,6 +116,12 @@ From the landing page through every feature, in order. The files to upload are i
 7. Re-scan the muzzle. `09_hp_muzzle.png` should match and `05_muzzle_closeup.jpg` should not.
 8. Check the audit trail.
 
+### Execution evidence
+
+VEYRA is not on-chain, so its evidence is sandbox operation logs. **The report is [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md).** It lists every key operation of a full run in order, with its actor, result, and sandbox receipt. It also points to the log lines that prove each control: an operator cannot approve, a repeated execution does not charge twice, payment alone does not activate cover, and a wrong-cow muzzle blocks a claim.
+
+The raw logs sit next to it in `docs/evidence/`: the HTTP operation log, audit events, wallet ledger, agent actions, policies, claims, and the server log. To produce them again, follow `demo/evidence/README.md`.
+
 ### Demo accounts
 
 There is no login. The role switcher in the top bar (in **More** on a phone) changes the demo bearer token:
@@ -106,8 +129,8 @@ There is no login. The role switcher in the top bar (in **More** on a phone) cha
 | Role | Token | Can do |
 | --- | --- | --- |
 | Manager (W. Santoso) | `demo-manager` | Everything, including approving and declining actions and resetting the demo |
-| Operator (A. Pratama) | `demo-operator` | Enroll, start replays, review tracks and alerts, record incidents, prepare actions; cannot approve |
-| Vet (dr. R. Lestari) | `demo-vet` | Add professional findings to incidents; no payment authority |
+| Operator (A. Pratama) | `demo-operator` | Enroll, start replays, review tracks and alerts, record incidents, prepare actions. Cannot approve |
+| Vet (dr. R. Lestari) | `demo-vet` | Add professional findings to incidents. No payment authority |
 | Assessor | `demo-assessor` | Read sandbox submissions (API only) |
 
 ### Demo reset
@@ -121,20 +144,20 @@ curl -X POST "http://localhost:8000/api/v1/demo/reset?scenario=fresh" -H "Author
 - `fresh` seeds five cattle.
 - `post-enrollment` also seeds Sari (`animal-demo-001`) with a confirmed valuation.
 
-The sandbox provider switches are at `PUT /api/v1/demo/settings`: the payment succeeds, fails, or times out; the insurer confirms or withholds activation.
+The sandbox provider switches are at `PUT /api/v1/demo/settings`: the payment can succeed, fail, or time out, and the insurer can confirm or withhold activation.
 
 ### Configuration
 
-Every variable is optional; the defaults run the demo. Copy `.env.example` to `.env` at the repo root. Both `uv run uvicorn main:app` and `docker compose` read it, and a variable already set in the shell wins.
+Every variable is optional. The defaults run the demo. Copy `.env.example` to `.env` at the repo root. Both `uv run uvicorn main:app` and `docker compose` read it, and a variable already set in the shell wins.
 
 | Variable | Default | Effect |
 | --- | --- | --- |
 | `VEYRA_DATA_DIR` | `services/api/.data` | Where the SQLite database and uploaded media live |
 | `VEYRA_DATABASE_URL` | `sqlite:///<data dir>/veyra.db` | Database URL (SQLite only) |
-| `VEYRA_MEDIA_SECRET` | random per process | Signs media URLs; set it so links survive a restart |
+| `VEYRA_MEDIA_SECRET` | random per process | Signs media URLs. Set it so links survive a restart |
 | `VEYRA_SERVICE_TOKEN` | `demo-worker-token` | Token for the internal camera and worker endpoints (`X-Service-Token`) |
 | `VEYRA_SYNC_JOBS` | `false` | Run background jobs inline (tests use this) |
-| `VEYRA_REPLAY_SPEED` | `10` | Camera replay speed multiplier; `0` ingests a whole replay at once |
+| `VEYRA_REPLAY_SPEED` | `10` | Camera replay speed multiplier. `0` ingests a whole replay at once |
 | `VEYRA_PERCEPTION_MODE` | `auto` | `auto` uses each installed ML capability, `prototype` asks for all of them and logs what's missing, `fixture` uses labeled fixtures only |
 | `VEYRA_LLM_MODE` | `auto` | `auto` goes live when the provider's key is set, `live` always tries, `offline` uses templates and the offline parser |
 | `VEYRA_LLM_PROVIDER` | `openai` | `openai` or `anthropic` |
@@ -154,6 +177,12 @@ pnpm -C apps/web test
 pnpm -C apps/web build
 ```
 
+- **Backend (pytest, about 550 tests).** `tests/domain/` checks the rules on their own: eligibility, valuation, evidence labels, movement alerts, identity handoff, and the database transaction guards. `tests/integration/` drives the real API end to end: enrollment, the agent wallet (approval, idempotent execution, ledger, insurer activation), claims and muzzle identity checks, camera replays, the VEYRA agent, and role scoping. `test_critical_verification.py` holds one test for each of the ten critical checks.
+- **Web (Vitest, about 135 tests).** Screens and components: the approve-and-stamp flow, enrollment steps, monitor overlays, the agent cards, and the labels each one shows.
+- **Typecheck and build** confirm that the web app compiles against the generated API types.
+
+The tests need no API key and no network. They use the offline language-model fallback, and stand-in models where a real one would be slow.
+
 ### Regenerating the API contract
 
 After changing a route or schema in `services/api`:
@@ -167,9 +196,9 @@ pnpm -C apps/web gen:api                     # rewrites apps/web/src/lib/api-typ
 
 ### Limits
 
-- **Sandbox only.** No real money moves, no policy is bound, and no claim is filed. The wallet is a sandbox ledger; the insurer (Sandbox Mutual) and the payment provider are simulated.
+- **Sandbox only.** No real money moves, no policy is bound, and no claim is filed. The wallet is a sandbox ledger, and the insurer (Sandbox Mutual) and the payment provider are simulated.
 - **Fixture data.** The policies, the price (5.20 USD/kg), the herd, and the synthetic camera replays are fixtures.
-- **Demo footage.** The videos in `demo/media/veo/` were made with Google Veo for this prototype; `VEO_PROMPTS.md` has the prompts. The tracker and the muzzle matcher run on them for real.
+- **Demo footage.** The videos in `demo/media/veo/` were made with Google Veo for this prototype, and `VEO_PROMPTS.md` has the prompts. The tracker and the muzzle matcher run on them for real.
 - **No diagnoses or payout promises.** Alerts are observations for inspection, not diagnoses. An indicative value is not an insurer-agreed value or a payout.
 - **Prototype models.** The muzzle matcher, weight estimate, and tracker make no production accuracy claim. Weight needs the scale marker in view, and age comes from a fixture.
 
@@ -216,29 +245,46 @@ VEYRA 通过一本**数字牲畜护照**，把牛只身份识别、参考估值�
 | `shared/schemas/openapi.json` | API 契约，网页应用据此生成类型。 |
 | `docs/technical-document/` | 技术文档（PDF 与 LaTeX 源文件）。 |
 
-### 使用 Docker 运行
+### 如何运行
 
-一个镜像包含全部内容：网页应用在 Node 阶段构建，由 API 在同一端口提供服务。需要 Docker 和 Git LFS。先运行 `git lfs pull`，确保模型、视频和图片是真实文件。
+有两种运行方式。Docker 最快，一条命令即可构建并启动全部内容。开发模式分别运行后端和网页应用，支持热更新，适合修改代码。
 
-```bash
-docker compose up --build                # http://localhost:8000
-```
+#### 方式一：Docker（推荐）
 
-`/` 是宣传页，应用从 `/herd` 打开。
+需要 Docker Desktop 和 Git LFS。
 
-- **语言模型：** 在根目录 `.env`（复制 `.env.example`）中填入 `OPENAI_API_KEY`，即可启用 GPT-6 Luna 的解释和问题解析。没有密钥时，所有回答都是带标注的离线模板。添加后需重启（`docker compose up -d --force-recreate`）。
+1. 获取代码和大文件（模型、视频、图片）：
+
+   ```bash
+   git clone https://github.com/ShibainuID/Veyra.git
+   cd Veyra
+   git lfs pull
+   ```
+
+2. 可选：启用语言模型。把 `.env.example` 复制为 `.env`，并填入 `OPENAI_API_KEY`。没有密钥时，所有解释都是带标注的离线模板，其余功能不受影响。
+3. 构建并启动：
+
+   ```bash
+   docker compose up --build
+   ```
+
+4. 打开 http://localhost:8000 查看宣传页，或打开 http://localhost:8000/herd 进入应用。
+
+按 `Ctrl+C` 停止，或在另一个终端运行 `docker compose down`。
+
 - **完整机器学习链路：** `VEYRA_PERCEPTION_BUILD=true docker compose up --build` 会加入 torch、Ultralytics 和 OpenCLIP，运行真实的视频选帧和体重模型，镜像会增大数 GB。默认镜像已包含真实的鼻纹匹配器（ONNX）。
-- **端口：** `VEYRA_PORT=8090 docker compose up` 改用其他端口。
-- **数据：** 数据库和媒体文件存放在 `veyra-data` 卷中。`docker compose down -v` 会删除它们；Demo 按钮可在不重启的情况下重置。
+- **其他端口：** `VEYRA_PORT=8090 docker compose up`。
+- **数据：** 数据库和媒体文件存放在 `veyra-data` 卷中。`docker compose down -v` 会删除它们。应用中的 Demo 按钮可在不重启的情况下重置。
+- **修改 `.env` 后：** 运行 `docker compose up -d --force-recreate`。
 - **不使用 compose：** 先 `docker build -t veyra .`，再 `docker run -p 8000:8000 -v veyra-data:/data veyra`。
 
-容器特意只运行一个 uvicorn 进程：后台任务和摄像头回放都在 API 进程中。
+容器特意只运行一个 uvicorn 进程，因为后台任务和摄像头回放都在 API 进程中。
 
-### 快速开始（开发）
+#### 方式二：开发模式
 
-环境要求：Python 3.12 与 [uv](https://docs.astral.sh/uv/)，Node 22 与 pnpm 10。Windows（PowerShell 或 Git Bash）和 macOS 上命令相同。
+需要 Python 3.12 与 [uv](https://docs.astral.sh/uv/)、Node 22 与 pnpm 10，以及 Git LFS（克隆后运行 `git lfs pull`）。Windows（PowerShell 或 Git Bash）和 macOS 上命令相同。
 
-后端（终端 1）：
+后端，在终端 1 中运行：
 
 ```bash
 cd services/api
@@ -246,16 +292,16 @@ uv sync                                  # 加 --extra perception 启用完整�
 uv run uvicorn main:app --port 8000      # http://localhost:8000/api/v1/health
 ```
 
-网页（终端 2）：
+网页应用，在终端 2 中运行：
 
 ```bash
 pnpm -C apps/web install
 pnpm -C apps/web dev                     # http://localhost:5173，/api 代理到 8000 端口
 ```
 
-如果 8000 端口被占用，可在其他端口启动 API，并让网页指向它：`VEYRA_API_TARGET=http://127.0.0.1:8010 pnpm -C apps/web dev`。PowerShell 下为 `$env:VEYRA_API_TARGET="http://127.0.0.1:8010"; pnpm -C apps/web dev`。
+打开 http://localhost:5173。后端同样读取根目录的 `.env`，所以同一个 `OPENAI_API_KEY` 在这里也有效。首次启动时会在 `services/api/.data/` 下创建数据库并写入演示数据。
 
-首次启动时会在 `services/api/.data/` 下创建数据库并写入演示数据。
+如果 8000 端口被占用，可在其他端口启动 API，并用 `VEYRA_API_TARGET=http://127.0.0.1:8010 pnpm -C apps/web dev` 让网页指向它。PowerShell 下为 `$env:VEYRA_API_TARGET="http://127.0.0.1:8010"; pnpm -C apps/web dev`。
 
 ### 演示流程
 
@@ -270,6 +316,12 @@ pnpm -C apps/web dev                     # http://localhost:5173，/api 代理�
 7. 重新扫描鼻纹：`09_hp_muzzle.png` 应匹配，`05_muzzle_closeup.jpg` 不应匹配。
 8. 查看审计日志。
 
+### 执行证据
+
+VEYRA 不涉及链上操作，因此执行证据是沙盒操作日志。**报告见 [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md)。** 它按顺序列出一次完整运行中的每个关键操作，包括执行者、结果和沙盒回执，并指向证明各项控制的日志：操作员不能批准，重复执行不会重复扣款，仅付款不会使保障生效，鼻纹不符时理赔会被拦截。
+
+原始日志在同一目录 `docs/evidence/` 中：HTTP 操作日志、审计事件、钱包账本、智能体操作、保单、理赔和服务器日志。如需重新生成，请按 `demo/evidence/README.md` 操作。
+
 ### 演示账号
 
 无需登录。顶栏的角色切换（手机上在 **More** 中）会更换演示用的 bearer token：
@@ -277,8 +329,8 @@ pnpm -C apps/web dev                     # http://localhost:5173，/api 代理�
 | 角色 | Token | 权限 |
 | --- | --- | --- |
 | 管理者（W. Santoso） | `demo-manager` | 全部权限，包括批准、拒绝操作和重置演示 |
-| 操作员（A. Pratama） | `demo-operator` | 登记、启动回放、复核轨迹和告警、记录事故、准备操作；不能批准 |
-| 兽医（dr. R. Lestari） | `demo-vet` | 为事故添加专业意见；无付款权限 |
+| 操作员（A. Pratama） | `demo-operator` | 登记、启动回放、复核轨迹和告警、记录事故、准备操作，不能批准 |
+| 兽医（dr. R. Lestari） | `demo-vet` | 为事故添加专业意见，无付款权限 |
 | 理赔评估员 | `demo-assessor` | 查看沙盒提交（仅 API） |
 
 ### 重置演示
@@ -292,7 +344,7 @@ curl -X POST "http://localhost:8000/api/v1/demo/reset?scenario=fresh" -H "Author
 - `fresh` 写入五头牛。
 - `post-enrollment` 另外写入已确认估值的 Sari（`animal-demo-001`）。
 
-沙盒服务开关在 `PUT /api/v1/demo/settings`：付款可设为成功、失败或超时；保险公司可确认或暂缓生效。
+沙盒服务开关在 `PUT /api/v1/demo/settings`：付款可设为成功、失败或超时，保险公司可确认或暂缓生效。
 
 ### 配置
 
@@ -302,10 +354,10 @@ curl -X POST "http://localhost:8000/api/v1/demo/reset?scenario=fresh" -H "Author
 | --- | --- | --- |
 | `VEYRA_DATA_DIR` | `services/api/.data` | SQLite 数据库和上传媒体的存放位置 |
 | `VEYRA_DATABASE_URL` | `sqlite:///<data dir>/veyra.db` | 数据库地址（仅支持 SQLite） |
-| `VEYRA_MEDIA_SECRET` | 每个进程随机 | 签名媒体链接；设置后链接在重启后仍有效 |
+| `VEYRA_MEDIA_SECRET` | 每个进程随机 | 签名媒体链接，设置后链接在重启后仍有效 |
 | `VEYRA_SERVICE_TOKEN` | `demo-worker-token` | 内部摄像头和后台任务接口的令牌（`X-Service-Token`） |
 | `VEYRA_SYNC_JOBS` | `false` | 同步执行后台任务（测试时使用） |
-| `VEYRA_REPLAY_SPEED` | `10` | 摄像头回放倍速；`0` 表示一次性导入整段回放 |
+| `VEYRA_REPLAY_SPEED` | `10` | 摄像头回放倍速，`0` 表示一次性导入整段回放 |
 | `VEYRA_PERCEPTION_MODE` | `auto` | `auto` 使用已安装的各项机器学习能力，`prototype` 要求全部能力并记录缺失项，`fixture` 只用带标注的固定数据 |
 | `VEYRA_LLM_MODE` | `auto` | `auto` 在设置了服务方密钥时启用实时模型，`live` 始终尝试，`offline` 使用模板和离线解析器 |
 | `VEYRA_LLM_PROVIDER` | `openai` | `openai` 或 `anthropic` |
@@ -325,6 +377,12 @@ pnpm -C apps/web test
 pnpm -C apps/web build
 ```
 
+- **后端（pytest，约 550 个测试）。** `tests/domain/` 单独检查各项规则：资格判断、估值、证据标注、活动量告警、身份交接和数据库事务保护。`tests/integration/` 通过真实 API 端到端运行：登记、智能体钱包（审批、幂等执行、账本、保险公司生效确认）、理赔与鼻纹身份核验、摄像头回放、VEYRA 智能体和角色权限。`test_critical_verification.py` 为十项关键检查各写了一个测试。
+- **网页（Vitest，约 135 个测试）。** 覆盖页面和组件：批准盖章流程、登记步骤、监控叠加层、智能体卡片，以及它们显示的标注。
+- **类型检查和构建** 确认网页应用能基于生成的 API 类型正确编译。
+
+测试不需要 API 密钥，也不需要网络。语言模型使用离线回退，耗时的真实模型用替身代替。
+
 ### 重新生成 API 契约
 
 修改 `services/api` 中的路由或数据结构后：
@@ -338,7 +396,7 @@ pnpm -C apps/web gen:api                     # 重写 apps/web/src/lib/api-types
 
 ### 局限
 
-- **仅限沙盒。** 不会发生真实资金往来，不会签发真实保单，也不会提交真实理赔。钱包是沙盒账本；保险公司（Sandbox Mutual）和支付服务方均为模拟。
+- **仅限沙盒。** 不会发生真实资金往来，不会签发真实保单，也不会提交真实理赔。钱包是沙盒账本，保险公司（Sandbox Mutual）和支付服务方均为模拟。
 - **固定数据。** 保单、价格（5.20 美元/公斤）、牛群和合成的摄像头回放都是固定的演示数据。
 - **演示视频。** `demo/media/veo/` 中的视频是为本原型用 Google Veo 制作的，提示词见 `VEO_PROMPTS.md`。跟踪器和鼻纹匹配器在这些视频上真实运行。
 - **不作诊断，不承诺赔付。** 告警只是供人工检查的观察结果，并非诊断。参考价值不是保险公司认可的价值，也不是赔付金额。
