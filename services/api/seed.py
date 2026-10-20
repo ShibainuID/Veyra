@@ -47,7 +47,13 @@ def seed(db: Database) -> dict[str, str]:
 
 
 if __name__ == "__main__":
-    tokens = seed(Database(Settings.from_env().database_url))
+    import sys
+
+    database = Database(Settings.from_env().database_url)
+    if "--reset" in sys.argv:
+        # Development only: drops every table, then recreates the schema and demo users.
+        database.drop_all()
+    tokens = seed(database)
     out = SERVICE_ROOT / "var" / "dev_tokens.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(tokens, indent=1))
