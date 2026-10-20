@@ -46,7 +46,9 @@ Upload: `demo/uploads/video_hp.mp4`. You can also pick **Use the phone enrollmen
    - **Expect:** three registered frames (muzzle, teeth, body), each with a provenance chip.
    - **Expect:** identity outcome **New**, because nothing on the farm matches.
    - **Expect:** honest review reasons. The video has no teeth view and no scale marker, so weight needs review.
-4. **Confirm:** register as **Sari**, Bali cattle, female. Missing views require a short override note.
+4. **Confirm:** register as **Sari**, Bali cattle, female, and **enter a birth date**, e.g. 12/04/2024. Without one, age is unknown and Basic Mortality shows "needs review" instead of eligible. Missing views require a short override note.
+   - **Raw video upload, no ML extras:** weight and age come back as "no range". The weight model needs `uv sync --extra perception`. In step 4, enter a weight range in the valuation calculator yourself, e.g. 480–560 kg.
+   - **Fully seeded result (ranges included):** use **Use prepared demo sample**, then `sample-enrollment-001`. It gives 480–560 kg and 24–30 months.
 5. **Expect:** "Sari is enrolled as animal-demo-001".
 6. **Negative test:** enroll `sample-enrollment-dup`. It flags a possible duplicate of Bima, and registering it as new requires a reason. `sample-enrollment-unclear` stays "review required".
 
