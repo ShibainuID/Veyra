@@ -1,7 +1,7 @@
-import { Ellipsis, MessageSquareText, Wallet } from "lucide-react";
+import { Ellipsis, Wallet } from "lucide-react";
 import { useState } from "react";
 import { Link, Outlet, useLocation } from "react-router";
-import { buttonClasses } from "../components/Button";
+import { AskButton } from "../features/assistant/Ask";
 import { cn } from "../lib/cn";
 import { formatMoney } from "../lib/format";
 import { inMore, MoreSheet } from "./MoreSheet";
@@ -79,15 +79,7 @@ function TopBar({ pathname, summary }: { pathname: string; summary: HerdSummary 
           ))}
         </nav>
         <div className="ml-auto flex min-w-0 items-center gap-2 xl:gap-4">
-          <Link
-            to="/ask"
-            aria-current={pathname === "/ask" ? "page" : undefined}
-            className={buttonClasses("shell", "md", cn("px-3", pathname === "/ask" && "border-tag"))}
-          >
-            <MessageSquareText aria-hidden="true" className="size-5" strokeWidth={2.25} />
-            {/* Icon-only between 1024 and 1280px, where the full bar is tightest. */}
-            <span className="lg:max-xl:sr-only">Ask</span>
-          </Link>
+          <AskButton pathname={pathname} />
           <WalletBalance summary={summary} />
           <RoleSwitcher />
         </div>
