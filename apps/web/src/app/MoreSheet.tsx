@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { IconButton } from "../components/Button";
 import { cn } from "../lib/cn";
 import { NAV_ITEMS } from "./nav";
+import { DemoReset } from "./DemoReset";
 import { RoleSwitcher } from "./RoleSwitcher";
 
 export const MORE_ITEMS = [
@@ -83,7 +84,10 @@ export function MoreSheet({ open, onClose, pathname }: { open: boolean; onClose:
       </nav>
       <div className="mt-2 flex items-center justify-between gap-3 border-t border-shell-line px-4 pt-4 pb-[calc(16px+env(safe-area-inset-bottom))]">
         <span className="text-on-shell-muted">Acting as</span>
-        <RoleSwitcher />
+        <span className="flex items-center gap-2">
+          <DemoReset compact />
+          <RoleSwitcher />
+        </span>
       </div>
     </dialog>
   );

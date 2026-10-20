@@ -31,7 +31,7 @@ function amountFor(line: PassbookLineOut): PassbookAmount | undefined {
     return { minor: -line.amount_minor, currency };
   }
   let label = "Amount";
-  if (line.event_type.startsWith("valuation")) label = "Valued";
+  if (line.event_type.startsWith("valuation")) label = "Low bound";
   else if (line.event_type.includes("policy")) label = "Insured";
   else if (line.event_type.startsWith("incident")) label = "Est. loss";
   else if (line.event_type.startsWith("claim")) label = "Claimed";

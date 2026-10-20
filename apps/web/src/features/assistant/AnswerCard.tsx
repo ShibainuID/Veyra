@@ -28,14 +28,17 @@ export function AnswerCard({ answer }: { answer: AssistantAnswer }) {
       {answer.facts.length > 0 && (
         <dl className="flex flex-col border-t border-line">
           {answer.facts.map((fact, i) => {
+            // One link per run of facts from the same record, not "Open passport" on every row.
             const link = factLink(fact, animal?.id ?? null);
+            const previous = i > 0 ? factLink(answer.facts[i - 1]!, animal?.id ?? null) : null;
+            const repeated = link !== null && previous !== null && previous.to === link.to;
             return (
               <div key={`${fact.record_type}-${fact.record_id}-${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5 border-b border-line py-2.5">
                 <dt className="text-sm text-muted">{fact.label}</dt>
                 <dd className="col-start-1 min-w-0 font-bold break-words">
                   {isInstant(fact.value) ? <Timestamp value={fact.value} /> : factText(fact.value)}
                 </dd>
-                {link && (
+                {link && !repeated && (
                   <dd className="col-start-2 row-span-2 row-start-1">
                     <Link
                       to={link.to}

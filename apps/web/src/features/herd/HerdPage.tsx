@@ -60,10 +60,10 @@ function asFilter(value: string | null): HerdFilter {
   return value && (FILTERS as readonly string[]).includes(value) ? (value as HerdFilter) : "all";
 }
 
-/** Alert kinds short enough for the herd column; the alert page carries the full wording. */
+/** Alert kinds short enough for the herd's Alerts column; the alert page carries the full wording. */
 function shortAlertLabel(kind: string): string {
-  if (kind === "reduced_movement") return "Movement alert";
-  if (kind === "observation_quality") return "Quality alert";
+  if (kind === "reduced_movement") return "Movement";
+  if (kind === "observation_quality") return "Quality";
   return "Alert";
 }
 
@@ -132,7 +132,7 @@ const COLUMNS: readonly Column<HerdItem>[] = [
   {
     id: "observed",
     header: "Last observed",
-    width: "132px",
+    width: "124px",
     sortValue: (row) => row.last_observation?.observed_at ?? null,
     cell: (row) =>
       row.last_observation ? (
@@ -147,7 +147,7 @@ const COLUMNS: readonly Column<HerdItem>[] = [
   {
     id: "alerts",
     header: "Alerts",
-    width: "160px",
+    width: "132px",
     sortValue: (row) => row.alerts.open_count + row.awaiting_approval_count,
     cell: (row) => {
       if (row.alerts.open_count === 0 && row.awaiting_approval_count === 0) return <span className="text-muted">None open</span>;
@@ -274,7 +274,7 @@ export function HerdPage() {
 
   return (
     <div className="flex flex-1">
-      <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+      <div className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8 xl:px-6">
         <PageHeader
           title="Herd"
           meta={<HerdMeta />}

@@ -7,7 +7,7 @@ import { StatusPill, type StatusTone } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { api } from "../../lib/api";
 import type { Role } from "../../lib/role-store";
-import { approvalsHref, isOpen, latestAction } from "../finance/actions";
+import { approvalsHref, closedNote, isOpen, latestAction } from "../finance/actions";
 import { refreshFinance, useProposeAction, type AgentAction, type Policy } from "../finance/api";
 import { receiptRef } from "../actions";
 import { formatDate, newIdempotencyKey } from "../finance/dates";
@@ -129,6 +129,7 @@ function PaymentStep({ policy, actions, role }: CurrentCoverProps) {
   const failure = failed?.execution?.error as { message?: string } | null | undefined;
   return (
     <div className="flex flex-col gap-3 border-t border-line pt-4">
+      {!failed && closedNote(payment, "premium payment") && <p className="text-muted">{closedNote(payment, "premium payment")}</p>}
       {failed && (
         <div role="status" className="rounded-control border-2 border-danger bg-danger-soft p-4">
           <p className="font-bold">The last premium payment failed</p>
