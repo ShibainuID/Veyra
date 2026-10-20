@@ -36,7 +36,7 @@ def test_show_me_animal_002_returns_passport_facts(farm):
 
 
 def test_where_was_001_last_seen_and_what_coverage_after_the_anomaly(farm):
-    assert farm.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 202
+    assert farm.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 200
     body = _ask(farm, "Where was animal-demo-001 last seen, and what coverage is active?")
     assert body["intent"] == "location_lookup"
     facts = _facts(body)
@@ -69,8 +69,8 @@ def test_which_animals_have_open_alerts(farm):
     assert [f["record_type"] for f in body["facts"]] == ["alert"]
     assert body["records"]["alerts"][0]["animal_id"] == "animal-demo-004"
 
-    assert farm.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 202
-    assert farm.post(f"{API}/demo/replays/lost_identity/start", headers=OPERATOR).status_code == 202
+    assert farm.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 200
+    assert farm.post(f"{API}/demo/replays/lost_identity/start", headers=OPERATOR).status_code == 200
     after = _ask(farm, "Which animals have open alerts?")
     assert after["answer"].startswith("2 animals have open alerts: ")
     assert "Sari (animal-demo-001): 1 open (reduced movement)" in after["answer"]

@@ -120,9 +120,14 @@ def window_applies(*, first_seen_s: float, lost_at_s: float | None, start_s: flo
 
 
 def assess(stats: WindowStats, *, associated: bool, baseline: WindowStats | None,
-           config: MovementConfig = DEFAULT_CONFIG) -> Assessment:
+           partial_association: bool = False, config: MovementConfig = DEFAULT_CONFIG) -> Assessment:
+    """`stats` of an associated track count only the observations attributed to its animal. When the track was
+    associated partway through the window (`partial_association`), a window too short to be usable is skipped:
+    the gap comes from when identity was confirmed, not from observation quality."""
     subject = "animal" if associated else "track"
     if not stats.usable:
+        if associated and partial_association:
+            return Assessment("unassessed", subject)
         return Assessment("observation_quality", subject)
     if not associated or stats.speed is None:
         return Assessment("unassessed", subject)
