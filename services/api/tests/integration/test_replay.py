@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from config import get_settings
 from domain import clock
 from persistence.db import read_session
-from persistence.models import AuditEvent, Observation, Replay
+from persistence.models import Alert, AuditEvent, Observation, Replay
 from tests.support import ASSESSOR, MANAGER, OPERATOR, OTHER_FARM, VET
 from workers import replay as replays
 
@@ -24,9 +24,12 @@ def farm(client):
 
 
 def _start(client, scenario: str, headers=OPERATOR) -> dict:
+    """Speed 0 runs inside the request and answers 200 `finished`; a threaded replay answers 202 `running`."""
     response = client.post(f"{API}/demo/replays/{scenario}/start", headers=headers)
-    assert response.status_code == 202, response.text
-    return response.json()
+    assert response.status_code in (200, 202), response.text
+    body = response.json()
+    assert (response.status_code, body["status"]) in ((200, "finished"), (202, "running"))
+    return body
 
 
 def _alerts(client, **params) -> list[dict]:
@@ -58,7 +61,8 @@ def test_only_managers_and_operators_start_replays(farm):
 
 def test_anomaly_replay_raises_exactly_one_reduced_movement_alert_for_sari(farm):
     started = _start(farm, "anomaly")
-    assert (started["scenario_id"], started["speed"], started["duration_s"]) == ("anomaly", 0.0, 180)
+    assert (started["scenario_id"], started["speed"], started["duration_s"], started["status"]) == (
+        "anomaly", 0.0, 180, "finished")
 
     replay = farm.get(f"{API}/replays/{started['replay_id']}", headers=VET).json()
     assert (replay["status"], replay["progress_s"]) == ("finished", 180)
@@ -76,9 +80,9 @@ def test_anomaly_replay_raises_exactly_one_reduced_movement_alert_for_sari(farm)
     assert alert["rule"]["score"] > 0.7 and alert["rule"]["source"] == "simulated"
     assert alert["clip"] == {"scenario_id": "anomaly", "camera_id": "cam-pen-a", "start_s": 90, "end_s": 120,
                              "video": None}
-    started_at = replay["started_at"]
-    assert alert["window_start"] > started_at and alert["baseline_start"] == started_at
-    assert alert["baseline_end"] < alert["window_start"] < alert["window_end"]
+    anchor = replay["anchor_at"]
+    assert alert["baseline_start"] == anchor and alert["window_start"] > anchor
+    assert alert["baseline_end"] < alert["window_start"] < alert["window_end"] <= replay["started_at"]
     assert alert["summary"].startswith("Movement ") and "below Sari's earlier window on Pen A · feed line" in \
         alert["summary"] and alert["summary"].endswith("this is not a diagnosis.")
     assert [a["id"] for a in _replay_alerts(farm, started["replay_id"])] == [alert["id"]]
@@ -266,5 +270,107 @@ def test_starting_a_replay_stops_the_running_one_on_that_camera(farm, monkeypatc
             assert session.get(Replay, first["replay_id"]).status == "stopped"
             assert session.get(Replay, second["replay_id"]).status == "running"
         assert farm.get(f"{API}/replays/{first['replay_id']}", headers=VET).json()["status"] == "stopped"
+    finally:
+        replays.stop_all()
+
+
+def _latest_observation_time():
+    with read_session() as session:
+        return session.scalar(select(func.max(Observation.observed_at)))
+
+
+@pytest.mark.parametrize("scenario", ["healthy", "anomaly", "lost_identity"])
+def test_instant_replay_is_footage_that_ends_before_now(farm, scenario):
+    started = _start(farm, scenario)
+    replay = farm.get(f"{API}/replays/{started['replay_id']}", headers=VET).json()
+    assert replay["anchor_at"] < replay["started_at"]
+    latest = _latest_observation_time()
+    assert latest <= clock.now()
+    assert clock.isoformat(latest) < replay["started_at"]
+    with read_session() as session:
+        alert_ends = session.scalars(select(Alert.window_end)).all()
+    assert all(end <= clock.now() for end in alert_ends)
+
+
+def test_threaded_replay_never_stamps_an_observation_after_its_ingest(farm, monkeypatch):
+    monkeypatch.setenv("VEYRA_REPLAY_SPEED", "20")
+    get_settings.cache_clear()
+    started = _start(farm, "healthy")
+    assert started["anchor_at"] < started["started_at"]
+    try:
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            latest = _latest_observation_time()
+            assert latest <= clock.now()
+            time.sleep(0.1)
+    finally:
+        replays.stop_all()
+
+
+def test_assistant_reports_a_past_last_seen_time_after_a_replay(farm):
+    _start(farm, "anomaly")
+    body = farm.post(f"{API}/assistant/query", json={"text": "Where was Sari last seen?"}, headers=VET).json()
+    observed = next(f["value"] for f in body["facts"] if f["label"] == "Last observed at")
+    assert observed <= clock.isoformat(clock.now())
+    assert "(just now)" in body["answer"] or "min ago" in body["answer"]
+
+
+def _walk_frames(start: float, end: float, speed_per_s: float, fps: int = 2) -> list[dict]:
+    frames, x, direction = [], 0.3, 1
+    for i in range(round(start * fps), round(end * fps)):
+        step = speed_per_s / fps
+        if not 0.05 <= x + direction * step <= 0.7:
+            direction = -direction
+        x += direction * step
+        frames.append({"t": i / fps, "bbox": [round(x, 5), 0.4, 0.2, 0.2], "visibility": 0.9})
+    return frames
+
+
+def test_movement_uses_only_observations_attributed_to_the_animal(farm, monkeypatch):
+    """Bima's track is matched at 40 s. Before that the (unidentified) track runs fast; afterwards it walks at a steady
+    speed. Counting the unattributed frames would make the 30-60 s window a fast baseline and raise a false
+    reduced-movement alert; attributing only Bima's own frames skips that partial window and finds no change."""
+    scenario = {"id": "late_match", "label": "Late match", "description": "test", "camera_id": "cam-pen-a",
+                "source": "simulated", "duration_s": 120, "fps": 2, "window_s": 30, "clip": None,
+                "tracks": [{"track_key": "t-late",
+                            "frames": _walk_frames(0, 40, 0.05) + _walk_frames(40, 120, 0.008),
+                            "events": [{"t": 40, "type": "muzzle_match", "candidate_animal_id": "animal-demo-002",
+                                        "inliers": 25, "quality": 0.9}]}]}
+    real = replays.load_scenario
+    monkeypatch.setattr(replays, "load_scenario",
+                        lambda settings, scenario_id: scenario if scenario_id == "late_match" else real(settings,
+                                                                                                        scenario_id))
+    started = _start(farm, "late_match")
+    replay = farm.get(f"{API}/replays/{started['replay_id']}", headers=VET).json()
+    assert replay["tracks"][0]["animal_id"] == "animal-demo-002"
+    assert replay["alerts"] == []  # no reduced movement and no quality warning on Bima for the partial window
+
+
+def test_concurrent_starts_on_one_camera_leave_one_running_replay(farm, monkeypatch):
+    monkeypatch.setenv("VEYRA_REPLAY_SPEED", "4")
+    get_settings.cache_clear()
+    import threading as _threading
+
+    results, errors = [], []
+
+    def start(scenario):
+        try:
+            results.append(replays.start(get_settings(), farm_id="farm-wahyu", actor=("user", "user-operator"),
+                                         scenario_id=scenario).id)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(exc)
+
+    workers = [_threading.Thread(target=start, args=(name,)) for name in ("healthy", "anomaly", "healthy")]
+    try:
+        for worker in workers:
+            worker.start()
+        for worker in workers:
+            worker.join(10)
+        assert errors == [] and len(results) == 3
+        with read_session() as session:
+            statuses = dict(session.execute(select(Replay.id, Replay.status)).all())
+        assert sorted(statuses.values()) == ["running", "stopped", "stopped"]
+        running = [rid for rid, status in statuses.items() if status == "running"]
+        assert [rid for rid in results if replays.is_running_thread(rid)] == running
     finally:
         replays.stop_all()
