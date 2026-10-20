@@ -96,6 +96,11 @@ def link_scans(session: Session, recording: CameraRecording, tracks: Tracks) -> 
             link.linked_from = _at(recording, handoff.linked_from_t)
             link.linked_until = None if until is None else _at(recording, until)
             link.release_reason = why
+            # Last sighting while the identity was trusted: the passport's "last observed" even for short clips.
+            seen = [f.t for f in tracks.frames if f.get(track_id) and handoff.linked_from_t <= f.t
+                    and (until is None or f.t <= until)]
+            link.details = {**link.details, "last_seen_at": _at(recording, max(seen)).isoformat(),
+                            "source": recording.source}
         session.add(link)
         session.flush()
         audit.record(session, recording.farm_id, f"camera.identity_{status}", "animal", scan.animal_id,

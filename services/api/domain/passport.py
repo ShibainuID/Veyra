@@ -23,6 +23,7 @@ from persistence.models import (
     MuzzleReference,
     Observation,
     Policy,
+    TrackLink,
     User,
     Valuation,
 )
@@ -84,9 +85,7 @@ def build(session: Session, animal: Animal) -> dict:
                       for kind, rows in by_kind.items()},
         "valuations": [_valuation(v) for v in session.scalars(
             select(Valuation).where(where(Valuation)).order_by(Valuation.created_at.desc()))],
-        "last_observed": None if last_seen is None else {
-            "camera_id": str(last_seen.camera_id), "observed_at": last_seen.observed_at, "track_id": last_seen.track_id,
-            "source": last_seen.source},
+        "last_observed": last_observed(session, animal, last_seen),
         "open_alerts": [{"id": str(a.id), "kind": a.kind, "status": a.status, "window_start": a.window_start,
                          "window_end": a.window_end}
                         for a in session.scalars(select(Alert).where(where(Alert), Alert.status.in_(("open", "acknowledged"))))],
@@ -98,6 +97,21 @@ def build(session: Session, animal: Animal) -> dict:
         "history": [{"action": h.action, "actor_type": h.actor_type, "actor_id": h.actor_id, "details": h.details,
                      "created_at": h.created_at} for h in history],
     }
+
+
+def last_observed(session: Session, animal: Animal, observation: Observation | None) -> dict | None:
+    """Latest sighting through a confirmed identity: a confirmed observation window or a confirmed track link."""
+    candidates = []
+    if observation is not None:
+        # The window start is the conservative time: the animal was certainly seen within the window after it.
+        candidates.append({"camera_id": str(observation.camera_id), "observed_at": observation.observed_at,
+                           "track_id": observation.track_id, "source": observation.source})
+    for link in session.scalars(select(TrackLink).where(TrackLink.animal_id == animal.id, TrackLink.status == "confirmed")):
+        if link.details.get("last_seen_at"):
+            candidates.append({"camera_id": str(link.camera_id),
+                               "observed_at": datetime.fromisoformat(link.details["last_seen_at"]),
+                               "track_id": link.track_id, "source": link.details.get("source", "prototype")})
+    return max(candidates, key=lambda c: c["observed_at"]) if candidates else None
 
 
 def require_confirmed_identity(animal: Animal) -> None:
