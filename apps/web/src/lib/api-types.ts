@@ -21,6 +21,194 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/whoami": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whoami */
+        get: operations["whoami_api_v1_auth_whoami_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/animals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Animals */
+        get: operations["list_animals_api_v1_animals_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/animals/{animal_id}/passport": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Passport */
+        get: operations["get_passport_api_v1_animals__animal_id__passport_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audit-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Audit Events */
+        get: operations["list_audit_events_api_v1_audit_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Enrollments */
+        get: operations["list_enrollments_api_v1_enrollments_get"];
+        put?: never;
+        /** Create Enrollment */
+        post: operations["create_enrollment_api_v1_enrollments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Enrollment */
+        get: operations["get_enrollment_api_v1_enrollments__enrollment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}/video": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload Video */
+        put: operations["upload_video_api_v1_enrollments__enrollment_id__video_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}/process": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Process Enrollment */
+        post: operations["process_enrollment_api_v1_enrollments__enrollment_id__process_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Enrollment */
+        post: operations["confirm_enrollment_api_v1_enrollments__enrollment_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/enrollments/{enrollment_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Enrollment */
+        post: operations["retry_enrollment_api_v1_enrollments__enrollment_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Job */
+        get: operations["get_job_api_v1_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/media/{media_id}": {
         parameters: {
             query?: never;
@@ -73,10 +261,676 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/demo/replays": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Scenarios */
+        get: operations["list_scenarios_api_v1_demo_replays_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/demo/replays/{scenario_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Replay */
+        post: operations["start_replay_api_v1_demo_replays__scenario_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/replays/{replay_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Replay */
+        get: operations["get_replay_api_v1_replays__replay_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cameras */
+        get: operations["list_cameras_api_v1_cameras_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{camera_id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ingest Observation */
+        post: operations["ingest_observation_api_v1_cameras__camera_id__observations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/animals/{animal_id}/observations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Animal Observations */
+        get: operations["animal_observations_api_v1_animals__animal_id__observations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tracks/{track_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Track */
+        patch: operations["review_track_api_v1_tracks__track_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Alerts */
+        get: operations["list_alerts_api_v1_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Alert */
+        get: operations["get_alert_api_v1_alerts__alert_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Review Alert */
+        patch: operations["review_alert_api_v1_alerts__alert_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/assistant/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query */
+        post: operations["query_api_v1_assistant_query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActorRef */
+        ActorRef: {
+            /** Type */
+            type: string;
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /** AlertCounts */
+        AlertCounts: {
+            /** Open Count */
+            open_count: number;
+            /** Kinds */
+            kinds: string[];
+        };
+        /** AlertList */
+        AlertList: {
+            /** Items */
+            items: components["schemas"]["AlertView"][];
+        };
+        /** AlertOut */
+        AlertOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Camera Id */
+            camera_id: string;
+            /** Track Id */
+            track_id: string | null;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /** Baseline Start */
+            baseline_start: string | null;
+            /** Baseline End */
+            baseline_end: string | null;
+            /** Rule */
+            rule: {
+                [key: string]: unknown;
+            };
+            /** Clip */
+            clip: {
+                [key: string]: unknown;
+            } | null;
+            /** Notes */
+            notes: unknown[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AlertReview */
+        AlertReview: {
+            /** Status */
+            status?: ("acknowledged" | "resolved") | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** AlertView */
+        AlertView: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "reduced_movement" | "observation_quality";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "acknowledged" | "resolved";
+            /** Animal Id */
+            animal_id: string | null;
+            /** Animal Name */
+            animal_name: string | null;
+            /** Track Id */
+            track_id: string | null;
+            /** Track Key */
+            track_key: string | null;
+            /** Camera Id */
+            camera_id: string;
+            /** Camera Name */
+            camera_name: string;
+            /**
+             * Window Start
+             * Format: date-time
+             */
+            window_start: string;
+            /**
+             * Window End
+             * Format: date-time
+             */
+            window_end: string;
+            /** Baseline Start */
+            baseline_start: string | null;
+            /** Baseline End */
+            baseline_end: string | null;
+            /** Rule */
+            rule: {
+                [key: string]: unknown;
+            };
+            /** Clip */
+            clip: {
+                [key: string]: unknown;
+            } | null;
+            /** Notes */
+            notes: {
+                [key: string]: unknown;
+            }[];
+            /** Summary */
+            summary: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AnimalIn */
+        AnimalIn: {
+            /** Name */
+            name: string;
+            /** Breed */
+            breed: string;
+            /** Breed Category */
+            breed_category: string;
+            /**
+             * Sex
+             * @enum {string}
+             */
+            sex: "F" | "M";
+            /** Birth Date */
+            birth_date?: string | null;
+        };
+        /** AnimalLastObservation */
+        AnimalLastObservation: {
+            /** Id */
+            id: string;
+            /** Camera Id */
+            camera_id: string;
+            /** Camera Name */
+            camera_name: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Bbox */
+            bbox: number[];
+            /** Visibility */
+            visibility: number;
+            /**
+             * Association Status
+             * @enum {string}
+             */
+            association_status: "unassigned" | "associated" | "uncertain";
+        };
+        /** AnimalList */
+        AnimalList: {
+            /** Items */
+            items: components["schemas"]["AnimalListItem"][];
+            summary: components["schemas"]["HerdSummary"];
+        };
+        /** AnimalListItem */
+        AnimalListItem: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Breed */
+            breed: string;
+            /** Breed Category */
+            breed_category: string;
+            /** Sex */
+            sex: string;
+            /** Identity Status */
+            identity_status: string;
+            age: components["schemas"]["RangeEstimate"] | null;
+            weight: components["schemas"]["RangeEstimate"] | null;
+            valuation: components["schemas"]["ValuationBrief"] | null;
+            coverage: components["schemas"]["Coverage"];
+            alerts: components["schemas"]["AlertCounts"];
+            last_observation: components["schemas"]["LastObservation"] | null;
+            /** Awaiting Approval Count */
+            awaiting_approval_count: number;
+        };
+        /** AnimalObservations */
+        AnimalObservations: {
+            /** Animal Id */
+            animal_id: string;
+            last_observation: components["schemas"]["AnimalLastObservation"] | null;
+            /** Tracks */
+            tracks: components["schemas"]["TrackOut"][];
+            /** Recent */
+            recent: components["schemas"]["ObservationOut"][];
+            quality_summary: components["schemas"]["QualitySummary"];
+        };
+        /** ApplicationOut */
+        ApplicationOut: {
+            /** Id */
+            id: string;
+            /** Product Id */
+            product_id: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Provider Id */
+            provider_id: string;
+            /** Terms Version */
+            terms_version: string;
+            /** Insured Value Minor */
+            insured_value_minor: number;
+            /** Premium Minor */
+            premium_minor: number;
+            /** Deductible Minor */
+            deductible_minor: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Coverage Start
+             * Format: date
+             */
+            coverage_start: string;
+            /**
+             * Coverage End
+             * Format: date
+             */
+            coverage_end: string;
+            /** Status */
+            status: string;
+            /** Provider Ref */
+            provider_ref: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** AssistantAnswer */
+        AssistantAnswer: {
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "animal_lookup" | "location_lookup" | "alert_lookup" | "coverage_lookup" | "unknown";
+            /**
+             * Parsed By
+             * @enum {string}
+             */
+            parsed_by: "live" | "simulated";
+            /** Answer */
+            answer: string;
+            /** Facts */
+            facts: components["schemas"]["AssistantFact"][];
+            records: components["schemas"]["AssistantRecords"];
+            /** Missing */
+            missing: string[];
+            /** Fallback Reason */
+            fallback_reason: string | null;
+        };
+        /** AssistantFact */
+        AssistantFact: {
+            /** Label */
+            label: string;
+            /** Value */
+            value: unknown;
+            /** Record Type */
+            record_type: string;
+            /** Record Id */
+            record_id: string;
+        };
+        /** AssistantQuery */
+        AssistantQuery: {
+            /** Text */
+            text: string;
+        };
+        /** AssistantRecords */
+        AssistantRecords: {
+            /** Animals */
+            animals: {
+                [key: string]: unknown;
+            }[];
+            /** Last Observations */
+            last_observations: {
+                [key: string]: unknown;
+            }[];
+            /** Coverage */
+            coverage: {
+                [key: string]: unknown;
+            }[];
+            /** Alerts */
+            alerts: components["schemas"]["AlertView"][];
+        };
+        /** AuditEventOut */
+        AuditEventOut: {
+            /** Id */
+            id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            actor: components["schemas"]["ActorRef"];
+            /** Event Type */
+            event_type: string;
+            /** Subject Type */
+            subject_type: string;
+            /** Subject Id */
+            subject_id: string;
+            /** Animal Id */
+            animal_id: string | null;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** Body_upload_video_api_v1_enrollments__enrollment_id__video_put */
+        Body_upload_video_api_v1_enrollments__enrollment_id__video_put: {
+            /** File */
+            file: string;
+        };
+        /** CameraLastObservation */
+        CameraLastObservation: {
+            /** Id */
+            id: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Track Id */
+            track_id: string;
+            /** Animal Id */
+            animal_id: string | null;
+            /** Animal Name */
+            animal_name: string | null;
+            /**
+             * Association Status
+             * @enum {string}
+             */
+            association_status: "unassigned" | "associated" | "uncertain";
+            /** Visibility */
+            visibility: number;
+            /** Bbox */
+            bbox: number[];
+        };
+        /** CameraList */
+        CameraList: {
+            /** Items */
+            items: components["schemas"]["CameraOut"][];
+        };
+        /** CameraOut */
+        CameraOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Location */
+            location: string;
+            /** Map X */
+            map_x: number;
+            /** Map Y */
+            map_y: number;
+            last_observation: components["schemas"]["CameraLastObservation"] | null;
+        };
+        /** CameraSeen */
+        CameraSeen: {
+            /** Camera Id */
+            camera_id: string;
+            /** Camera Name */
+            camera_name: string | null;
+            /** Count */
+            count: number;
+            /**
+             * Last Observed At
+             * Format: date-time
+             */
+            last_observed_at: string;
+        };
+        /** Candidate */
+        Candidate: {
+            /** Animal Id */
+            animal_id: string;
+            /** Animal Name */
+            animal_name?: string | null;
+            /** Cosine */
+            cosine?: number | null;
+            /** Inliers */
+            inliers?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ClaimOut */
+        ClaimOut: {
+            /** Id */
+            id: string;
+            /** Policy Id */
+            policy_id: string;
+            /** Incident Id */
+            incident_id: string;
+            /** Status */
+            status: string;
+            /** Checklist */
+            checklist: unknown[];
+            /** Blocked Reason */
+            blocked_reason: {
+                [key: string]: unknown;
+            } | null;
+            /** Declaration Confirmed */
+            declaration_confirmed: boolean;
+            /** Declaration By */
+            declaration_by: string | null;
+            /** Claimed Amount Minor */
+            claimed_amount_minor: number;
+            /** Currency */
+            currency: string;
+            /** Evidence Manifest Id */
+            evidence_manifest_id: string | null;
+            /** Receipt */
+            receipt: {
+                [key: string]: unknown;
+            } | null;
+            /** Assessment Status */
+            assessment_status: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ConfirmBody */
+        ConfirmBody: {
+            /**
+             * Decision
+             * @enum {string}
+             */
+            decision: "register_new" | "link_existing" | "reject";
+            /** @description For `register_new`; defaults to the sample's proposal. */
+            animal?: components["schemas"]["AnimalIn"] | null;
+            /**
+             * Link To
+             * @description For `link_existing`: an animal id on this farm.
+             */
+            link_to?: string | null;
+            /**
+             * Override Note
+             * @description Required to register a possible duplicate, or with a required view missing or an uncertain identity.
+             */
+            override_note?: string | null;
+            /**
+             * Reject Reason
+             * @description Required for `reject`.
+             */
+            reject_reason?: string | null;
+        };
+        /** Coverage */
+        Coverage: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "pending" | "none";
+            /** Policy Id */
+            policy_id: string | null;
+            /** Product Id */
+            product_id: string | null;
+            /** Policy Status */
+            policy_status: string | null;
+        };
         /** DemoSettingsOut */
         DemoSettingsOut: {
             /**
@@ -110,10 +964,733 @@ export interface components {
              */
             insurer_activation: "confirm" | "withhold";
         };
+        /** EnrollmentCreate */
+        EnrollmentCreate: {
+            /**
+             * Sample Key
+             * @description A demo sample from `demo/fixtures/enrollment_samples.json`.
+             */
+            sample_key?: string | null;
+        };
+        /** EnrollmentCreated */
+        EnrollmentCreated: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "created" | "uploaded" | "processing" | "review" | "confirmed" | "rejected" | "failed";
+            /** Sample Key */
+            sample_key: string | null;
+            /** Retry Of Id */
+            retry_of_id: string | null;
+            upload: components["schemas"]["UploadTarget"];
+        };
+        /** EnrollmentList */
+        EnrollmentList: {
+            /** Items */
+            items: components["schemas"]["EnrollmentSummary"][];
+        };
+        /** EnrollmentOut */
+        EnrollmentOut: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "created" | "uploaded" | "processing" | "review" | "confirmed" | "rejected" | "failed";
+            /** Sample Key */
+            sample_key: string | null;
+            /** Video Media Id */
+            video_media_id: string | null;
+            /** Video Url */
+            video_url: string | null;
+            /** Processing Mode */
+            processing_mode: string | null;
+            /** Review Reasons */
+            review_reasons: string[];
+            /** Sources */
+            sources: {
+                [key: string]: string | null;
+            } | null;
+            /** Capabilities */
+            capabilities: {
+                [key: string]: boolean;
+            } | null;
+            /** Decision */
+            decision: {
+                [key: string]: unknown;
+            } | null;
+            /** Reviewer Id */
+            reviewer_id: string | null;
+            /** Animal Id */
+            animal_id: string | null;
+            /** Retry Of Id */
+            retry_of_id: string | null;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            job: components["schemas"]["JobRef"] | null;
+            manifest: components["schemas"]["Manifest"] | null;
+            identity: components["schemas"]["Identity"] | null;
+            /** Estimates */
+            estimates: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+        };
+        /** EnrollmentSummary */
+        EnrollmentSummary: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "created" | "uploaded" | "processing" | "review" | "confirmed" | "rejected" | "failed";
+            /** Sample Key */
+            sample_key: string | null;
+            /** Video Media Id */
+            video_media_id: string | null;
+            /** Video Url */
+            video_url: string | null;
+            /** Processing Mode */
+            processing_mode: string | null;
+            /** Review Reasons */
+            review_reasons: string[];
+            /** Sources */
+            sources: {
+                [key: string]: string | null;
+            } | null;
+            /** Capabilities */
+            capabilities: {
+                [key: string]: boolean;
+            } | null;
+            /** Decision */
+            decision: {
+                [key: string]: unknown;
+            } | null;
+            /** Reviewer Id */
+            reviewer_id: string | null;
+            /** Animal Id */
+            animal_id: string | null;
+            /** Retry Of Id */
+            retry_of_id: string | null;
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            job: components["schemas"]["JobRef"] | null;
+        };
+        /** ErrorBody */
+        ErrorBody: {
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+        };
+        /** ErrorEnvelope */
+        ErrorEnvelope: {
+            error: components["schemas"]["ErrorBody"];
+        };
+        /** EstimateOut */
+        EstimateOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Range Low */
+            range_low: number | null;
+            /** Range High */
+            range_high: number | null;
+            /** Point */
+            point: number | null;
+            /** Unit */
+            unit: string;
+            /** Source */
+            source: string;
+            /** Method Version */
+            method_version: string;
+            /** Evidence */
+            evidence: {
+                [key: string]: unknown;
+            };
+            /** Review Required */
+            review_required: boolean;
+            /** Review Reason */
+            review_reason: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ExposureSummary */
+        ExposureSummary: {
+            /** Exposure Low Minor */
+            exposure_low_minor: number | null;
+            /** Exposure High Minor */
+            exposure_high_minor: number | null;
+            /** Insured Minor */
+            insured_minor: number;
+            /** Uninsured Low Minor */
+            uninsured_low_minor: number | null;
+            /** Currency */
+            currency: string | null;
+        };
+        /** FarmRef */
+        FarmRef: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HerdSummary */
+        HerdSummary: {
+            /** Animal Count */
+            animal_count: number;
+            /** Exposure Low Minor */
+            exposure_low_minor: number;
+            /** Exposure High Minor */
+            exposure_high_minor: number;
+            /** Insured Minor */
+            insured_minor: number;
+            /** Uncovered Count */
+            uncovered_count: number;
+            /** Open Alerts */
+            open_alerts: number;
+            /** Pending Approvals */
+            pending_approvals: number;
+            /** Wallet Balance Minor */
+            wallet_balance_minor: number;
+            /** Currency */
+            currency: string;
+        };
+        /** Identity */
+        Identity: {
+            /** Source */
+            source: string;
+            /** Method Version */
+            method_version: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "candidate" | "new" | "uncertain";
+            /** Reason */
+            reason?: string | null;
+            /** Animal Id */
+            animal_id?: string | null;
+            /** Animal Name */
+            animal_name?: string | null;
+            /**
+             * Candidates
+             * @default []
+             */
+            candidates: components["schemas"]["Candidate"][];
+            /** Possible Duplicate */
+            possible_duplicate: boolean;
+        } & {
+            [key: string]: unknown;
+        };
+        /** IncidentOut */
+        IncidentOut: {
+            /** Id */
+            id: string;
+            /** Policy Id */
+            policy_id: string | null;
+            /** Kind */
+            kind: string;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Description */
+            description: string;
+            /** Estimated Loss Minor */
+            estimated_loss_minor: number;
+            /** Currency */
+            currency: string;
+            /** Reported By */
+            reported_by: string;
+            /** Facts */
+            facts: {
+                [key: string]: unknown;
+            };
+            /** Documents */
+            documents: unknown[];
+            /** Professional Findings */
+            professional_findings: unknown[];
+            /** Linked Alert Ids */
+            linked_alert_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** JobAccepted */
+        JobAccepted: {
+            /** Job Id */
+            job_id: string;
+        };
+        /** JobOut */
+        JobOut: {
+            /** Id */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Subject Id */
+            subject_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
+            /** Result */
+            result: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** JobRef */
+        JobRef: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "succeeded" | "failed";
+        };
+        /** LastObservation */
+        LastObservation: {
+            /** Camera Id */
+            camera_id: string;
+            /** Camera Name */
+            camera_name: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Association Status */
+            association_status: string;
+        };
+        /** Manifest */
+        Manifest: {
+            /** Processing Mode */
+            processing_mode?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Method Version */
+            method_version?: string | null;
+            /** Video */
+            video?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Views
+             * @default {}
+             */
+            views: {
+                [key: string]: components["schemas"]["ViewOut"];
+            };
+            /**
+             * Checks
+             * @default {}
+             */
+            checks: {
+                [key: string]: unknown;
+            };
+            /** Review Required */
+            review_required?: boolean | null;
+            /**
+             * Review Reasons
+             * @default []
+             */
+            review_reasons: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** ObservationIn */
+        ObservationIn: {
+            /** Track Key */
+            track_key: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Bbox */
+            bbox: number[];
+            /** Visibility */
+            visibility: number;
+            /**
+             * Event
+             * @default frame
+             * @enum {string}
+             */
+            event: "frame" | "muzzle_match" | "track_lost";
+            /** Candidate Animal Id */
+            candidate_animal_id?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Quality */
+            quality?: number | null;
+            /** Reason */
+            reason?: string | null;
+            /** Media Ref */
+            media_ref?: string | null;
+            /** Replay Id */
+            replay_id?: string | null;
+        };
+        /** ObservationIngested */
+        ObservationIngested: {
+            observation: components["schemas"]["ObservationOut"];
+            track: components["schemas"]["TrackOut"];
+        };
+        /** ObservationOut */
+        ObservationOut: {
+            /** Id */
+            id: string;
+            /** Camera Id */
+            camera_id: string;
+            /** Track Id */
+            track_id: string;
+            /** Animal Id */
+            animal_id: string | null;
+            /**
+             * Association Status
+             * @enum {string}
+             */
+            association_status: "unassigned" | "associated" | "uncertain";
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Bbox */
+            bbox: number[];
+            /** Visibility */
+            visibility: number;
+            /** Event */
+            event: string;
+            /** Media Ref */
+            media_ref: string | null;
+            /** Source */
+            source: string;
+        };
+        /** ObservationSummary */
+        ObservationSummary: {
+            last: components["schemas"]["LastObservation"] | null;
+            /** Count */
+            count: number;
+            /** Cameras */
+            cameras: components["schemas"]["CameraSeen"][];
+        };
+        /** Passbook */
+        Passbook: {
+            /** Lines */
+            lines: components["schemas"]["PassbookLine"][];
+            summary: components["schemas"]["ExposureSummary"];
+        };
+        /** PassbookLine */
+        PassbookLine: {
+            /** No */
+            no: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "event" | "awaiting";
+            /** Event Type */
+            event_type: string;
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string | null;
+            actor: components["schemas"]["ActorRef"];
+            /** Amount Minor */
+            amount_minor: number | null;
+            /** Currency */
+            currency: string | null;
+            stamp: components["schemas"]["Stamp"] | null;
+            /** Action Id */
+            action_id: string | null;
+            /** Subject Type */
+            subject_type: string;
+            /** Subject Id */
+            subject_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "posted" | "awaiting" | "void";
+            /** Expires At */
+            expires_at: string | null;
+            /** Payload Hash Prefix */
+            payload_hash_prefix: string | null;
+        };
+        /** Passport */
+        Passport: {
+            animal: components["schemas"]["PassportAnimal"];
+            /** References */
+            references: components["schemas"]["ReferenceOut"][];
+            /** Estimates */
+            estimates: components["schemas"]["EstimateOut"][];
+            /** Valuations */
+            valuations: components["schemas"]["ValuationOut"][];
+            /** Policies */
+            policies: components["schemas"]["PolicyOut"][];
+            /** Applications */
+            applications: components["schemas"]["ApplicationOut"][];
+            observations: components["schemas"]["ObservationSummary"];
+            /** Alerts */
+            alerts: components["schemas"]["AlertOut"][];
+            /** Incidents */
+            incidents: components["schemas"]["IncidentOut"][];
+            /** Claims */
+            claims: components["schemas"]["ClaimOut"][];
+            /** Pending Actions */
+            pending_actions: components["schemas"]["PendingActionOut"][];
+            passbook: components["schemas"]["Passbook"];
+        };
+        /** PassportAnimal */
+        PassportAnimal: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Breed */
+            breed: string;
+            /** Breed Category */
+            breed_category: string;
+            /** Sex */
+            sex: string;
+            /** Identity Status */
+            identity_status: string;
+            age: components["schemas"]["RangeEstimate"] | null;
+            weight: components["schemas"]["RangeEstimate"] | null;
+            valuation: components["schemas"]["ValuationBrief"] | null;
+            coverage: components["schemas"]["Coverage"];
+            alerts: components["schemas"]["AlertCounts"];
+            last_observation: components["schemas"]["LastObservation"] | null;
+            /** Awaiting Approval Count */
+            awaiting_approval_count: number;
+            /** Birth Date */
+            birth_date: string | null;
+            /** Ownership Doc Refs */
+            ownership_doc_refs: string[];
+            /** Confirmed By */
+            confirmed_by: string | null;
+            /** Confirmed At */
+            confirmed_at: string | null;
+            /** Enrollment Id */
+            enrollment_id: string | null;
+        };
+        /** PendingActionOut */
+        PendingActionOut: {
+            /** Id */
+            id: string;
+            /** Action Type */
+            action_type: string;
+            /** Status */
+            status: string;
+            /** Version */
+            version: number;
+            /** Subject Type */
+            subject_type: string | null;
+            /** Subject Id */
+            subject_id: string | null;
+            /** Payload Hash */
+            payload_hash: string;
+            /** Amount Minor */
+            amount_minor: number | null;
+            /** Currency */
+            currency: string | null;
+            /** Rationale */
+            rationale: string | null;
+            proposed_by: components["schemas"]["ActorRef"];
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PolicyOut */
+        PolicyOut: {
+            /** Id */
+            id: string;
+            /** Application Id */
+            application_id: string | null;
+            /** Product Id */
+            product_id: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Provider Id */
+            provider_id: string;
+            /** Terms Version */
+            terms_version: string;
+            /** Insured Value Minor */
+            insured_value_minor: number;
+            /** Premium Minor */
+            premium_minor: number;
+            /** Deductible Minor */
+            deductible_minor: number;
+            /** Currency */
+            currency: string;
+            /** Status */
+            status: string;
+            /** Effective Date */
+            effective_date: string | null;
+            /** Expiry Date */
+            expiry_date: string | null;
+            /** Activation Receipt */
+            activation_receipt: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** QualitySummary */
+        QualitySummary: {
+            /** Observations */
+            observations: number;
+            /** Mean Visibility */
+            mean_visibility: number | null;
+            /** Low Visibility */
+            low_visibility: number;
+            /** Min Visibility */
+            min_visibility: number;
+            /** Open Quality Alerts */
+            open_quality_alerts: number;
+        };
+        /** RangeEstimate */
+        RangeEstimate: {
+            /** Range Low */
+            range_low: number | null;
+            /** Range High */
+            range_high: number | null;
+            /** Unit */
+            unit: string;
+            /** Source */
+            source: string;
+        };
+        /** ReferenceOut */
+        ReferenceOut: {
+            /** Id */
+            id: string;
+            /** View */
+            view: string;
+            /** Frame Time S */
+            frame_time_s: number | null;
+            /** Quality */
+            quality: {
+                [key: string]: unknown;
+            };
+            /** Media Url */
+            media_url: string | null;
+            /** Crop Url */
+            crop_url: string | null;
+        };
+        /** ReplayOut */
+        ReplayOut: {
+            /** Id */
+            id: string;
+            /** Scenario Id */
+            scenario_id: string;
+            /** Camera Id */
+            camera_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "finished" | "failed" | "stopped";
+            /** Speed */
+            speed: number;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Duration S */
+            duration_s: number;
+            /** Progress S */
+            progress_s: number;
+            /** Tracks */
+            tracks: components["schemas"]["TrackOut"][];
+            /** Alerts */
+            alerts: components["schemas"]["AlertView"][];
+        };
+        /** ReplayStarted */
+        ReplayStarted: {
+            /** Replay Id */
+            replay_id: string;
+            /** Scenario Id */
+            scenario_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "finished" | "failed" | "stopped";
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Speed */
+            speed: number;
+            /** Duration S */
+            duration_s: number;
         };
         /** ResetResult */
         ResetResult: {
@@ -130,6 +1707,145 @@ export interface components {
             /** Animals */
             animals: number;
         };
+        /** Scenario */
+        Scenario: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Description */
+            description: string;
+            /** Camera Id */
+            camera_id: string;
+            /** Camera Name */
+            camera_name: string | null;
+            /** Source */
+            source: string;
+            /** Duration S */
+            duration_s: number;
+            /** Fps */
+            fps: number;
+            /** Window S */
+            window_s: number;
+            /** Clip */
+            clip: string | null;
+            /** Tracks */
+            tracks: components["schemas"]["ScenarioTrack"][];
+        };
+        /** ScenarioEvent */
+        ScenarioEvent: {
+            /** T */
+            t: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "muzzle_match" | "track_lost";
+            /** Candidate Animal Id */
+            candidate_animal_id?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Quality */
+            quality?: number | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** ScenarioFrame */
+        ScenarioFrame: {
+            /** T */
+            t: number;
+            /** Bbox */
+            bbox: number[];
+            /** Visibility */
+            visibility: number;
+        };
+        /** ScenarioList */
+        ScenarioList: {
+            /** Scenarios */
+            scenarios: components["schemas"]["Scenario"][];
+            /** Cameras */
+            cameras: components["schemas"]["CameraOut"][];
+        };
+        /** ScenarioTrack */
+        ScenarioTrack: {
+            /** Track Key */
+            track_key: string;
+            /** Frames */
+            frames: components["schemas"]["ScenarioFrame"][];
+            /** Events */
+            events: components["schemas"]["ScenarioEvent"][];
+        };
+        /** Stamp */
+        Stamp: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "approved" | "declined" | "posted" | "failed" | "unknown" | "confirmed";
+            /** By */
+            by: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+        };
+        /** TrackOut */
+        TrackOut: {
+            /** Id */
+            id: string;
+            /** Replay Id */
+            replay_id: string | null;
+            /** Camera Id */
+            camera_id: string;
+            /** Track Key */
+            track_key: string;
+            /** Animal Id */
+            animal_id: string | null;
+            /** Animal Name */
+            animal_name: string | null;
+            /**
+             * Association Status
+             * @enum {string}
+             */
+            association_status: "unassigned" | "associated" | "uncertain";
+            /** Association Method */
+            association_method: string | null;
+            /** Association Evidence */
+            association_evidence: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * First Seen
+             * Format: date-time
+             */
+            first_seen: string;
+            /**
+             * Last Seen
+             * Format: date-time
+             */
+            last_seen: string;
+        };
+        /** TrackReview */
+        TrackReview: {
+            /**
+             * Animal Id
+             * @description The confirmed animal to associate, or null to unassign the track.
+             */
+            animal_id: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** UploadTarget */
+        UploadTarget: {
+            /**
+             * Method
+             * @constant
+             */
+            method: "PUT";
+            /** Url */
+            url: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -142,6 +1858,86 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ValuationBrief */
+        ValuationBrief: {
+            /** Value Low Minor */
+            value_low_minor: number;
+            /** Value High Minor */
+            value_high_minor: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Price Date
+             * Format: date
+             */
+            price_date: string;
+            /** Version */
+            version: number;
+        };
+        /** ValuationOut */
+        ValuationOut: {
+            /** Id */
+            id: string;
+            /** Version */
+            version: number;
+            /** Weight Low Kg */
+            weight_low_kg: number;
+            /** Weight High Kg */
+            weight_high_kg: number;
+            /** Weight Basis */
+            weight_basis: string;
+            /** Estimate Id */
+            estimate_id: string | null;
+            /** Unit Price Minor Per Kg */
+            unit_price_minor_per_kg: number;
+            /** Currency */
+            currency: string;
+            /** Price Source */
+            price_source: string;
+            /**
+             * Price Date
+             * Format: date
+             */
+            price_date: string;
+            /** Value Low Minor */
+            value_low_minor: number;
+            /** Value High Minor */
+            value_high_minor: number;
+            /** Confirmed By */
+            confirmed_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** ViewOut */
+        ViewOut: {
+            /** Frame Id */
+            frame_id: string | null;
+            /** Time S */
+            time_s: number | null;
+            /** Media Id */
+            media_id?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Crop Media Id */
+            crop_media_id?: string | null;
+            /** Crop Url */
+            crop_url?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** WhoAmI */
+        WhoAmI: {
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            farm: components["schemas"]["FarmRef"];
         };
     };
     responses: never;
@@ -170,6 +1966,652 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    whoami_api_v1_auth_whoami_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhoAmI"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    list_animals_api_v1_animals_get: {
+        parameters: {
+            query?: {
+                coverage?: ("none" | "active" | "pending") | null;
+                alerts?: "open" | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_passport_api_v1_animals__animal_id__passport_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Passport"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_audit_events_api_v1_audit_events_get: {
+        parameters: {
+            query?: {
+                animal_id?: string | null;
+                subject_type?: string | null;
+                subject_id?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditEventOut"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    list_enrollments_api_v1_enrollments_get: {
+        parameters: {
+            query?: {
+                status?: ("created" | "uploaded" | "processing" | "review" | "confirmed" | "rejected" | "failed") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    create_enrollment_api_v1_enrollments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EnrollmentCreate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentCreated"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_enrollment_api_v1_enrollments__enrollment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_video_api_v1_enrollments__enrollment_id__video_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_video_api_v1_enrollments__enrollment_id__video_put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    process_enrollment_api_v1_enrollments__enrollment_id__process_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobAccepted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    confirm_enrollment_api_v1_enrollments__enrollment_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    retry_enrollment_api_v1_enrollments__enrollment_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                enrollment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnrollmentCreated"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_job_api_v1_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -226,13 +2668,40 @@ export interface operations {
                     "application/json": components["schemas"]["ResetResult"];
                 };
             };
-            /** @description Validation Error */
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -253,6 +2722,24 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DemoSettingsOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -279,6 +2766,129 @@ export interface operations {
                     "application/json": components["schemas"]["DemoSettingsOut"];
                 };
             };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    list_scenarios_api_v1_demo_replays_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    start_replay_api_v1_demo_replays__scenario_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                scenario_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayStarted"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
             /** @description Validation Error */
             422: {
                 headers: {
@@ -286,6 +2896,461 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_replay_api_v1_replays__replay_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                replay_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cameras_api_v1_cameras_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    ingest_observation_api_v1_cameras__camera_id__observations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ObservationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ObservationIngested"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    animal_observations_api_v1_animals__animal_id__observations_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalObservations"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_track_api_v1_tracks__track_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                track_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TrackReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TrackOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    list_alerts_api_v1_alerts_get: {
+        parameters: {
+            query?: {
+                status?: ("open" | "acknowledged" | "resolved") | null;
+                kind?: ("reduced_movement" | "observation_quality") | null;
+                animal_id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_alert_api_v1_alerts__alert_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_alert_api_v1_alerts__alert_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AlertReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertView"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    query_api_v1_assistant_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantQuery"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantAnswer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
