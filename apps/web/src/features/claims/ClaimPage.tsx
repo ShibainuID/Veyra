@@ -1,8 +1,9 @@
+import { agentHref } from "../agent/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, FlaskConical, Send } from "lucide-react";
+import { ArrowLeft, FlaskConical, Send, Bot } from "lucide-react";
 import { useId } from "react";
 import { Link, useParams } from "react-router";
-import { Button } from "../../components/Button";
+import { Button, ButtonLink } from "../../components/Button";
 import { EarTag } from "../../components/EarTag";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { Money, Mono, Timestamp } from "../../components/figures";
@@ -248,6 +249,9 @@ export function ClaimPage() {
         actions={
           <>
             <StatusPill tone={status.tone} label={status.label} />
+            <ButtonLink to={agentHref(animal.id, isSubmitted(c.status) ? "track_claim" : "file_claim")} variant="secondary" icon={Bot}>
+              Help me with this claim
+            </ButtonLink>
             <Link to="/claims" className="inline-flex min-h-11 items-center gap-2 font-bold">
               <ArrowLeft aria-hidden="true" className="size-5" strokeWidth={2.25} />
               All claims
