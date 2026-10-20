@@ -5,18 +5,18 @@ import { PageHeader } from "../components/layout";
 import { Page } from "../pages/Page";
 import {
   AlertPage,
-  ApprovalsPage,
   AskPage,
   AuditPage,
-  ClaimPage,
-  ClaimsPage,
   EnrollPage,
   HerdPage,
-  InsurancePage,
   MonitorPage,
   NotFoundPage,
   PassportPage,
 } from "../pages/placeholders";
+import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
+import { ClaimPage } from "../features/claims/ClaimPage";
+import { ClaimsPage } from "../features/claims/ClaimsPage";
+import { InsurancePage } from "../features/insurance/InsurancePage";
 import { AppShell } from "./AppShell";
 
 function RouteError() {
