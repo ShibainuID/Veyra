@@ -1,0 +1,110 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "./components.css";
+
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scrollbar-color: var(--line-strong) var(--surface);
+    scroll-padding-top: calc(var(--shell-height) + var(--space-4));
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    caret-color: var(--ink);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background: var(--tag);
+    color: var(--ink);
+  }
+
+  a {
+    color: inherit;
+    text-underline-offset: 0.2em;
+    text-decoration-thickness: 2px;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  [data-surface="shell"] :focus-visible,
+  [data-surface="shell"]:focus-visible {
+    outline-color: var(--focus-on-shell);
+  }
+
+  input,
+  textarea,
+  select {
+    caret-color: var(--ink);
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: var(--radius-pill);
+    border: 3px solid var(--surface);
+  }
+
+  code,
+  kbd,
+  samp,
+  pre,
+  time,
+  .figures {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums slashed-zero;
+  }
+
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+
+  img,
+  svg,
+  video {
+    display: block;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
