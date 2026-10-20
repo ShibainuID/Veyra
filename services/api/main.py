@@ -28,6 +28,7 @@ from routes import (
 )
 from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
 from routes import gallery  # camera muzzle gallery sync
+from routes import agent_chat  # the in-app VEYRA agent conversations
 from workers.jobs import recover_interrupted
 
 API_PREFIX = "/api/v1"
@@ -48,6 +49,7 @@ ROUTERS = [
     valuations.router,
     insurance.router,
     agent.router,
+    agent_chat.router,
     wallet.router,
     incidents.router,
     claims.router,

@@ -305,6 +305,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/demo/claims/{claim_id}/insurer-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insurer Update
+         * @description Play the sandbox insurer's assessment of a submitted claim for the demo: record what the insurer reports
+         *     (`under_review`, `more_info_requested`, `approved` with an optional stated settlement, `declined`). Recorded as a
+         *     provider event labeled sandbox; VEYRA never decides a claim or pays it.
+         */
+        post: operations["insurer_update_api_v1_demo_claims__claim_id__insurer_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cameras/gallery/publish": {
         parameters: {
             query?: never;
@@ -748,6 +770,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Conversation
+         * @description Open a conversation about one animal with an intent: `find_insurance`, `file_claim`, or `track_claim`.
+         */
+        post: operations["start_conversation_api_v1_agent_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Message
+         * @description Send the farmer's turn (typed text, or one of the choices the agent offered) and get the agent's next turns.
+         *     `{"choice": {"key": "continue"}}` re-reads the records, for example after an approval.
+         */
+        post: operations["post_message_api_v1_agent_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_v1_agent_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wallet": {
         parameters: {
             query?: never;
@@ -988,6 +1068,62 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** AgentCard */
+        AgentCard: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "passport_summary" | "eligibility_questions" | "plan_comparison" | "recommendation" | "application_draft" | "action_review" | "status_steps" | "claim_checklist" | "missing_items" | "receipt" | "claim_status";
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** AgentChoice */
+        AgentChoice: {
+            /** Key */
+            key: string;
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Style
+             * @enum {string}
+             */
+            style: "primary" | "secondary" | "link";
+            /** Href */
+            href: string | null;
+        };
+        /** AgentMessageOut */
+        AgentMessageOut: {
+            /** Id */
+            id: string;
+            /** Seq */
+            seq: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "agent" | "user";
+            /** Text */
+            text: string;
+            /** Cards */
+            cards: components["schemas"]["AgentCard"][];
+            /** Choices */
+            choices: components["schemas"]["AgentChoice"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "live" | "simulated" | "user";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** AlertCounts */
         AlertCounts: {
@@ -1503,6 +1639,13 @@ export interface components {
             /** Detail */
             detail?: string | null;
         };
+        /** ChoicePick */
+        ChoicePick: {
+            /** Key */
+            key: string;
+            /** Value */
+            value?: string | null;
+        };
         /** ClaimDetail */
         ClaimDetail: {
             /** Id */
@@ -1561,6 +1704,8 @@ export interface components {
             identity_check_required: boolean;
             /** Identity Checks */
             identity_checks?: components["schemas"]["IdentityCheckOut"][];
+            /** Insurer Updates */
+            insurer_updates?: components["schemas"]["InsurerUpdateOut"][];
         };
         /** ClaimDraftRequest */
         ClaimDraftRequest: {
@@ -1647,6 +1792,65 @@ export interface components {
              * @description Required for `reject`.
              */
             reject_reason?: string | null;
+        };
+        /** ConversationAnimal */
+        ConversationAnimal: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Breed */
+            breed: string;
+            /** Identity Status */
+            identity_status: string;
+            /**
+             * Coverage Status
+             * @enum {string}
+             */
+            coverage_status: "active" | "pending" | "none";
+            /** Coverage Label */
+            coverage_label: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Policy Id */
+            policy_id: string | null;
+        };
+        /** ConversationCreate */
+        ConversationCreate: {
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "find_insurance" | "file_claim" | "track_claim";
+        };
+        /** ConversationOut */
+        ConversationOut: {
+            /** Id */
+            id: string;
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "find_insurance" | "file_claim" | "track_claim";
+            /** Animal Id */
+            animal_id: string;
+            animal: components["schemas"]["ConversationAnimal"];
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["AgentMessageOut"][];
         };
         /** Coverage */
         Coverage: {
@@ -2339,6 +2543,55 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * InsurerUpdateOut
+         * @description An assessment update the sandbox insurer reported; the settlement and disbursement are the insurer's words.
+         */
+        InsurerUpdateOut: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "under_review" | "more_info_requested" | "approved" | "declined";
+            /** Label */
+            label: string;
+            /** Note */
+            note: string | null;
+            /** Settlement Minor */
+            settlement_minor: number | null;
+            /** Currency */
+            currency: string;
+            /** Disbursement */
+            disbursement: ("scheduled" | "paid") | null;
+            /** Provider Id */
+            provider_id: string;
+            /**
+             * Source
+             * @constant
+             */
+            source: "sandbox";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** InsurerUpdateRequest */
+        InsurerUpdateRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "under_review" | "more_info_requested" | "approved" | "declined";
+            /** Note */
+            note?: string | null;
+            /** Settlement Minor */
+            settlement_minor?: number | null;
+            /** Disbursement */
+            disbursement?: ("scheduled" | "paid") | null;
+        };
         /** JobAccepted */
         JobAccepted: {
             /** Job Id */
@@ -2425,6 +2678,15 @@ export interface components {
             review_reasons: string[];
         } & {
             [key: string]: unknown;
+        };
+        /**
+         * MessageCreate
+         * @description Exactly one of `text` (the farmer's words, kept as data) or `choice` (one the agent offered).
+         */
+        MessageCreate: {
+            /** Text */
+            text?: string | null;
+            choice?: components["schemas"]["ChoicePick"] | null;
         };
         /**
          * ObservationIn
@@ -4336,6 +4598,77 @@ export interface operations {
             };
         };
     };
+    insurer_update_api_v1_demo_claims__claim_id__insurer_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InsurerUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     publish_gallery_api_v1_cameras_gallery_publish_post: {
         parameters: {
             query?: never;
@@ -5805,6 +6138,186 @@ export interface operations {
             };
             /** @description Conflict */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_conversation_api_v1_agent_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    post_message_api_v1_agent_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_conversation_api_v1_agent_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

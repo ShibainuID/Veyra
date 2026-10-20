@@ -1470,6 +1470,104 @@
         ]
       }
     },
+    "/api/v1/demo/claims/{claim_id}/insurer-update": {
+      "post": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Insurer Update",
+        "description": "Play the sandbox insurer's assessment of a submitted claim for the demo: record what the insurer reports\n(`under_review`, `more_info_requested`, `approved` with an optional stated settlement, `declined`). Recorded as a\nprovider event labeled sandbox; VEYRA never decides a claim or pays it.",
+        "operationId": "insurer_update_api_v1_demo_claims__claim_id__insurer_update_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsurerUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/cameras/gallery/publish": {
       "post": {
         "tags": [
@@ -3571,6 +3669,248 @@
         }
       }
     },
+    "/api/v1/agent/conversations": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Start Conversation",
+        "description": "Open a conversation about one animal with an intent: `find_insurance`, `file_claim`, or `track_claim`.",
+        "operationId": "start_conversation_api_v1_agent_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agent/conversations/{conversation_id}/messages": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Post Message",
+        "description": "Send the farmer's turn (typed text, or one of the choices the agent offered) and get the agent's next turns.\n`{\"choice\": {\"key\": \"continue\"}}` re-reads the records, for example after an approval.",
+        "operationId": "post_message_api_v1_agent_conversations__conversation_id__messages_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/agent/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "get_conversation_api_v1_agent_conversations__conversation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/wallet": {
       "get": {
         "tags": [
@@ -4701,6 +5041,154 @@
           "name"
         ],
         "title": "ActorRef"
+      },
+      "AgentCard": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "passport_summary",
+              "eligibility_questions",
+              "plan_comparison",
+              "recommendation",
+              "application_draft",
+              "action_review",
+              "status_steps",
+              "claim_checklist",
+              "missing_items",
+              "receipt",
+              "claim_status"
+            ],
+            "title": "Type"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "data"
+        ],
+        "title": "AgentCard"
+      },
+      "AgentChoice": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "link"
+            ],
+            "title": "Style"
+          },
+          "href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "label",
+          "style",
+          "href"
+        ],
+        "title": "AgentChoice"
+      },
+      "AgentMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "user"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/AgentCard"
+            },
+            "type": "array",
+            "title": "Cards"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/AgentChoice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "live",
+              "simulated",
+              "user"
+            ],
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "role",
+          "text",
+          "cards",
+          "choices",
+          "source",
+          "created_at"
+        ],
+        "title": "AgentMessageOut"
       },
       "AlertCounts": {
         "properties": {
@@ -6183,6 +6671,33 @@
         ],
         "title": "ChecklistItem"
       },
+      "ChoicePick": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Key"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "ChoicePick"
+      },
       "ClaimDetail": {
         "properties": {
           "id": {
@@ -6341,6 +6856,13 @@
             },
             "type": "array",
             "title": "Identity Checks"
+          },
+          "insurer_updates": {
+            "items": {
+              "$ref": "#/components/schemas/InsurerUpdateOut"
+            },
+            "type": "array",
+            "title": "Insurer Updates"
           }
         },
         "type": "object",
@@ -6600,6 +7122,154 @@
           "decision"
         ],
         "title": "ConfirmBody"
+      },
+      "ConversationAnimal": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "breed": {
+            "type": "string",
+            "title": "Breed"
+          },
+          "identity_status": {
+            "type": "string",
+            "title": "Identity Status"
+          },
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending",
+              "none"
+            ],
+            "title": "Coverage Status"
+          },
+          "coverage_label": {
+            "type": "string",
+            "title": "Coverage Label"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "breed",
+          "identity_status",
+          "coverage_status",
+          "coverage_label",
+          "product_name",
+          "policy_id"
+        ],
+        "title": "ConversationAnimal"
+      },
+      "ConversationCreate": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Animal Id"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "find_insurance",
+              "file_claim",
+              "track_claim"
+            ],
+            "title": "Intent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id",
+          "intent"
+        ],
+        "title": "ConversationCreate"
+      },
+      "ConversationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "find_insurance",
+              "file_claim",
+              "track_claim"
+            ],
+            "title": "Intent"
+          },
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "animal": {
+            "$ref": "#/components/schemas/ConversationAnimal"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/AgentMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "intent",
+          "animal_id",
+          "animal",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "messages"
+        ],
+        "title": "ConversationOut"
       },
       "Coverage": {
         "properties": {
@@ -8700,6 +9370,156 @@
         ],
         "title": "IncidentRequest"
       },
+      "InsurerUpdateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "under_review",
+              "more_info_requested",
+              "approved",
+              "declined"
+            ],
+            "title": "Status"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "settlement_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "disbursement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "paid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disbursement"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "source": {
+            "type": "string",
+            "const": "sandbox",
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "label",
+          "note",
+          "settlement_minor",
+          "currency",
+          "disbursement",
+          "provider_id",
+          "source",
+          "created_at"
+        ],
+        "title": "InsurerUpdateOut",
+        "description": "An assessment update the sandbox insurer reported; the settlement and disbursement are the insurer's words."
+      },
+      "InsurerUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "under_review",
+              "more_info_requested",
+              "approved",
+              "declined"
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "settlement_minor": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Minor"
+          },
+          "disbursement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "paid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disbursement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "InsurerUpdateRequest"
+      },
       "JobAccepted": {
         "properties": {
           "job_id": {
@@ -8917,6 +9737,35 @@
         "additionalProperties": true,
         "type": "object",
         "title": "Manifest"
+      },
+      "MessageCreate": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChoicePick"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MessageCreate",
+        "description": "Exactly one of `text` (the farmer's words, kept as data) or `choice` (one the agent offered)."
       },
       "ObservationIn": {
         "properties": {

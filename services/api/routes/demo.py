@@ -1,5 +1,7 @@
 """Demo controls: reset to a scenario and the sandbox provider switches (plan Section 5: `/demo/*`).
 
+`POST /demo/claims/{id}/insurer-update` (managers) plays the sandbox insurer's assessment of a submitted claim.
+
 Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on; that check runs before auth. Reset (which reseeds every farm)
 needs a manager of the demo farm; changing the settings needs a manager; any signed-in user may read their farm's
 settings.
@@ -15,7 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from config import get_settings
-from domain import clock
+from domain import claims, clock, insurer_updates
 from domain.auth import APPROVERS, Principal
 from domain.errors import DomainError
 from persistence.db import get_read_session, get_session
@@ -23,6 +25,7 @@ from persistence.models import DemoSettings
 from persistence.seed import DEMO_FARM_ID, reset_database
 from routes.deps import current_principal, require_roles
 from schemas import error_responses
+from schemas_finance import ClaimDetail, InsurerUpdateRequest
 
 Scenario = Literal["fresh", "post-enrollment"]
 PaymentMode = Literal["succeed", "fail", "timeout"]
@@ -125,3 +128,15 @@ def put_demo_settings(body: DemoSettingsUpdate, principal: Principal = Depends(r
     row.updated_at = clock.now()
     session.commit()
     return _out(row)
+
+
+@router.post("/claims/{claim_id}/insurer-update", response_model=ClaimDetail,
+             responses=error_responses(401, 403, 404, 409, 422))
+def insurer_update(claim_id: str, body: InsurerUpdateRequest, principal: Principal = Depends(require_roles(*APPROVERS)),
+                   session: Session = Depends(get_session)) -> dict:
+    """Play the sandbox insurer's assessment of a submitted claim for the demo: record what the insurer reports
+    (`under_review`, `more_info_requested`, `approved` with an optional stated settlement, `declined`). Recorded as a
+    provider event labeled sandbox; VEYRA never decides a claim or pays it."""
+    insurer_updates.record_update(session, principal, claim_id, **body.model_dump())
+    session.commit()
+    return claims.claim_view(session, claims.farm_claim(session, principal.farm_id, claim_id))

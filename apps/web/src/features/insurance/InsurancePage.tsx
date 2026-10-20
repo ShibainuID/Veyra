@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, FileSignature, Lock, ShieldAlert } from "lucide-react";
+import { ArrowLeft, ArrowRight, FileSignature, Lock, ShieldAlert, Bot } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { Button, ButtonLink } from "../../components/Button";
+import { agentHref } from "../agent/api";
 import { EarTag } from "../../components/EarTag";
 import { EmptyState, ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { Money, Mono } from "../../components/figures";
@@ -195,10 +196,15 @@ export function InsurancePage() {
           </>
         }
         actions={
+          <>
+            <ButtonLink to={agentHref(animal.id, "find_insurance")} variant="primary" icon={Bot}>
+              Ask the VEYRA agent
+            </ButtonLink>
           <Link to={`/animals/${animal.id}`} className="inline-flex min-h-11 items-center gap-2 font-bold">
             <ArrowLeft aria-hidden="true" className="size-5" strokeWidth={2.25} />
             Back to the passport
           </Link>
+          </>
         }
       />
 
