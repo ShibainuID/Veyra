@@ -202,7 +202,7 @@ def _passport(out: _Answer, card: dict) -> None:
     valuation = card.get("valuation")
     if valuation:
         value = (f"{_money(valuation['value_low_minor'], valuation['currency'])}–"
-                 f"{_money(valuation['value_high_minor'], valuation['currency'])}")
+                 f"{_money(valuation['value_high_minor'], None)}")
         text += f" Indicative value {value} (valuation v{valuation['version']})."
         out.facts.append(_fact("Indicative value", value, "animal", card["id"]))
     else:
