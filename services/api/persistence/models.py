@@ -50,7 +50,8 @@ def _status_check(column: str, values: tuple[str, ...], name: str) -> CheckConst
     return CheckConstraint(f"{column} IN ({quoted})", name=name)
 
 
-ROLES = ("manager", "operator", "veterinarian", "assessor")
+# `service` is the camera worker identity for internal observation ingestion (PRD Section 6).
+ROLES = ("manager", "operator", "veterinarian", "assessor", "service")
 SOURCES = ("live", "prototype", "simulated", "documented", "measured", "manual")
 
 
@@ -202,6 +203,87 @@ class Camera(Base):
     created_at: Mapped[datetime] = _created()
 
 
+class CameraZone(Base):
+    """An area the farmer marks in the camera view. A `scan` zone is where a scanned animal hands its identity to a track."""
+
+    __tablename__ = "camera_zones"
+    __table_args__ = (_status_check("kind", ("scan",), "ck_camera_zones_kind"),)
+    id: Mapped[uuid.UUID] = _id()
+    farm_id: Mapped[uuid.UUID] = _fk("farms")
+    camera_id: Mapped[uuid.UUID] = _fk("cameras")
+    name: Mapped[str] = mapped_column(String(100))
+    kind: Mapped[str] = mapped_column(String(20), default="scan")
+    # Polygon in normalised image coordinates: [[x, y], ...] with 0 <= x, y <= 1.
+    polygon: Mapped[list] = mapped_column(JSONB)
+    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
+    created_at: Mapped[datetime] = _created()
+
+
+class CameraRecording(Base):
+    """One stretch of camera footage (or worker-supplied tracks) processed into tracks, links, and observations."""
+
+    __tablename__ = "camera_recordings"
+    __table_args__ = (
+        _status_check("status", ("uploaded", "processing", "processed", "failed"), "ck_camera_recordings_status"),
+        _status_check("source", SOURCES, "ck_camera_recordings_source"),
+    )
+    id: Mapped[uuid.UUID] = _id()
+    farm_id: Mapped[uuid.UUID] = _fk("farms")
+    camera_id: Mapped[uuid.UUID] = _fk("cameras")
+    video_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
+    tracks_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    duration_s: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    status: Mapped[str] = mapped_column(String(20), default="uploaded")
+    source: Mapped[str] = mapped_column(String(20))
+    scenario: Mapped[str | None] = mapped_column(String(50))
+    job_id: Mapped[uuid.UUID | None] = _fk("jobs", nullable=True, index=False)
+    summary: Mapped[dict | None] = mapped_column(JSONB)
+    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
+    created_at: Mapped[datetime] = _created()
+
+
+class ZoneScan(Base):
+    """A confirmed animal scanned in a scan zone at a known time: the identity evidence a track can inherit."""
+
+    __tablename__ = "zone_scans"
+    id: Mapped[uuid.UUID] = _id()
+    farm_id: Mapped[uuid.UUID] = _fk("farms")
+    camera_id: Mapped[uuid.UUID] = _fk("cameras")
+    zone_id: Mapped[uuid.UUID] = _fk("camera_zones", index=False)
+    animal_id: Mapped[uuid.UUID] = _fk("animals")
+    enrollment_id: Mapped[uuid.UUID | None] = _fk("enrollments", nullable=True, index=False)
+    scanned_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_by: Mapped[uuid.UUID] = _fk("users", index=False)
+    created_at: Mapped[datetime] = _created()
+
+
+class TrackLink(Base):
+    """Outcome of one scan handoff in one recording. Only `confirmed` links attach observations to an animal."""
+
+    __tablename__ = "track_links"
+    __table_args__ = (
+        _status_check("status", ("confirmed", "uncertain", "unresolved"), "ck_track_links_status"),
+        UniqueConstraint("recording_id", "scan_id", name="uq_track_links_recording_scan"),
+    )
+    id: Mapped[uuid.UUID] = _id()
+    farm_id: Mapped[uuid.UUID] = _fk("farms")
+    camera_id: Mapped[uuid.UUID] = _fk("cameras", index=False)
+    recording_id: Mapped[uuid.UUID] = _fk("camera_recordings")
+    scan_id: Mapped[uuid.UUID] = _fk("zone_scans", index=False)
+    animal_id: Mapped[uuid.UUID] = _fk("animals")
+    track_id: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(20))
+    reason: Mapped[str | None] = mapped_column(String(100))
+    policy_version: Mapped[str] = mapped_column(String(50))
+    linked_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # When the continuity policy stopped trusting the track (crowding, loss); null means it held to the end.
+    linked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    release_reason: Mapped[str | None] = mapped_column(String(100))
+    details: Mapped[dict] = mapped_column(JSONB, default=dict)
+    created_at: Mapped[datetime] = _created()
+
+
 class Observation(Base):
     __tablename__ = "observations"
     __table_args__ = (
@@ -212,11 +294,15 @@ class Observation(Base):
     id: Mapped[uuid.UUID] = _id()
     farm_id: Mapped[uuid.UUID] = _fk("farms")
     camera_id: Mapped[uuid.UUID] = _fk("cameras")
+    recording_id: Mapped[uuid.UUID | None] = _fk("camera_recordings", nullable=True)
+    track_link_id: Mapped[uuid.UUID | None] = _fk("track_links", nullable=True, index=False)
     track_id: Mapped[str] = mapped_column(String(100))
     animal_id: Mapped[uuid.UUID | None] = _fk("animals", nullable=True, index=False)
     association_status: Mapped[str] = mapped_column(String(20), default="unassociated")
+    # Start of the observation window.
     observed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     window_seconds: Mapped[float] = mapped_column(Numeric(8, 2))
+    # Body diagonals moved per visible minute; see domain/tracks.py.
     movement_score: Mapped[float | None] = mapped_column(Numeric(10, 4))
     quality: Mapped[dict] = mapped_column(JSONB, default=dict)
     media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True, index=False)
@@ -225,6 +311,8 @@ class Observation(Base):
 
 
 class Alert(Base):
+    """An observation alert asks for inspection. It is not a diagnosis and cannot by itself start a claim."""
+
     __tablename__ = "alerts"
     __table_args__ = (
         _status_check("kind", ("reduced_movement", "observation_quality"), "ck_alerts_kind"),
@@ -242,6 +330,25 @@ class Alert(Base):
     status: Mapped[str] = mapped_column(String(20), default="open")
     review_notes: Mapped[str | None] = mapped_column(Text)
     reviewed_by: Mapped[uuid.UUID | None] = _fk("users", nullable=True, index=False)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Professional findings from a veterinarian, kept apart from the camera observation.
+    assessment: Mapped[dict | None] = mapped_column(JSONB)
+    source: Mapped[str] = mapped_column(String(20), default="prototype")
+    created_at: Mapped[datetime] = _created()
+
+
+class EvidencePack(Base):
+    """Versioned evidence manifest for an alert. Approvals and claims bind to (`version`, `manifest_sha256`)."""
+
+    __tablename__ = "evidence_packs"
+    __table_args__ = (UniqueConstraint("alert_id", "version", name="uq_evidence_packs_alert_version"),)
+    id: Mapped[uuid.UUID] = _id()
+    farm_id: Mapped[uuid.UUID] = _fk("farms")
+    animal_id: Mapped[uuid.UUID] = _fk("animals")
+    alert_id: Mapped[uuid.UUID] = _fk("alerts")
+    version: Mapped[int] = mapped_column(Integer)
+    manifest: Mapped[dict] = mapped_column(JSONB)
+    manifest_sha256: Mapped[str] = mapped_column(String(64))
     created_at: Mapped[datetime] = _created()
 
 
