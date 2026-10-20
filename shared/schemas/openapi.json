@@ -1320,6 +1320,7 @@
           "monitoring"
         ],
         "summary": "Start Replay",
+        "description": "202 while a threaded replay runs; 200 with the final status once a speed-0 replay has already finished.",
         "operationId": "start_replay_api_v1_demo_replays__scenario_id__start_post",
         "security": [
           {
@@ -1340,6 +1341,16 @@
         "responses": {
           "202": {
             "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayStarted"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Replay already ran to completion (speed 0).",
             "content": {
               "application/json": {
                 "schema": {
@@ -8827,6 +8838,11 @@
             ],
             "title": "Finished At"
           },
+          "anchor_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Anchor At"
+          },
           "duration_s": {
             "type": "number",
             "title": "Duration S"
@@ -8859,6 +8875,7 @@
           "speed",
           "started_at",
           "finished_at",
+          "anchor_at",
           "duration_s",
           "progress_s",
           "tracks",
@@ -8891,6 +8908,12 @@
             "format": "date-time",
             "title": "Started At"
           },
+          "anchor_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Anchor At",
+            "description": "Observation time of scenario t=0: replays are footage ending by now."
+          },
           "speed": {
             "type": "number",
             "title": "Speed"
@@ -8906,6 +8929,7 @@
           "scenario_id",
           "status",
           "started_at",
+          "anchor_at",
           "speed",
           "duration_s"
         ],
