@@ -34,16 +34,18 @@ import { CameraStage } from "./CameraStage";
 import "./monitor.css";
 import { boxAt, type TrackEvent } from "./interpolate";
 import { PenMap, type LivePosition } from "./PenMap";
-import { identityAt } from "./track-state";
+import { identityAt, identityContext } from "./track-state";
 import { TracksPanel } from "./TracksPanel";
-import { useReplayClock } from "./use-replay-clock";
+import { LOCAL_RATE, useReplayClock } from "./use-replay-clock";
 
 const SCENARIO_LABEL: Record<string, string> = {
   healthy: "Healthy replay",
   anomaly: "Reduced-movement replay",
   lost_identity: "Lost identity replay",
+  crowded_scan: "Crowded scan replay",
+  veo_barn: "Pen A camera footage",
 };
-const SCENARIO_ORDER = ["healthy", "anomaly", "lost_identity"];
+const SCENARIO_ORDER = ["healthy", "anomaly", "lost_identity", "crowded_scan", "veo_barn"];
 
 function scenarioLabel(s: Scenario): string {
   return SCENARIO_LABEL[s.id] ?? s.label;
@@ -77,7 +79,7 @@ function ScenarioPicker({
               <input type="radio" name={name} value={s.id} checked={checked} onChange={() => onChange(s.id)} className="sr-only" />
               <span className="font-bold">{scenarioLabel(s)}</span>
               <span className={cn("text-sm", checked ? "text-on-shell-muted" : "text-muted")}>
-                Recorded scenario · {s.source}
+                {s.footage ? "Camera footage" : "Recorded scenario"} · {s.source}
               </span>
             </label>
           );
@@ -127,7 +129,8 @@ export function MonitorScreen() {
     (replay ? visibleScenarios.find((s) => s.id === replay.scenario_id) : undefined) ??
     visibleScenarios[0];
   const scenarioReplay = replay && scenario && replay.scenario_id === scenario.id ? replay : undefined;
-  const clock = useReplayClock(scenarioReplay, scenario?.duration_s ?? 0);
+  // A scenario with footage plays back in real time, so the clip and the overlay share one clock.
+  const clock = useReplayClock(scenarioReplay, scenario?.duration_s ?? 0, scenario?.clip ? 1 : LOCAL_RATE);
   const camera = cameras.find((c) => c.id === scenario?.camera_id);
 
   // A replay that no longer exists (a demo reset) is forgotten.
@@ -174,14 +177,26 @@ export function MonitorScreen() {
     },
   });
 
-  const animals = animalsQuery.data?.items ?? [];
+  const animals = useMemo(() => animalsQuery.data?.items ?? [], [animalsQuery.data]);
+  const context = useMemo(() => identityContext(scenarioReplay, animals), [scenarioReplay, animals]);
+
+  // Footage plays on its own once the server replay settles, so the clip and its overlay run together.
+  const autoPlayed = useRef<string | null>(null);
+  const { play } = clock;
+  useEffect(() => {
+    if (!scenario?.clip || !scenarioReplay || scenarioReplay.status !== "finished") return;
+    if (autoPlayed.current === scenarioReplay.id) return;
+    autoPlayed.current = scenarioReplay.id;
+    play();
+  }, [scenario?.clip, scenarioReplay, play]);
+
   const livePositions: LivePosition[] = useMemo(() => {
     if (!scenarioReplay || !scenario) return [];
     const server = new Map(scenarioReplay.tracks.map((t) => [t.track_key, t]));
     return scenario.tracks.flatMap((st) => {
       const box = boxAt(st.frames, clock.t, st.events as TrackEvent[]);
       if (!box) return [];
-      const identity = identityAt(st, server.get(st.track_key), clock.t);
+      const identity = identityAt(st, server.get(st.track_key), clock.t, context);
       return [
         {
           key: st.track_key,
@@ -192,7 +207,7 @@ export function MonitorScreen() {
         },
       ];
     });
-  }, [scenarioReplay, scenario, clock.t]);
+  }, [scenarioReplay, scenario, clock.t, context]);
 
   const feed = useMemo(() => {
     const byId = new Map<string, AlertView>();
@@ -292,7 +307,7 @@ export function MonitorScreen() {
         <div className="flex min-w-0 flex-col gap-4">
           {scenario && (
             <p className="flex flex-wrap items-center gap-2 text-muted">
-              <Provenance source="simulated" />
+              <Provenance source={scenario.source === "prototype" ? "prototype" : "simulated"} />
               <span className="min-w-0">{scenario.description}</span>
             </p>
           )}
@@ -302,6 +317,7 @@ export function MonitorScreen() {
             clock={clock}
             selectedAnimalId={selectedAnimalId}
             cameraName={camera?.name ?? scenario?.camera_name ?? null}
+            animals={animals}
           />
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -318,7 +334,7 @@ export function MonitorScreen() {
                 type="range"
                 min={0}
                 max={duration}
-                step={0.5}
+                step={scenario?.clip ? 0.1 : 0.5}
                 value={Math.min(duration, clock.t)}
                 disabled={!scenarioReplay || live}
                 onChange={(e) => clock.seek(Number(e.target.value))}

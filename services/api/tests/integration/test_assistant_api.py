@@ -1,4 +1,4 @@
-"""The scripted assistant queries plus the missing-evidence query, offline (PRD verification)."""
+"""The scripted assistant queries plus the missing-evidence query, offline."""
 
 import pytest
 

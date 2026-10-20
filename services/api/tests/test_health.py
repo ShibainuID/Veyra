@@ -8,7 +8,7 @@ def test_health_reports_perception_and_llm(client):
     assert body["perception"]["mode"] == "fixture"
     assert set(body["perception"]["capabilities"]) == {"video", "muzzle", "weight", "age"}
     assert body["perception"]["capabilities"]["age"] is True
-    assert body["llm"] == {"mode": "offline", "model": "claude-opus-5-5"}
+    assert body["llm"] == {"mode": "offline", "provider": "anthropic", "model": "claude-opus-5-5"}
 
 
 def test_health_reports_effective_capabilities_for_the_mode(client):

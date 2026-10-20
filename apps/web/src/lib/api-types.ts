@@ -72,6 +72,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/animals/{animal_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_animals__animal_id__documents_get"];
+        put?: never;
+        /**
+         * Add Document
+         * @description Keep a document on the passport. An `ownership` document also becomes the animal's ownership reference,
+         *     which the Mortality + Theft eligibility rule reads.
+         */
+        post: operations["add_document_api_v1_animals__animal_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -226,6 +248,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/demo/footage/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Footage
+         * @description Stream one of the demo's AI-generated clips (read-only, demo mode only, no sign-in: a `<video>` element
+         *     cannot send a bearer token, and these clips hold no farm data). Unknown names are 404; so is a clip whose Git LFS
+         *     content was never pulled.
+         */
+        get: operations["footage_api_v1_demo_footage__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/demo/reset": {
         parameters: {
             query?: never;
@@ -255,6 +299,79 @@ export interface paths {
         /** Put Demo Settings */
         put: operations["put_demo_settings_api_v1_demo_settings_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/demo/claims/{claim_id}/insurer-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Insurer Update
+         * @description Play the sandbox insurer's assessment of a submitted claim for the demo: record what the insurer reports
+         *     (`under_review`, `more_info_requested`, `approved` with an optional stated settlement, `declined`). Recorded as a
+         *     provider event labeled sandbox; VEYRA never decides a claim or pays it.
+         */
+        post: operations["insurer_update_api_v1_demo_claims__claim_id__insurer_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/gallery/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Gallery */
+        post: operations["publish_gallery_api_v1_cameras_gallery_publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{camera_id}/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Camera Gallery */
+        get: operations["camera_gallery_api_v1_cameras__camera_id__gallery_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{camera_id}/gallery/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge Gallery */
+        post: operations["acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -341,7 +458,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ingest Observation */
+        /**
+         * Ingest Observation
+         * @description A track observation, or a `zone_scan`: a muzzle scan in the camera's scan zone, handed to the one track inside
+         *     the zone (`handoff` says what happened; `observation` and `track` are null unless exactly one track was there).
+         */
         post: operations["ingest_observation_api_v1_cameras__camera_id__observations_post"];
         delete?: never;
         options?: never;
@@ -649,6 +770,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/agent/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start Conversation
+         * @description Open a conversation about one animal with an intent: `find_insurance`, `file_claim`, or `track_claim`.
+         */
+        post: operations["start_conversation_api_v1_agent_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Message
+         * @description Send the farmer's turn (typed text, or one of the choices the agent offered) and get the agent's next turns.
+         *     `{"choice": {"key": "continue"}}` re-reads the records, for example after an approval.
+         */
+        post: operations["post_message_api_v1_agent_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Conversation */
+        get: operations["get_conversation_api_v1_agent_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/wallet": {
         parameters: {
             query?: never;
@@ -770,6 +949,26 @@ export interface paths {
         patch: operations["patch_claim_api_v1_claims__claim_id__patch"];
         trace?: never;
     };
+    "/api/v1/claims/{claim_id}/identity-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Identity
+         * @description Compare a muzzle re-scan of the claimed animal with its enrolled references; a death claim needs a match.
+         */
+        post: operations["check_identity_api_v1_claims__claim_id__identity_checks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -869,6 +1068,62 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+        };
+        /** AgentCard */
+        AgentCard: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "passport_summary" | "eligibility_questions" | "plan_comparison" | "recommendation" | "application_draft" | "action_review" | "status_steps" | "claim_checklist" | "missing_items" | "receipt" | "claim_status";
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+        };
+        /** AgentChoice */
+        AgentChoice: {
+            /** Key */
+            key: string;
+            /** Value */
+            value: string | null;
+            /** Label */
+            label: string;
+            /**
+             * Style
+             * @enum {string}
+             */
+            style: "primary" | "secondary" | "link";
+            /** Href */
+            href: string | null;
+        };
+        /** AgentMessageOut */
+        AgentMessageOut: {
+            /** Id */
+            id: string;
+            /** Seq */
+            seq: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "agent" | "user";
+            /** Text */
+            text: string;
+            /** Cards */
+            cards: components["schemas"]["AgentCard"][];
+            /** Choices */
+            choices: components["schemas"]["AgentChoice"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "live" | "simulated" | "user";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** AlertCounts */
         AlertCounts: {
@@ -1000,6 +1255,45 @@ export interface components {
              * Format: date-time
              */
             updated_at: string;
+        };
+        /** AnimalDocumentList */
+        AnimalDocumentList: {
+            /** Items */
+            items: components["schemas"]["AnimalDocumentOut"][];
+        };
+        /**
+         * AnimalDocumentOut
+         * @description A file on the passport. `url` is a signed, expiring download link; documents download as attachments.
+         */
+        AnimalDocumentOut: {
+            /** Id */
+            id: string;
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ownership" | "purchase_receipt" | "vet_record" | "other";
+            /** Title */
+            title: string;
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Bytes */
+            bytes: number;
+            /** Sha256 */
+            sha256: string;
+            /** Url */
+            url: string;
+            /** Uploaded By */
+            uploaded_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
         };
         /** AnimalIn */
         AnimalIn: {
@@ -1201,10 +1495,59 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** Body_add_document_api_v1_animals__animal_id__documents_post */
+        Body_add_document_api_v1_animals__animal_id__documents_post: {
+            /**
+             * File
+             * @description A PDF, JPEG, or PNG, up to 10 MB.
+             */
+            file: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ownership" | "purchase_receipt" | "vet_record" | "other";
+            /** Title */
+            title?: string | null;
+        };
         /** Body_upload_video_api_v1_enrollments__enrollment_id__video_put */
         Body_upload_video_api_v1_enrollments__enrollment_id__video_put: {
             /** File */
             file: string;
+        };
+        /** CameraGallery */
+        CameraGallery: {
+            /** Camera Id */
+            camera_id: string;
+            /** Farm Id */
+            farm_id: string;
+            /** Version */
+            version: number;
+            /** Updated At */
+            updated_at: string | null;
+            /** Animals */
+            animals: components["schemas"]["GalleryAnimal"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+        };
+        /**
+         * CameraGalleryStatus
+         * @description Whether this camera holds the farm's current muzzle gallery (`domain.gallery`).
+         */
+        CameraGalleryStatus: {
+            /** Current Version */
+            current_version: number;
+            /** Synced Version */
+            synced_version: number | null;
+            /** Synced At */
+            synced_at: string | null;
+            /** In Sync */
+            in_sync: boolean;
+            /** Source */
+            source?: ("prototype" | "simulated") | null;
         };
         /** CameraLastObservation */
         CameraLastObservation: {
@@ -1248,7 +1591,10 @@ export interface components {
             map_x: number;
             /** Map Y */
             map_y: number;
+            /** @description The calibrated scan zone, if the camera has one. */
+            scan_zone?: components["schemas"]["ScanZone"] | null;
             last_observation: components["schemas"]["CameraLastObservation"] | null;
+            gallery?: components["schemas"]["CameraGalleryStatus"] | null;
         };
         /** CameraSeen */
         CameraSeen: {
@@ -1292,6 +1638,13 @@ export interface components {
             ref: string | null;
             /** Detail */
             detail?: string | null;
+        };
+        /** ChoicePick */
+        ChoicePick: {
+            /** Key */
+            key: string;
+            /** Value */
+            value?: string | null;
         };
         /** ClaimDetail */
         ClaimDetail: {
@@ -1342,6 +1695,17 @@ export interface components {
             /** Product Id */
             product_id: string | null;
             illustrative_payout: components["schemas"]["IllustrativePayout"] | null;
+            /** Incident Kind */
+            incident_kind?: string | null;
+            /**
+             * Identity Check Required
+             * @default false
+             */
+            identity_check_required: boolean;
+            /** Identity Checks */
+            identity_checks?: components["schemas"]["IdentityCheckOut"][];
+            /** Insurer Updates */
+            insurer_updates?: components["schemas"]["InsurerUpdateOut"][];
         };
         /** ClaimDraftRequest */
         ClaimDraftRequest: {
@@ -1428,6 +1792,65 @@ export interface components {
              * @description Required for `reject`.
              */
             reject_reason?: string | null;
+        };
+        /** ConversationAnimal */
+        ConversationAnimal: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Breed */
+            breed: string;
+            /** Identity Status */
+            identity_status: string;
+            /**
+             * Coverage Status
+             * @enum {string}
+             */
+            coverage_status: "active" | "pending" | "none";
+            /** Coverage Label */
+            coverage_label: string;
+            /** Product Name */
+            product_name: string | null;
+            /** Policy Id */
+            policy_id: string | null;
+        };
+        /** ConversationCreate */
+        ConversationCreate: {
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "find_insurance" | "file_claim" | "track_claim";
+        };
+        /** ConversationOut */
+        ConversationOut: {
+            /** Id */
+            id: string;
+            /**
+             * Intent
+             * @enum {string}
+             */
+            intent: "find_insurance" | "file_claim" | "track_claim";
+            /** Animal Id */
+            animal_id: string;
+            animal: components["schemas"]["ConversationAnimal"];
+            /** Created By */
+            created_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Messages */
+            messages: components["schemas"]["AgentMessageOut"][];
         };
         /** Coverage */
         Coverage: {
@@ -1785,6 +2208,69 @@ export interface components {
              */
             finding_type: "vet_assessment" | "vet_health_record";
         };
+        /** GalleryAck */
+        GalleryAck: {
+            /** Version */
+            version: number;
+        };
+        /** GalleryAckOut */
+        GalleryAckOut: {
+            /** Camera Id */
+            camera_id: string;
+            gallery: components["schemas"]["CameraGalleryStatus"];
+        };
+        /** GalleryAnimal */
+        GalleryAnimal: {
+            /** Animal Id */
+            animal_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Identity Status
+             * @enum {string}
+             */
+            identity_status: "confirmed" | "pending_review";
+            /** References */
+            references: components["schemas"]["GalleryReference"][];
+        };
+        /** GalleryPublishOut */
+        GalleryPublishOut: {
+            /** Version */
+            version: number;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Acknowledged */
+            acknowledged: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+            /** Cameras */
+            cameras: {
+                [key: string]: components["schemas"]["CameraGalleryStatus"];
+            };
+        };
+        /** GalleryReference */
+        GalleryReference: {
+            /** Reference Id */
+            reference_id: string;
+            /**
+             * View
+             * @constant
+             */
+            view: "muzzle";
+            /** Media Url */
+            media_url: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1852,6 +2338,92 @@ export interface components {
             possible_duplicate: boolean;
         } & {
             [key: string]: unknown;
+        };
+        /** IdentityCandidate */
+        IdentityCandidate: {
+            /** Animal Id */
+            animal_id: string | null;
+            /** Animal Name */
+            animal_name?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Cosine */
+            cosine?: number | null;
+        };
+        /** IdentityCheckOut */
+        IdentityCheckOut: {
+            /** Id */
+            id: string;
+            /** Claim Id */
+            claim_id: string;
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "match" | "mismatch" | "uncertain";
+            /** Reason */
+            reason: string | null;
+            /** Matched Animal Id */
+            matched_animal_id: string | null;
+            /** Matched Animal Name */
+            matched_animal_name: string | null;
+            /** Candidates */
+            candidates: components["schemas"]["IdentityCandidate"][];
+            /** Inliers */
+            inliers: number | null;
+            /** Accept Inliers */
+            accept_inliers: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+            /** Method Version */
+            method_version: string;
+            /** Input */
+            input: ("photo" | "video" | "sample") | null;
+            /** Fallback */
+            fallback?: {
+                [key: string]: unknown;
+            } | null;
+            /** Checked By */
+            checked_by: string;
+            /** Checked By Name */
+            checked_by_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            scan: components["schemas"]["IdentityScan"];
+            reference: components["schemas"]["IdentityReference"] | null;
+        };
+        /** IdentityCheckResult */
+        IdentityCheckResult: {
+            check: components["schemas"]["IdentityCheckOut"];
+            claim: components["schemas"]["ClaimDetail"];
+        };
+        /** IdentityReference */
+        IdentityReference: {
+            /** Reference Id */
+            reference_id: string;
+            /** Crop Url */
+            crop_url: string | null;
+            /** Frame Url */
+            frame_url: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** IdentityScan */
+        IdentityScan: {
+            /** Media Url */
+            media_url: string | null;
+            /** Content Type */
+            content_type: string | null;
+            /** Crop Url */
+            crop_url: string | null;
         };
         /** IllustrativePayout */
         IllustrativePayout: {
@@ -1971,6 +2543,55 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * InsurerUpdateOut
+         * @description An assessment update the sandbox insurer reported; the settlement and disbursement are the insurer's words.
+         */
+        InsurerUpdateOut: {
+            /** Id */
+            id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "under_review" | "more_info_requested" | "approved" | "declined";
+            /** Label */
+            label: string;
+            /** Note */
+            note: string | null;
+            /** Settlement Minor */
+            settlement_minor: number | null;
+            /** Currency */
+            currency: string;
+            /** Disbursement */
+            disbursement: ("scheduled" | "paid") | null;
+            /** Provider Id */
+            provider_id: string;
+            /**
+             * Source
+             * @constant
+             */
+            source: "sandbox";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** InsurerUpdateRequest */
+        InsurerUpdateRequest: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "under_review" | "more_info_requested" | "approved" | "declined";
+            /** Note */
+            note?: string | null;
+            /** Settlement Minor */
+            settlement_minor?: number | null;
+            /** Disbursement */
+            disbursement?: ("scheduled" | "paid") | null;
+        };
         /** JobAccepted */
         JobAccepted: {
             /** Job Id */
@@ -2058,26 +2679,42 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** ObservationIn */
+        /**
+         * MessageCreate
+         * @description Exactly one of `text` (the farmer's words, kept as data) or `choice` (one the agent offered).
+         */
+        MessageCreate: {
+            /** Text */
+            text?: string | null;
+            choice?: components["schemas"]["ChoicePick"] | null;
+        };
+        /**
+         * ObservationIn
+         * @description One track observation, or (`event: "zone_scan"`) a muzzle scan in the camera's scan zone, which needs no
+         *     track, box, or visibility: it is handed to the one track inside the zone at `observed_at`, or to none.
+         */
         ObservationIn: {
             /** Track Key */
-            track_key: string;
+            track_key?: string | null;
             /**
              * Observed At
              * Format: date-time
              */
             observed_at: string;
             /** Bbox */
-            bbox: number[];
+            bbox?: number[] | null;
             /** Visibility */
-            visibility: number;
+            visibility?: number | null;
             /**
              * Event
              * @default frame
              * @enum {string}
              */
-            event: "frame" | "muzzle_match" | "track_lost";
-            /** Candidate Animal Id */
+            event: "frame" | "muzzle_match" | "track_lost" | "zone_scan";
+            /**
+             * Candidate Animal Id
+             * @description The matched animal; for a zone_scan, the scanned one.
+             */
             candidate_animal_id?: string | null;
             /** Inliers */
             inliers?: number | null;
@@ -2092,8 +2729,11 @@ export interface components {
         };
         /** ObservationIngested */
         ObservationIngested: {
-            observation: components["schemas"]["ObservationOut"];
-            track: components["schemas"]["TrackOut"];
+            /** @description Null for a zone_scan without exactly one track in the zone. */
+            observation: components["schemas"]["ObservationOut"] | null;
+            track: components["schemas"]["TrackOut"] | null;
+            /** @description What a zone_scan did. */
+            handoff?: components["schemas"]["ZoneHandoffOut"] | null;
         };
         /** ObservationOut */
         ObservationOut: {
@@ -2495,6 +3135,7 @@ export interface components {
             duration_s: number;
             /** Progress S */
             progress_s: number;
+            scan_zone: components["schemas"]["ScanZone"] | null;
             /** Tracks */
             tracks: components["schemas"]["TrackOut"][];
             /** Alerts */
@@ -2558,6 +3199,23 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** ScanZone */
+        ScanZone: {
+            /**
+             * Polygon
+             * @description [[x, y], ...] normalized 0-1 to the camera frame.
+             */
+            polygon: number[][];
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            /**
+             * Calibrated At
+             * Format: date-time
+             */
+            calibrated_at: string;
+        };
         /** Scenario */
         Scenario: {
             /** Id */
@@ -2580,8 +3238,42 @@ export interface components {
             window_s: number;
             /** Clip */
             clip: string | null;
+            footage?: components["schemas"]["ScenarioFootage"] | null;
+            /**
+             * Events
+             * @default []
+             */
+            events: components["schemas"]["ScenarioCameraEvent"][];
+            scan_zone?: components["schemas"]["ScanZone"] | null;
             /** Tracks */
             tracks: components["schemas"]["ScenarioTrack"][];
+        };
+        /**
+         * ScenarioCameraEvent
+         * @description A camera event: a muzzle scan made in the scan zone, handed to the one track inside it (or to none).
+         */
+        ScenarioCameraEvent: {
+            /** T */
+            t: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "zone_scan";
+            /**
+             * Animal Id
+             * @description Who the muzzle matcher says was scanned.
+             */
+            animal_id?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Quality */
+            quality?: number | null;
+            /**
+             * Muzzle Image
+             * @description A repo-relative scan image: when set, the real muzzle matcher decides `animal_id` against the farm's gallery as the replay starts.
+             */
+            muzzle_image?: string | null;
         };
         /** ScenarioEvent */
         ScenarioEvent: {
@@ -2600,6 +3292,27 @@ export interface components {
             quality?: number | null;
             /** Reason */
             reason?: string | null;
+        };
+        /** ScenarioFootage */
+        ScenarioFootage: {
+            /**
+             * Label
+             * @description The caption shown with the clip, e.g. that it is AI-generated.
+             */
+            label: string;
+            /** Generator */
+            generator: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "ai_generated";
+            /** Tracker */
+            tracker: string;
+            /** Tracks */
+            tracks: string;
+            /** Prompts */
+            prompts: string;
         };
         /** ScenarioFrame */
         ScenarioFrame: {
@@ -2856,6 +3569,24 @@ export interface components {
             role: string;
             farm: components["schemas"]["FarmRef"];
         };
+        /** ZoneHandoffOut */
+        ZoneHandoffOut: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "associated" | "already_associated" | "rejected" | "no_track" | "crowded" | "track_uncertain" | "conflict";
+            /** Reason */
+            reason: string | null;
+            /** Message */
+            message: string;
+            /** Track Ids */
+            track_ids: string[];
+            /** Track Keys */
+            track_keys: string[];
+            /** Tracks In Zone */
+            tracks_in_zone: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -3003,6 +3734,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_animals__animal_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalDocumentList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_document_api_v1_animals__animal_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_document_api_v1_animals__animal_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalDocumentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
@@ -3565,6 +4407,46 @@ export interface operations {
             };
         };
     };
+    footage_api_v1_demo_footage__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The clip; supports HTTP Range. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     reset_api_v1_demo_reset_post: {
         parameters: {
             query?: {
@@ -3694,6 +4576,226 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    insurer_update_api_v1_demo_claims__claim_id__insurer_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InsurerUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    publish_gallery_api_v1_cameras_gallery_publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalleryPublishOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    camera_gallery_api_v1_cameras__camera_id__gallery_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraGallery"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GalleryAck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalleryAckOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5059,6 +6161,186 @@ export interface operations {
             };
         };
     };
+    start_conversation_api_v1_agent_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    post_message_api_v1_agent_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    get_conversation_api_v1_agent_conversations__conversation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_wallet_api_v1_wallet_get: {
         parameters: {
             query?: never;
@@ -5479,6 +6761,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClaimDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    check_identity_api_v1_claims__claim_id__identity_checks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A muzzle photo (JPEG, PNG, WebP) or short video (MP4, WebM, MOV).
+                     */
+                    file: string;
+                };
+                "application/json": {
+                    /**
+                     * Sample
+                     * @enum {string}
+                     */
+                    sample: "match" | "mismatch";
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityCheckResult"];
                 };
             };
             /** @description Unauthorized */

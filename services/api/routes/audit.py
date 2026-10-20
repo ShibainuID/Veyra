@@ -1,4 +1,4 @@
-"""The farm's audit trail, newest first (plan Section 5: `/audit-events`). Any role may read; actor names are
+"""The farm's audit trail, newest first (`/audit-events`). Any role may read; actor names are
 resolved."""
 
 from fastapi import APIRouter, Depends, Query

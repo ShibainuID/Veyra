@@ -1,4 +1,4 @@
-"""Camera replay, monitoring endpoints, and the PRD's identity and movement verification (replay speed 0)."""
+"""Camera replay, monitoring endpoints, and the identity and movement verification (replay speed 0)."""
 
 import time
 from datetime import timedelta
@@ -44,11 +44,12 @@ def _replay_alerts(client, replay_id: str) -> list[dict]:
 
 def test_scenarios_list_carries_track_data_and_cameras(farm):
     body = farm.get(f"{API}/demo/replays", headers=ASSESSOR).json()
-    assert [s["id"] for s in body["scenarios"]] == ["anomaly", "healthy", "lost_identity"]
+    assert [s["id"] for s in body["scenarios"]] == ["anomaly", "crowded_scan", "healthy", "lost_identity", "veo_barn"]
     anomaly = body["scenarios"][0]
     assert (anomaly["camera_name"], anomaly["source"], len(anomaly["tracks"][0]["frames"])) == (
         "Pen A · feed line", "simulated", 360)
-    assert anomaly["tracks"][0]["events"][0]["type"] == "muzzle_match"
+    assert anomaly["events"][0]["type"] == "zone_scan"  # Sari: identified in the scan zone
+    assert anomaly["tracks"][1]["events"][0]["type"] == "muzzle_match"  # Bima: by a muzzle match on her track
     assert {c["id"] for c in body["cameras"]} == {"cam-pen-a", "cam-pen-b", "cam-pen-c"}
     assert farm.get(f"{API}/demo/replays").status_code == 401
 

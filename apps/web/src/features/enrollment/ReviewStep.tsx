@@ -6,6 +6,7 @@ import { Mono, Range } from "../../components/figures";
 import { Provenance, type Source } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { cn } from "../../lib/cn";
+import { FrameQualityReadout } from "./QualityMeter";
 import { identityReasonCopy, reviewReasons, type ReasonCopy } from "./review-copy";
 import {
   REQUIRED_VIEWS,
@@ -103,6 +104,7 @@ function ReviewFrame({ view, spec, source }: { view: RequiredView; spec: ViewOut
           )}
           {spec && <Provenance source={source} />}
         </div>
+        {crop && <FrameQualityReadout src={crop} />}
       </figcaption>
     </figure>
   );
@@ -164,7 +166,7 @@ function Checks({ enrollment }: { enrollment: Enrollment }) {
                   ? "One continuous take, no cuts"
                   : `Cut at ${cuts.map((c) => `${(c as number).toFixed(1)} s`).join(", ")}`}
             </p>
-            {cuts === null && <p className="text-sm text-muted">There was no footage to check.</p>}
+            {cuts === null && <p className="text-sm text-muted">Cut detection didn&apos;t run for this enrollment, so check the video is one take.</p>}
           </CheckRow>
           <CheckRow ok={times.length < 2 ? null : inOrder}>
             <p className="font-bold">{inOrder ? "Views in the guided order" : "Views out of the guided order"}</p>

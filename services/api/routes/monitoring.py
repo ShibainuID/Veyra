@@ -1,4 +1,4 @@
-"""Camera monitoring: scenarios, replays, cameras, observations, and track review (plan Section 5).
+"""Camera monitoring: scenarios, replays, cameras, observations, and track review.
 
 Any signed-in role may read. Starting a replay and reviewing tracks needs a manager or operator; the internal
 observation feed needs `X-Service-Token`. Every read is scoped to the principal's farm.
@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import domain.monitoring_passbook  # noqa: F401  (registers the passbook formatters)
 from config import get_settings
 from domain import alerts as alert_rules
-from domain import association, audit
+from domain import association, audit, gallery
 from domain.auth import ENROLLERS, Principal, ServicePrincipal
 from domain.errors import DomainError
 from persistence.db import SessionLocal, get_read_session, get_session
@@ -48,15 +48,23 @@ def _animal_names(session: Session, farm_id: str) -> dict[str, str]:
     return dict(session.execute(select(Animal.id, Animal.name).where(Animal.farm_id == farm_id)).all())
 
 
+def _scan_zone(session: Session, camera_id: str) -> dict | None:
+    zone = association.scan_zone_of(session, camera_id)
+    return None if zone is None else {"polygon": [list(p) for p in zone.polygon], "label": zone.label,
+                                      "source": zone.source, "calibrated_at": zone.calibrated_at}
+
+
 def _cameras(session: Session, farm_id: str) -> list[dict]:
     names = _animal_names(session, farm_id)
+    galleries = gallery.status(session, farm_id)
     items = []
     for camera in session.scalars(select(Camera).where(Camera.farm_id == farm_id).order_by(Camera.id)):
         last = session.scalar(select(Observation).where(Observation.camera_id == camera.id)
                               .order_by(Observation.observed_at.desc(), Observation.id.desc()).limit(1))
         items.append({
             "id": camera.id, "name": camera.name, "location": camera.location, "map_x": camera.map_x,
-            "map_y": camera.map_y,
+            "map_y": camera.map_y, "scan_zone": _scan_zone(session, camera.id),
+            "gallery": galleries.get(camera.id),
             "last_observation": None if last is None else {
                 "id": last.id, "observed_at": last.observed_at, "track_id": last.track_id,
                 "animal_id": last.animal_id, "animal_name": names.get(last.animal_id) if last.animal_id else None,
@@ -70,9 +78,10 @@ def _cameras(session: Session, farm_id: str) -> list[dict]:
 def list_scenarios(principal: Principal = Depends(current_principal),
                    session: Session = Depends(get_read_session)) -> dict:
     cameras = _cameras(session, principal.farm_id)
-    names = {camera["id"]: camera["name"] for camera in cameras}
-    scenarios = [{**scenario, "camera_name": names.get(scenario["camera_id"])}
-                 for scenario in replays.list_scenarios(get_settings()) if scenario["camera_id"] in names]
+    by_id = {camera["id"]: camera for camera in cameras}
+    scenarios = [{**scenario, "camera_name": by_id[scenario["camera_id"]]["name"],
+                  "scan_zone": by_id[scenario["camera_id"]]["scan_zone"]}
+                 for scenario in replays.list_scenarios(get_settings()) if scenario["camera_id"] in by_id]
     return {"scenarios": scenarios, "cameras": cameras}
 
 
@@ -114,6 +123,7 @@ def get_replay(replay_id: str, principal: Principal = Depends(current_principal)
             "status": replay.status, "speed": replay.speed, "started_at": replay.started_at,
             "finished_at": replay.finished_at, "anchor_at": replays.anchor_of(replay, duration), "duration_s": duration,
             "progress_s": replays.progress_of(replay, duration, session),
+            "scan_zone": _scan_zone(session, replay.camera_id),
             "tracks": [_track(track, names) for track in tracks],
             "alerts": alert_rules.views(session, principal.farm_id, alert_rows)}
 
@@ -128,15 +138,34 @@ def list_cameras(principal: Principal = Depends(current_principal),
              response_model=ObservationIngested, responses=error_responses(401, 404, 422))
 def ingest_observation(camera_id: str, body: ObservationIn, service: ServicePrincipal = Depends(service_principal),
                        session: Session = Depends(get_session)) -> dict:
+    """A track observation, or a `zone_scan`: a muzzle scan in the camera's scan zone, handed to the one track inside
+    the zone (`handoff` says what happened; `observation` and `track` are null unless exactly one track was there)."""
     camera = session.get(Camera, camera_id)
     if camera is None:
         raise DomainError("NOT_FOUND", "Camera not found.")
+    names = _animal_names(session, camera.farm_id)
+    if body.event == "zone_scan":
+        handoff = association.zone_scan(
+            session, farm_id=camera.farm_id, camera_id=camera_id, replay_id=body.replay_id,
+            actor=audit.actor_from(service), source="simulated",
+            scan=association.ZoneScanInput(observed_at=body.observed_at, animal_id=body.candidate_animal_id,
+                                           inliers=body.inliers, quality=body.quality))
+        session.flush()
+        observation = handoff.observation
+        track = session.get(Track, observation.track_id) if observation else None
+        result = {"observation": _observation(observation) if observation else None,
+                  "track": _track(track, names) if track else None,
+                  "handoff": {"outcome": handoff.outcome, "reason": handoff.reason, "message": handoff.message,
+                              "track_ids": handoff.track_ids, "track_keys": handoff.track_keys,
+                              "tracks_in_zone": len(handoff.track_ids)}}
+        session.commit()
+        return result
     item = association.ObservationInput(**body.model_dump(exclude={"replay_id"}))
     observation = association.ingest(session, farm_id=camera.farm_id, camera_id=camera_id, item=item,
                                      replay_id=body.replay_id, actor=audit.actor_from(service), source="simulated")
     session.flush()
     track = session.get(Track, observation.track_id)
-    result = {"observation": _observation(observation), "track": _track(track, _animal_names(session, camera.farm_id))}
+    result = {"observation": _observation(observation), "track": _track(track, names), "handoff": None}
     session.commit()
     return result
 

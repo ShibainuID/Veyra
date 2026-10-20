@@ -1,4 +1,4 @@
-"""Camera replay runner (plan Section 3: `demo/scenarios`, Section 4: association and movement rules).
+"""Camera replay runner (`demo/scenarios`; association and movement rules).
 
 A replay steps through a simulated scenario and feeds every frame and event through the same ingest function the
 internal `POST /cameras/{id}/observations` endpoint uses, so association, observations, and alerts are produced
@@ -10,6 +10,11 @@ exactly as for a live camera.
 - Speed 0 ingests the whole scenario synchronously, inside the request that started it.
 - Speed > 0 runs a daemon thread that ingests one simulated second per commit and waits `1 / speed` real seconds
   between batches (no transaction is held while waiting).
+- Camera events (`scenario["events"]`, today only `zone_scan`) go through `association.zone_scan`, the same handoff
+  the observation feed uses; at one instant, frames come first, then track events, then camera events.
+- A `zone_scan` that names a `muzzle_image` (repo-relative) is not pre-decided: when the replay starts, the real
+  muzzle matcher compares that image with the farm's enrolled muzzles, and its verified match (or none) becomes the
+  scan's animal. `inliers` are the matcher's verified points and `quality` the matched embedding's cosine.
 - The movement rule runs for every track as each window closes, on the observations attributed to the track's
   animal (an associated track) or on all of the track's frames (quality warnings on an unassigned track).
 - Only one replay runs per farm and camera: starting another stops the previous one (status `stopped`). Starts on
@@ -32,7 +37,8 @@ from sqlalchemy.orm import Session
 from config import Settings
 from domain import alerts as alert_rules
 from domain import audit, clock, movement
-from domain.association import ObservationInput, ingest
+from adapters.perception import Perception, guide_box_crop
+from domain.association import ObservationInput, ZoneScanInput, ingest, zone_scan
 from domain.errors import DomainError
 from domain.ids import new_id
 from persistence.db import SessionLocal, read_session, writer_scope
@@ -52,6 +58,52 @@ JOIN_TIMEOUT_S = 5.0
 @lru_cache(maxsize=16)
 def _read_scenario(path: Path, mtime: float) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def real_scan(settings: Settings, farm_id: str, image: Path, perception: Perception | None = None) -> dict:
+    """The real muzzle matcher on a scan image against the farm's enrolled muzzles: `{animal_id, inliers, quality,
+    source}`, with `animal_id` None unless one animal verifies. Never raises: an unreadable image or a missing
+    matcher is a scan that names no animal."""
+    import tempfile
+
+    import cv2
+
+    from workers.enrollment_job import gallery_refs
+
+    perception = perception or Perception()
+    none = {"animal_id": None, "inliers": None, "quality": None, "source": "simulated"}
+    frame = cv2.imread(str(image))
+    if frame is None or not perception.capabilities.get("muzzle"):
+        return none
+    with read_session() as session:
+        refs = gallery_refs(session, farm_id)
+    with tempfile.TemporaryDirectory() as work:
+        crop = Path(work) / "zone_scan_crop.jpg"
+        cv2.imwrite(str(crop), guide_box_crop(frame))
+        identity = perception.identify(crop, refs, None)
+    if identity.get("fallback"):
+        return none
+    best = max(identity.get("candidates") or [], key=lambda c: c.get("inliers") or 0, default=None)
+    matched = identity.get("animal_id") if identity.get("outcome") == "candidate" else None
+    chosen = next((c for c in identity.get("candidates") or [] if c.get("animal_id") == matched), best)
+    return {"animal_id": matched, "inliers": chosen.get("inliers") if chosen else None,
+            "quality": round(float(chosen["cosine"]), 2) if chosen and matched else None,
+            "source": identity.get("source") or "prototype"}
+
+
+def with_real_scans(settings: Settings, farm_id: str, scenario: dict) -> dict:
+    """The scenario with each `muzzle_image` zone scan decided by the real matcher (see the module docstring)."""
+    events = scenario.get("events") or []
+    if not any(e.get("muzzle_image") for e in events):
+        return scenario
+    resolved = []
+    for event in events:
+        if event.get("type") == "zone_scan" and event.get("muzzle_image"):
+            result = real_scan(settings, farm_id, settings.repo_root / event["muzzle_image"])
+            event = {**event, **{k: result[k] for k in ("animal_id", "inliers", "quality")},
+                     "scan_source": result["source"]}
+        resolved.append(event)
+    return {**scenario, "events": resolved}
 
 
 def scenario_ids(settings: Settings) -> list[str]:
@@ -128,12 +180,17 @@ def footage_anchor(started_at: datetime, speed: float, duration_s: float) -> dat
     return started_at
 
 
+CAMERA_EVENT = 2
+
+
 def _items(scenario: dict) -> list[tuple[float, int, str, dict]]:
-    """Frames and events in scenario order; at the same instant a track's frame comes before its events."""
+    """Frames and events in scenario order; at the same instant every frame comes before the track events, and
+    those before the camera's own events (a scan sees the frames of its instant)."""
     items = []
     for track in scenario["tracks"]:
         items += [(frame["t"], 0, track["track_key"], frame) for frame in track["frames"]]
         items += [(event["t"], 1, track["track_key"], event) for event in track["events"]]
+    items += [(event["t"], CAMERA_EVENT, "", event) for event in scenario.get("events", [])]
     return sorted(items, key=lambda item: (item[0], item[1], item[2]))
 
 
@@ -178,10 +235,19 @@ class _Replayer:
             if session.scalar(select(Replay.status).where(Replay.id == self.run.replay_id)) != "running":
                 self.run.stop.set()
                 return False
+            source = self.scenario.get("source", "simulated")
             for t, kind, track_key, entry in batch:
+                if kind == CAMERA_EVENT:
+                    if entry["type"] == "zone_scan":
+                        zone_scan(session, farm_id=self.run.farm_id, camera_id=self.run.camera_id,
+                                  scan=ZoneScanInput(observed_at=self.at(t), animal_id=entry.get("animal_id"),
+                                                     inliers=entry.get("inliers"), quality=entry.get("quality")),
+                                  replay_id=self.run.replay_id, actor=REPLAY_ACTOR,
+                                  source=entry.get("scan_source", source))
+                    continue
                 ingest(session, farm_id=self.run.farm_id, camera_id=self.run.camera_id,
                        item=self._observation(t, kind, track_key, entry), replay_id=self.run.replay_id,
-                       actor=REPLAY_ACTOR)
+                       actor=REPLAY_ACTOR, source=source)
             session.commit()
         return True
 
@@ -315,6 +381,7 @@ def start(settings: Settings, *, farm_id: str, actor: tuple[str, str], scenario_
         camera = session.get(Camera, camera_id)
         if camera is None or camera.farm_id != farm_id:
             raise DomainError("NOT_FOUND", "This scenario's camera is not on your farm.", {"camera_id": camera_id})
+    scenario = with_real_scans(settings, farm_id, scenario)
     speed = float(settings.replay_speed)
     with _start_lock(farm_id, camera_id):
         _stop_runs(lambda run: run.farm_id == farm_id and run.camera_id == camera_id)

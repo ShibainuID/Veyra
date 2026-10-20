@@ -1,4 +1,4 @@
-"""The audit trail (plan Section 0: audit).
+"""The audit trail.
 
 Every state change records one event in the caller's transaction: `record` only adds the row, and the caller
 commits it together with the change it describes. Actor types are `user`, `agent`, `system`, and `provider`;
@@ -17,7 +17,7 @@ from persistence.models import AuditEvent, User
 ACTOR_TYPES = ("user", "agent", "system", "provider")
 AGENT_NAME = "VEYRA agent"
 SYSTEM_NAME = "VEYRA"
-SYSTEM_ACTOR_NAMES = {"seed": "Demo seed", "service-worker": "VEYRA worker"}
+SYSTEM_ACTOR_NAMES = {"seed": "Demo seed", "service-worker": "VEYRA worker", "camera-worker": "Camera worker"}
 _ROWID = literal_column("audit_events.rowid")
 
 

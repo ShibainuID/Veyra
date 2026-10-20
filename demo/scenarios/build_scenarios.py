@@ -1,8 +1,12 @@
-"""Build the simulated camera replay scenarios (plan Section 3: `demo/scenarios/*.json`).
+"""Build the simulated camera replay scenarios (`demo/scenarios/*.json`).
 
 Run from the repo root: `python demo/scenarios/build_scenarios.py`. Output is deterministic (seeded random) and
 committed, so the replay, the movement rule, and the frontend overlay all read the same tracks. Every scenario is
-labeled `source: "simulated"`: these are synthetic tracks, not detections from real footage.
+labeled `source: "simulated"`: `healthy`, `anomaly`, `lost_identity`, and `crowded_scan` are synthetic tracks, and
+`veo_barn` is a real tracker's output on AI-generated (Google Veo) footage, never a real farm.
+
+Identity starts from a scan-zone handoff (`events: [{"type": "zone_scan", ...}]`, a camera event) or a muzzle match on
+the track itself (a track event); see services/api/domain/association.py.
 
 Movement model: a centroid walks with a smoothly drifting heading and short grazing pauses, bouncing off the frame
 edges; a stationary animal keeps only a small positional jitter. Bounding boxes are normalized `[x, y, w, h]` and
@@ -15,7 +19,9 @@ import random
 from pathlib import Path
 
 OUT_DIR = Path(__file__).resolve().parent
+VEO_DIR = OUT_DIR.parent / "media" / "veo"
 DURATION_S = 180
+CROWDED_S = 90
 FPS = 2
 WINDOW_S = 30
 WALK_SPEED = 0.014  # normalized frame units per second
@@ -75,10 +81,22 @@ def _match(t: float, animal_id: str, inliers: int, quality: float) -> dict:
     return {"t": t, "type": "muzzle_match", "candidate_animal_id": animal_id, "inliers": inliers, "quality": quality}
 
 
-def _scenario(scenario_id: str, label: str, description: str, camera_id: str, tracks: list[dict]) -> dict:
+def _zone_scan(t: float, animal_id: str | None, inliers: int | None, quality: float | None) -> dict:
+    """A muzzle scan made in the camera's scan zone (a camera event, not a track's): the replay hands the identity to
+    the one track inside the zone at `t`, or to none (demo/fixtures/herd.json carries cam-pen-a's zone)."""
+    return {"t": t, "type": "zone_scan", "animal_id": animal_id, "inliers": inliers, "quality": quality}
+
+
+# cam-pen-a's scan zone (demo/fixtures/herd.json), calibrated by the ML teammate on the Veo CCTV footage.
+ZONE = ((0.4781, 0.6611), (0.7021, 0.8463))  # top-left, bottom-right
+ZONE_CENTRE = ((ZONE[0][0] + ZONE[1][0]) / 2, (ZONE[0][1] + ZONE[1][1]) / 2)
+
+
+def _scenario(scenario_id: str, label: str, description: str, camera_id: str, tracks: list[dict],
+              events: list[dict] | None = None, duration_s: float = DURATION_S) -> dict:
     return {"id": scenario_id, "label": label, "description": description, "camera_id": camera_id,
-            "source": "simulated", "duration_s": DURATION_S, "fps": FPS, "window_s": WINDOW_S, "clip": None,
-            "tracks": tracks}
+            "source": "simulated", "duration_s": duration_s, "fps": FPS, "window_s": WINDOW_S, "clip": None,
+            "events": events or [], "tracks": tracks}
 
 
 def _steady(t: float) -> float:
@@ -89,22 +107,26 @@ def _clear(t: float) -> float:
     return 0.88
 
 
+SARI_SCAN = _zone_scan(3, "animal-demo-001", 31, 0.88)  # Sari, alone in the scan zone at 3 s
+
+
 def healthy() -> dict:
     rng = random.Random(1001)
-    sari = Walker(rng, 0.30, 0.55, 0.22, 0.17, 0.3)
+    sari = Walker(rng, ZONE_CENTRE[0], ZONE_CENTRE[1], 0.22, 0.17, -2.4)  # starts in the scan zone, walks out
     bima = Walker(rng, 0.68, 0.45, 0.24, 0.18, 2.6)
     return _scenario(
         "healthy", "Healthy herd · Pen A",
-        "Sari and Bima are identified by muzzle and keep moving normally. No alert is expected.", "cam-pen-a",
-        [{"track_key": "t-01", "frames": _frames(sari, 0, DURATION_S, _steady, _clear),
-          "events": [_match(4, "animal-demo-001", 23, 0.86)]},
+        "Sari is scanned alone in the scan zone at 3 s, so her identity passes to her camera track; Bima is "
+        "identified by a muzzle match at 9 s. Both keep moving normally. No alert is expected.", "cam-pen-a",
+        [{"track_key": "t-01", "frames": _frames(sari, 0, DURATION_S, _steady, _clear), "events": []},
          {"track_key": "t-02", "frames": _frames(bima, 0, DURATION_S, _steady, _clear),
-          "events": [_match(9, "animal-demo-002", 31, 0.9)]}])
+          "events": [_match(9, "animal-demo-002", 31, 0.9)]}],
+        events=[SARI_SCAN])
 
 
 def anomaly() -> dict:
     rng = random.Random(2002)
-    sari = Walker(rng, 0.32, 0.52, 0.22, 0.17, 0.1)
+    sari = Walker(rng, ZONE_CENTRE[0], ZONE_CENTRE[1], 0.22, 0.17, -2.6)
     bima = Walker(rng, 0.70, 0.48, 0.24, 0.18, 3.0)
 
     def slowing(t: float) -> float:
@@ -118,12 +140,28 @@ def anomaly() -> dict:
 
     return _scenario(
         "anomaly", "Reduced movement · Pen A",
-        "Sari moves normally for the first minute, then her tracked movement drops by more than 70% from 90 s while "
-        "she stays clearly visible. One reduced-movement alert is expected.", "cam-pen-a",
-        [{"track_key": "t-01", "frames": _frames(sari, 0, DURATION_S, slowing, _clear),
-          "events": [_match(4, "animal-demo-001", 23, 0.86)]},
+        "Sari is identified alone in the scan zone at 3 s and moves normally for the first minute, then her tracked "
+        "movement drops by more than 70% from 90 s while she stays clearly visible. One reduced-movement alert is "
+        "expected.", "cam-pen-a",
+        [{"track_key": "t-01", "frames": _frames(sari, 0, DURATION_S, slowing, _clear), "events": []},
          {"track_key": "t-02", "frames": _frames(bima, 0, DURATION_S, _steady, _clear),
-          "events": [_match(9, "animal-demo-002", 31, 0.9)]}])
+          "events": [_match(9, "animal-demo-002", 31, 0.9)]}],
+        events=[SARI_SCAN])
+
+
+def crowded_scan() -> dict:
+    """Two cows stand in the scan zone when Sari's muzzle is scanned: nobody can say which track is Sari."""
+    rng = random.Random(4004)
+    sari = Walker(rng, ZONE_CENTRE[0] - 0.05, ZONE_CENTRE[1] - 0.03, 0.2, 0.15, -2.5)
+    other = Walker(rng, ZONE_CENTRE[0] + 0.06, ZONE_CENTRE[1] + 0.04, 0.2, 0.15, -0.6)
+    return _scenario(
+        "crowded_scan", "Crowded scan · Pen A",
+        "Sari's muzzle is scanned at 3 s while a second cow stands in the scan zone with her. With two animals in the "
+        "zone the camera cannot tell which track is Sari, so neither track is identified: both are uncertain and "
+        "no animal-specific alert can follow. Scan one animal at a time.", "cam-pen-a",
+        [{"track_key": "t-21", "frames": _frames(sari, 0, CROWDED_S, _steady, _clear), "events": []},
+         {"track_key": "t-22", "frames": _frames(other, 0, CROWDED_S, _steady, _clear), "events": []}],
+        events=[SARI_SCAN], duration_s=CROWDED_S)
 
 
 def lost_identity() -> dict:
@@ -149,7 +187,56 @@ def lost_identity() -> dict:
          {"track_key": "t-14", "frames": _frames(stranger, 75, DURATION_S, _steady, obscured), "events": []}])
 
 
-SCENARIOS = (healthy, anomaly, lost_identity)
+VEO_CLIP = "/api/v1/demo/footage/video_cctv.mp4"
+VEO_LABEL = "Pen A camera footage"
+VEO_SCAN_IMAGE = "demo/media/veo/references/09_hp_muzzle.png"  # the scanned heifer's muzzle, from the phone video
+VEO_SCAN_S = 4.0  # the muzzle scan in the phone video (VEO_PROMPTS.md: scan time ~4 s on the shared timeline)
+
+
+def veo_barn() -> dict:
+    """The ML teammate's real tracker run (`demo/media/veo/out/tracks.json`, yolov8x + BoT-SORT re-ID) on the
+    AI-generated CCTV clip, converted to the scenario format with its timing kept: pixel xyxy boxes become normalized
+    xywh, and the detector confidence stands in for visibility.
+
+    Identity is never invented. The heifer scanned in the zone at ~4 s is the one filmed in `video_hp.mp4`; the scan
+    carries her muzzle image (`muzzle_image`), and when the replay starts the real muzzle matcher compares it with the
+    farm's enrolled muzzles. If she was enrolled here from the phone video, her identity passes to track 11, the
+    only animal in the zone at that moment; otherwise the scan names no registered animal and every track stays
+    unassigned. The footage is AI-generated (Google Veo); `footage.kind` records that."""
+    tracks_data = json.loads((VEO_DIR / "out" / "tracks.json").read_text(encoding="utf-8"))
+    report = json.loads((VEO_DIR / "out" / "run_report.json").read_text(encoding="utf-8"))
+    assert [tuple(p) for p in report["zone"][::2]] == list(ZONE), "the Veo run's zone must be cam-pen-a's zone"
+    width, height = tracks_data["width"], tracks_data["height"]
+    frames: dict[str, list[dict]] = {}
+    for t, boxes in tracks_data["frames"]:
+        for track_id, x0, y0, x1, y1, conf in boxes:
+            x0, x1 = max(0.0, x0 / width), min(1.0, x1 / width)
+            y0, y1 = max(0.0, y0 / height), min(1.0, y1 / height)
+            frames.setdefault(track_id, []).append(
+                {"t": round(t, 3), "bbox": [_round(x0), _round(y0), _round(x1 - x0), _round(y1 - y0)],
+                 "visibility": _round(conf)})
+    last_t = tracks_data["frames"][-1][0]
+    sample_hz = round((len(tracks_data["frames"]) - 1) / last_t, 2)
+    linked = {link["track_id"] for link in report["recording"]["links"] if link["status"] == "confirmed"}
+    assert linked == {"11"}, "the teammate's run linked its scan to track 11"
+    return {
+        "id": "veo_barn", "label": "Veo barn · AI-generated CCTV",
+        "description": "A real tracker run on Pen A's camera footage: twelve heifers, one of them alone in the scan "
+                       "zone when her muzzle is scanned at 4 s. The muzzle matcher compares the scan with the farm's "
+                       "enrolled muzzles: once she is enrolled from the phone video, her identity passes to the one "
+                       "track in the zone; until then no track is identified.",
+        "camera_id": "cam-pen-a", "source": "prototype", "duration_s": math.ceil(last_t), "fps": sample_hz,
+        "window_s": WINDOW_S, "clip": VEO_CLIP,
+        "footage": {"label": VEO_LABEL, "generator": "Google Veo", "kind": "ai_generated",
+                    "tracker": tracks_data["method_version"], "tracks": "demo/media/veo/out/tracks.json",
+                    "prompts": "demo/media/veo/VEO_PROMPTS.md"},
+        "events": [{**_zone_scan(VEO_SCAN_S, None, None, None), "muzzle_image": VEO_SCAN_IMAGE}],
+        "tracks": [{"track_key": f"veo-{track_id}", "frames": frames[track_id], "events": []}
+                   for track_id in sorted(frames, key=int)],
+    }
+
+
+SCENARIOS = (healthy, anomaly, lost_identity, crowded_scan, veo_barn)
 
 
 def _dumps(scenario: dict) -> str:

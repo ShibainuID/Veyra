@@ -26,6 +26,13 @@ const DEMO_INCIDENT = {
   foundBy: "A. Pratama",
 };
 
+/** A death for the identity-check beat: covered by the mortality products, it needs a muzzle re-scan. */
+const DEMO_DEATH = {
+  kind: "death" as IncidentKind,
+  description: "Found dead in Pen A at the morning check, two days after a reduced-movement alert.",
+  loss: "2,400.00",
+};
+
 export const FIELD =
   "min-h-11 w-full rounded-control border-2 border-line-strong bg-bg px-3 py-2 text-base placeholder:text-muted focus:border-ink disabled:bg-surface disabled:text-muted";
 
@@ -152,21 +159,37 @@ export function IncidentForm({ animals, initialAnimalId, initialAlertId, onDone 
     <form id="incident-form" noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
       {animalId === DEMO_INCIDENT.animalId && !description && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border-2 border-dashed border-line-strong px-4 py-3">
-          <p className="text-sm text-muted">Demo: fill the form with the prepared sample incident for Sari.</p>
-          <Button
-            type="button"
-            variant="secondary"
-            icon={FlaskConical}
-            onClick={() => {
-              setKind(DEMO_INCIDENT.kind);
-              setDescription(DEMO_INCIDENT.description);
-              setLoss(DEMO_INCIDENT.loss);
-              setLocation(DEMO_INCIDENT.location);
-              setFoundBy(DEMO_INCIDENT.foundBy);
-            }}
-          >
-            Use the sample incident
-          </Button>
+          <p className="text-sm text-muted">Demo: fill the form with a prepared sample incident for Sari.</p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              type="button"
+              variant="secondary"
+              icon={FlaskConical}
+              onClick={() => {
+                setKind(DEMO_INCIDENT.kind);
+                setDescription(DEMO_INCIDENT.description);
+                setLoss(DEMO_INCIDENT.loss);
+                setLocation(DEMO_INCIDENT.location);
+                setFoundBy(DEMO_INCIDENT.foundBy);
+              }}
+            >
+              Use the sample incident
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              icon={FlaskConical}
+              onClick={() => {
+                setKind(DEMO_DEATH.kind);
+                setDescription(DEMO_DEATH.description);
+                setLoss(DEMO_DEATH.loss);
+                setLocation(DEMO_INCIDENT.location);
+                setFoundBy(DEMO_INCIDENT.foundBy);
+              }}
+            >
+              Use the sample death
+            </Button>
+          </div>
         </div>
       )}
       <Field label="Animal" htmlFor={ids.animal} hint="Only animals with active cover can be claimed against." error={show("animal")}>
@@ -212,6 +235,11 @@ export function IncidentForm({ animals, initialAnimalId, initialAlertId, onDone 
         {errors.kind && (
           <p className="text-sm font-bold text-danger" role="alert">
             {errors.kind}
+          </p>
+        )}
+        {kind === "death" && kindCovered && (
+          <p className="text-sm">
+            A death claim also needs a muzzle re-scan of the animal that matches its passport before it can be submitted.
           </p>
         )}
       </fieldset>

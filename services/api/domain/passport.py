@@ -1,4 +1,4 @@
-"""Herd list and Digital Livestock Passport views (plan Section 5: `GET /animals`, `GET /animals/{id}/passport`).
+"""Herd list and Digital Livestock Passport views (`GET /animals`, `GET /animals/{id}/passport`).
 
 Read-only: each function takes the caller's read session and the principal's farm, and returns plain dicts that
 `schemas.py` validates and serializes. Another farm's animal is `NOT_FOUND`.

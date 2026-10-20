@@ -48,6 +48,7 @@ function clamp01(v: number) {
  */
 export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraId, onSelect }: PenMapProps) {
   const camerasById = new Map(cameras.map((c) => [c.id, c]));
+  const zoned = cameras.filter((c) => c.scan_zone);
   const liveAnimals = new Set(live.map((p) => p.animalId).filter(Boolean));
   const markers: Marker[] = [];
 
@@ -96,7 +97,7 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
   }
 
   const selected = selectedAnimalId ? animals.find((a) => a.id === selectedAnimalId) : undefined;
-  const selectedLive = live.find((p) => p.animalId === selectedAnimalId);
+  const selectedLive = selectedAnimalId ? live.find((p) => p.animalId === selectedAnimalId) : undefined;
   const lastCameraId = selectedLive?.cameraId ?? selected?.last_observation?.camera_id ?? null;
 
   return (
@@ -125,6 +126,33 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
                   strokeWidth={isLast ? 4 : 2}
                   strokeDasharray={isLast || isActive ? undefined : "8 6"}
                 />
+                {camera.scan_zone && (
+                  <polygon
+                    points={camera.scan_zone.polygon
+                      .map(
+                        ([x = 0, y = 0]) =>
+                          `${(camera.map_x + (x - 0.5) * FIELD_OF_VIEW.width) * W},${(camera.map_y + (y - 0.5) * FIELD_OF_VIEW.height) * H}`,
+                      )
+                      .join(" ")}
+                    fill="var(--tag-soft)"
+                    stroke="var(--await-ink)"
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                  />
+                )}
+                {camera.scan_zone && (
+                  <text
+                    x={cx + fw / 2 - 14}
+                    y={cy - fh / 2 + 31}
+                    textAnchor="end"
+                    fontSize={18}
+                    fontWeight={700}
+                    fill="var(--await-ink)"
+                    fontFamily="var(--font-sans)"
+                  >
+                    Scan zone
+                  </text>
+                )}
                 {/* The camera hangs on the pen's top edge, looking in. */}
                 <rect x={cx - 13} y={cy - fh / 2 - 11} width={26} height={22} rx={5} fill="var(--ink)" />
                 <circle cx={cx} cy={cy - fh / 2} r={5} fill="var(--tag)" />
@@ -193,6 +221,11 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
           )
         ) : (
           <span>Each tag sits by the camera that last saw it. Pick one to see where.</span>
+        )}
+        {zoned.length > 0 && (
+          <span>
+            {zoned.map((c) => c.location).join(", ")} {zoned.length === 1 ? "has" : "have"} a calibrated scan zone, where one animal at a time is scanned so its identity passes to the camera.
+          </span>
         )}
       </figcaption>
     </figure>

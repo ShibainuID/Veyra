@@ -1,4 +1,4 @@
-"""The sample policy catalog (plan Section 3: `demo/fixtures/policies.json`, version `sample-v1`).
+"""The sample policy catalog (`demo/fixtures/policies.json`, version `sample-v1`).
 
 The catalog is fictional and read-only. Every rule, price, and exclusion carries a `terms_ref`, the only
 references an explanation may cite.

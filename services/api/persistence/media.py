@@ -1,4 +1,4 @@
-"""Local media storage behind signed URLs (plan Section 1: media on disk, served by signature).
+"""Local media storage behind signed URLs (media on disk, served by signature).
 
 Files live at `<media_dir>/<farm_id>/<media_id>.<ext>`; the row stores that path relative to `media_dir`,
 plus the SHA-256 that evidence manifests cite. A URL carries `exp` and `sig = HMAC-SHA256(secret, "id:exp")`,

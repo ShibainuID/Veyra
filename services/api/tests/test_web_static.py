@@ -9,6 +9,7 @@ def _dist(tmp_path):
     (dist / "index.html").write_text("<html>veyra shell</html>")
     (dist / "assets" / "app.js").write_text("console.log('veyra')")
     (dist / "favicon.svg").write_text("<svg/>")
+    (dist / "manifest.webmanifest").write_text('{"name": "VEYRA"}')
     return dist
 
 
@@ -19,6 +20,9 @@ def test_built_web_app_is_served_beside_the_api(tmp_path, monkeypatch):
         assert "veyra shell" in client.get("/animals/animal-demo-002").text  # client-side route
         assert client.get("/assets/app.js").text == "console.log('veyra')"
         assert client.get("/favicon.svg").text == "<svg/>"
+        manifest = client.get("/manifest.webmanifest")
+        assert manifest.json() == {"name": "VEYRA"}
+        assert manifest.headers["content-type"].startswith("application/manifest+json")
         assert client.get("/api/v1/health").status_code == 200
 
 

@@ -61,6 +61,9 @@ const TITLES: Record<string, (data: Data) => string> = {
   "claim.declaration_confirmed": () => "Farmer declaration confirmed",
   "claim.blocked": () => "Claim held · evidence incomplete",
   "claim.submitted": () => "Claim submitted · assessment pending",
+  "claim.identity_checked": (d) => `Identity checked at claim · ${str(d.outcome) ?? "uncertain"}`,
+  "camera.gallery_synced": (d) => `Camera gallery synced · v${String(d.version ?? "?")}`,
+  "camera.gallery_published": (d) => `Gallery pushed to cameras · v${String(d.version ?? "?")}`,
   "demo.reset": () => "Demo reset",
 };
 

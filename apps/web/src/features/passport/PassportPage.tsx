@@ -1,4 +1,4 @@
-import { ArrowRight, Cctv, FileCheck2, ShieldCheck, Siren, Stamp as StampIcon, TriangleAlert } from "lucide-react";
+import { ArrowRight, Bot, Cctv, FileCheck2, ShieldCheck, Siren, Stamp as StampIcon, TriangleAlert } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link, useParams } from "react-router";
 import { ButtonLink } from "../../components/Button";
@@ -7,9 +7,11 @@ import { EvidenceFrame, type EvidenceView } from "../../components/EvidenceFrame
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { Money, Mono, Range, TimeWindow, Timestamp } from "../../components/figures";
 import { PageHeader, Section } from "../../components/layout";
+import { NotGuaranteed } from "../../components/NotGuaranteed";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill, type StatusTone } from "../../components/StatusPill";
 import { alertKindLabel, asSource, healthPill, humanize, identityPill, productName, providerName, sexWord, tagStateFor } from "../../lib/animal";
+import { agentHref } from "../../lib/agent-link";
 import { toApiError } from "../../lib/errors";
 import { formatMoney, lineNumber } from "../../lib/format";
 import { useNow } from "../../lib/use-now";
@@ -18,6 +20,8 @@ import { Page } from "../../pages/Page";
 import { actionTitle } from "../actions/types";
 import { AnimalPassbook } from "../passbook/AnimalPassbook";
 import { useObservations, usePassport, type Passport } from "./api";
+import { CameraGallery } from "./CameraGallery";
+import { DocumentsSection } from "./DocumentsSection";
 import { ValuationSection } from "./ValuationSection";
 import { reasonCopy } from "../enrollment/review-copy";
 
@@ -98,18 +102,21 @@ function IdentitySection({ passport }: { passport: Passport }) {
             )}
           </Fact>
           <Fact label="Ownership documents">
-            {animal.ownership_doc_refs.length > 0 ? (
-              <ul className="flex flex-col gap-1">
-                {animal.ownership_doc_refs.map((ref) => (
-                  <li key={ref} className="flex items-center gap-2">
-                    <Mono>{ref}</Mono>
-                    <Provenance source="documented" />
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <span className="text-muted">None on file</span>
-            )}
+            <span className="flex flex-wrap items-center gap-2">
+              {animal.ownership_doc_refs.length > 0 ? (
+                <>
+                  <span>
+                    <Mono>{animal.ownership_doc_refs.length}</Mono> on file
+                  </span>
+                  <Provenance source="documented" />
+                </>
+              ) : (
+                <span className="text-muted">None on file</span>
+              )}
+              <a href="#documents" className="inline-flex min-h-11 items-center font-bold">
+                See documents
+              </a>
+            </span>
           </Fact>
         </Facts>
       </div>
@@ -164,6 +171,7 @@ function EstimatesSection({ passport }: { passport: Passport }) {
           ))}
         </ul>
       )}
+      {estimates.length > 0 && <NotGuaranteed className="mt-3" />}
     </Section>
   );
 }
@@ -175,20 +183,47 @@ function policyTone(status: string): StatusTone {
   return "neutral";
 }
 
+/** The in-app agent's way in for this animal: find cover when there is none, file a claim when a policy is active. */
+function AgentLink({ animal }: { animal: Passport["animal"] }) {
+  if (animal.coverage.status === "none") {
+    return (
+      <ButtonLink to={agentHref(animal.id, "find_insurance")} variant="primary" icon={Bot}>
+        Find insurance with the VEYRA agent
+      </ButtonLink>
+    );
+  }
+  if (animal.coverage.status === "active") {
+    return (
+      <ButtonLink to={agentHref(animal.id, "file_claim")} variant="primary" icon={Bot}>
+        File a claim with the VEYRA agent
+      </ButtonLink>
+    );
+  }
+  return null;
+}
+
 function CoverageSection({ passport }: { passport: Passport }) {
   const { policies, applications, animal } = passport;
   const openApplications = applications.filter((app) => !policies.some((p) => p.application_id === app.id));
+  const agentOffered = animal.coverage.status === "none" || animal.coverage.status === "active";
   return (
     <Section
       title="Coverage"
+      anchor="coverage"
       actions={
-        <ButtonLink to={`/animals/${animal.id}/insurance`} variant="primary" icon={ShieldCheck}>
-          Compare coverage
-        </ButtonLink>
+        <>
+          <AgentLink animal={animal} />
+          <ButtonLink to={`/animals/${animal.id}/insurance`} variant={agentOffered ? "secondary" : "primary"} icon={ShieldCheck}>
+            Compare coverage
+          </ButtonLink>
+        </>
       }
     >
       {policies.length === 0 && openApplications.length === 0 ? (
-        <Muted>Not covered. Compare the sandbox products to see what this animal is eligible for.</Muted>
+        <Muted>
+          No active insurance. The VEYRA agent checks eligibility, compares the sandbox products, and prepares an application for your
+          approval. You can also compare them yourself.
+        </Muted>
       ) : (
         <ul className="flex flex-col gap-4">
           {policies.map((policy) => (
@@ -303,6 +338,9 @@ function LocationSection({ passport }: { passport: Passport }) {
           )}
         </div>
       )}
+      <div className="mt-8">
+        <CameraGallery passport={passport} />
+      </div>
     </Section>
   );
 }
@@ -461,9 +499,12 @@ export function PassportPage() {
             </span>
           }
           actions={
-            <ButtonLink to={`/audit?animal=${animal.id}`} variant="secondary">
-              Audit trail
-            </ButtonLink>
+            <>
+              <AgentLink animal={animal} />
+              <ButtonLink to={`/audit?animal=${animal.id}`} variant="secondary">
+                Audit trail
+              </ButtonLink>
+            </>
           }
         />
         {pending && (
@@ -475,6 +516,7 @@ export function PassportPage() {
         <IdentitySection passport={passport} />
         <EstimatesSection passport={passport} />
         <ValuationSection passport={passport} />
+        <DocumentsSection passport={passport} />
         <CoverageSection passport={passport} />
         <LocationSection passport={passport} />
         <AlertsSection passport={passport} />

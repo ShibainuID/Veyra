@@ -1,4 +1,4 @@
-"""The animal passbook (design authority: Passbook Ledger; plan Section 7 F3-F10: "full passbook with all entries").
+"""The full animal passbook, with all its entries.
 
 Every animal keeps a passbook. Its lines are the animal's audit events, numbered in the order they happened,
 followed by one `awaiting` line per agent action still waiting for a decision, for execution, or for the

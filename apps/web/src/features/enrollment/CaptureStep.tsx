@@ -15,6 +15,57 @@ function formatSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
+/** The demo's phone enrollment video (demo/media/veo/video_hp.mp4), served by the API in demo mode. */
+export const PHONE_VIDEO = { url: "/api/v1/demo/footage/video_hp.mp4", filename: "video_hp.mp4" } as const;
+
+/**
+ * Fetches the AI-generated phone video and hands it to the normal upload, so the real pipeline runs on it.
+ */
+function PhoneVideoDemo({ onVideo, busy }: { onVideo: (file: Blob, filename: string) => void; busy?: boolean }) {
+  const headingId = useId();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function use() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(PHONE_VIDEO.url);
+      if (!response.ok) throw new Error(String(response.status));
+      const blob = await response.blob();
+      onVideo(new Blob([blob], { type: "video/mp4" }), PHONE_VIDEO.filename);
+    } catch {
+      setError("The phone video couldn't load. It is served only in demo mode, after `git lfs pull`. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby={headingId} className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h2 id={headingId} className="text-md font-bold">
+          Use the phone enrollment video
+        </h2>
+      </div>
+      <p className="text-sm text-muted">
+        An 8-second phone enrollment video: the muzzle, the teeth, then the full side. It goes through the real upload
+        and processing, so the review names whatever the video doesn't show.
+      </p>
+      {error && (
+        <p role="alert" className="text-sm font-bold text-danger">
+          {error}
+        </p>
+      )}
+      <div>
+        <Button variant="secondary" icon={FileVideo} disabled={busy} loading={loading} loadingLabel="Loading the video…" onClick={() => void use()}>
+          Use the phone enrollment video
+        </Button>
+      </div>
+    </section>
+  );
+}
+
 export interface CaptureStepProps {
   onVideo: (file: Blob, filename: string) => void;
   onSample: (sampleKey: string) => void;
@@ -104,6 +155,8 @@ export function CaptureStep({ onVideo, onSample, busy }: CaptureStepProps) {
             </div>
           )}
         </section>
+
+        <PhoneVideoDemo onVideo={onVideo} busy={busy} />
 
         <section aria-labelledby={sampleHeadingId} className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

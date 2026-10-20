@@ -1,4 +1,4 @@
-"""Engine, sessions, and the declarative base (plan Section 2).
+"""Engine, sessions, and the declarative base.
 
 The engine is built lazily and cached per `database_url`, so nothing connects at import time and a test
 with a fresh data dir gets a fresh database. Callers own the transaction: `get_session` never commits.

@@ -1,6 +1,6 @@
-"""Grounded policy explanations (plan Section 6: language model, grounding check).
+"""Grounded policy explanations (language model, grounding check).
 
-Claude explains eligibility and price results that the rules already computed; it never changes an outcome or a
+The language model explains eligibility and price results that the rules already computed; it never changes an outcome or a
 number. Its output is checked against the inputs: items for products that were not supplied are dropped, and
 terms references that are not in the catalog are removed (`grounding_dropped`). Offline, or on any failure, a
 deterministic template says the same facts with `source: simulated`.

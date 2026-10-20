@@ -1,0 +1,46 @@
+{
+  "name": "@veyra/video",
+  "version": "1.0.0",
+  "description": "VEYRA launch film (Remotion)",
+  "repository": {},
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.537",
+    "@remotion/fonts": "4.0.537",
+    "@remotion/google-fonts": "4.0.537",
+    "@remotion/media": "4.0.537",
+    "lucide-react": "1.59.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.537"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.537",
+    "@types/node": "22.20.5",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "esbuild": "0.25.5",
+    "eslint": "10.12.0",
+    "prettier": "3.8.1",
+    "puppeteer-core": "24.10.0",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "words": "node scripts/gen-words.mjs",
+    "voice": "uv run --with edge-tts==7.2.3 python scripts/make-voice.py",
+    "effects": "node scripts/render-effects.mjs",
+    "mix": "node scripts/mix.mjs",
+    "audio": "pnpm effects && pnpm mix",
+    "render": "remotion render VeyraLaunch out/veyra-launch.mp4 --codec=h264 --audio-codec=aac --audio-bitrate=192k",
+    "stills": "remotion still VeyraLaunch out/stills/reveal.png --frame=780 && remotion still VeyraLaunch out/stills/agent-insurance.png --frame=3240 && remotion still VeyraLaunch out/stills/tagline.png --frame=6300",
+    "build": "remotion bundle",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src && tsc --noEmit"
+  }
+}

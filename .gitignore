@@ -12,9 +12,9 @@ services/api/.data/
 node_modules/
 dist/
 .env
-.impeccable/questions/
-.impeccable/hook.cache.json
 .claude/worktrees/
 services/api/.venv/
 services/api/var/
 .pytest_cache/
+
+apps/video/

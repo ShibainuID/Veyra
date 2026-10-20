@@ -1,4 +1,4 @@
-"""Every ORM table (plan Section 2: data model).
+"""Every ORM table.
 
 Status and kind columns are plain strings; the domain modules validate them. `Mapped[datetime]` is stored
 as `UTCDateTime` and `Mapped[dict]`/`Mapped[list]` as mutation-tracked JSON through `Base.type_annotation_map`.
@@ -90,6 +90,22 @@ class AnimalReference(Base):
     enrollment_id: Mapped[str | None] = mapped_column(ForeignKey("enrollments.id"))
     frame_time_s: Mapped[float | None]
     quality: Mapped[dict] = mapped_column(default=dict)
+    created_at: Mapped[datetime] = _created_at()
+
+
+class AnimalDocument(Base):
+    """A file kept on the passport (ownership certificate, purchase receipt, vet record); the bytes are `media`."""
+
+    __tablename__ = "animal_documents"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    media_id: Mapped[str] = mapped_column(ForeignKey("media.id"))
+    kind: Mapped[str]
+    title: Mapped[str]
+    filename: Mapped[str]
+    uploaded_by: Mapped[str]
     created_at: Mapped[datetime] = _created_at()
 
 
@@ -314,6 +330,20 @@ class Camera(Base):
     map_y: Mapped[float]
 
 
+class CameraScanZone(Base):
+    """A camera's calibrated scan zone: the floor area where one animal at a time is muzzle-scanned, so its identity
+    can be handed to the one camera track inside it (domain/association.py). A separate table, so an existing
+    database gains it on startup without a migration."""
+
+    __tablename__ = "camera_scan_zones"
+
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"), primary_key=True)
+    polygon: Mapped[list]  # [[x, y], ...] normalized 0–1 to the camera frame, top-left origin
+    label: Mapped[str]
+    source: Mapped[str]
+    calibrated_at: Mapped[datetime] = _created_at()
+
+
 class Replay(Base):
     __tablename__ = "replays"
 
@@ -441,4 +471,106 @@ class AuditEvent(Base):
     subject_id: Mapped[str]
     animal_id: Mapped[str | None]
     data: Mapped[dict] = mapped_column(default=dict)
+    created_at: Mapped[datetime] = _created_at()
+
+
+class IdentityCheck(Base):
+    """A claim-time muzzle re-scan compared with the claimed animal's enrolled references (the anti-fraud step)."""
+
+    __tablename__ = "identity_checks"
+    __table_args__ = (Index("ix_identity_checks_claim_created", "claim_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    animal_id: Mapped[str] = _animal_fk()
+    media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    crop_media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    reference_id: Mapped[str | None] = mapped_column(ForeignKey("animal_references.id"))
+    outcome: Mapped[str]
+    reason: Mapped[str | None]
+    matched_animal_id: Mapped[str | None]
+    candidates: Mapped[list] = mapped_column(default=list)
+    inliers: Mapped[int | None]
+    source: Mapped[str]
+    method_version: Mapped[str]
+    evidence: Mapped[dict] = mapped_column(default=dict)
+    checked_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class CameraGallerySync(Base):
+    """The muzzle gallery version a camera worker last acknowledged."""
+
+    __tablename__ = "camera_gallery_syncs"
+
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"), primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    synced_version: Mapped[int]
+    synced_at: Mapped[datetime]
+    source: Mapped[str]
+
+
+class GalleryPublication(Base):
+    """The gallery version a manager last pushed to the farm's cameras."""
+
+    __tablename__ = "gallery_publications"
+
+    farm_id: Mapped[str] = mapped_column(ForeignKey("farms.id"), primary_key=True)
+    version: Mapped[int]
+    published_by: Mapped[str]
+    published_at: Mapped[datetime]
+
+
+class AgentConversation(Base):
+    """One guided conversation with the in-app VEYRA agent about one animal (domain/agent_chat.py). `state` holds
+    only what the farmer answered and which question is open; everything else is read again from the records."""
+
+    __tablename__ = "agent_conversations"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    intent: Mapped[str]
+    state: Mapped[dict] = mapped_column(default=dict)
+    created_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+    updated_at: Mapped[datetime] = _updated_at()
+
+
+class AgentMessage(Base):
+    """A turn of an agent conversation: the farmer's words (data, never instructions) or the agent's text, its
+    data-backed cards, and the choices it offers."""
+
+    __tablename__ = "agent_messages"
+    __table_args__ = (UniqueConstraint("conversation_id", "seq"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    conversation_id: Mapped[str] = mapped_column(ForeignKey("agent_conversations.id"), index=True)
+    seq: Mapped[int]
+    role: Mapped[str]
+    text: Mapped[str]
+    cards: Mapped[list] = mapped_column(default=list)
+    choices: Mapped[list] = mapped_column(default=list)
+    source: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class ClaimInsurerUpdate(Base):
+    """An assessment update the (sandbox) insurer reported on a submitted claim. VEYRA records it; it never decides
+    it. A settlement amount and a disbursement state are the insurer's words, never VEYRA's."""
+
+    __tablename__ = "claim_insurer_updates"
+    __table_args__ = (Index("ix_claim_insurer_updates_claim_created", "claim_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    provider_id: Mapped[str]
+    status: Mapped[str]
+    note: Mapped[str | None]
+    settlement_minor: Mapped[int | None]
+    currency: Mapped[str]
+    disbursement: Mapped[str | None]
+    source: Mapped[str]
     created_at: Mapped[datetime] = _created_at()

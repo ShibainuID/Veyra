@@ -44,6 +44,30 @@ export function useHerd(filters: HerdFilters) {
   });
 }
 
+export type CameraOut = Schemas["CameraOut"];
+export type GalleryPublishOut = Schemas["GalleryPublishOut"];
+
+/** The farm's cameras with their muzzle-gallery sync status. Same key and shape as Monitor's camera list. */
+export function useCameras() {
+  return useQuery({
+    queryKey: ["cameras"] as const,
+    queryFn: async () => must(await api.GET("/api/v1/cameras")).items,
+  });
+}
+
+/** A manager pushes the current muzzle gallery to the pen cameras (in the demo the cameras' acks are simulated). */
+export function usePublishGallery() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => must(await api.POST("/api/v1/cameras/gallery/publish")),
+    onSettled: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["cameras"] }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.auditEvents }),
+      ]),
+  });
+}
+
 export function useConfirmValuation(animalId: string) {
   const queryClient = useQueryClient();
   return useMutation({

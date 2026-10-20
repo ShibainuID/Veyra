@@ -10,6 +10,7 @@ import { EmptyState, ErrorNotice } from "../../components/feedback";
 import { Money, Mono, Timestamp } from "../../components/figures";
 import { FilterChips, type FilterOption } from "../../components/FilterChips";
 import { PageHeader } from "../../components/layout";
+import { NOT_GUARANTEED } from "../../components/NotGuaranteed";
 import { Provenance, type Source } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { useShellSummary } from "../../app/use-shell-summary";
@@ -140,6 +141,8 @@ const COLUMNS: readonly Column<HerdItem>[] = [
     width: "156px",
     sortValue: (row) => row.valuation?.value_high_minor ?? null,
     cell: (row) => <ExposureCell row={row} columnSource={null} />,
+    headerTitle: NOT_GUARANTEED,
+    headerDescription: NOT_GUARANTEED,
   },
   {
     id: "coverage",
@@ -297,7 +300,7 @@ export function HerdPage() {
               ...column,
               cell: (row: HerdItem) => <ExposureCell row={row} columnSource={source} />,
               headerAddon: <Provenance source={source} />,
-              headerDescription: `Every exposure in this column is ${source} unless its row says otherwise`,
+              headerDescription: `Every exposure in this column is ${source} unless its row says otherwise. ${NOT_GUARANTEED}`,
             }
           : column,
       ),

@@ -1,4 +1,4 @@
-"""Request and response models for enrollment and jobs (plan Section 5: `/enrollments`, `/jobs`).
+"""Request and response models for enrollment and jobs (`/enrollments`, `/jobs`).
 
 Perception payloads (manifest, identity, estimates) are the adapters' dicts stored verbatim, so their models
 name the fields the app relies on and allow the rest (`extra="allow"`): an adapter that adds a field does not
