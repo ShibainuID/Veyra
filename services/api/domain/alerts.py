@@ -12,7 +12,7 @@ otherwise the track) has a window ending within the cooldown of the new window's
 of the same scenario started close together therefore raise one alert, whatever its review status.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime, tzinfo
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -32,10 +32,11 @@ ACKNOWLEDGERS = ("manager", "operator", "vet")
 STATUS_EVENTS = {"acknowledged": "alert.acknowledged", "resolved": "alert.resolved"}
 
 
-def summary_of(alert: Alert, *, camera_name: str, animal_name: str | None, track_key: str | None) -> str:
+def summary_of(alert: Alert, *, camera_name: str, animal_name: str | None, track_key: str | None,
+               zone: tzinfo = UTC) -> str:
     return alert_summary(kind=alert.kind, rule=alert.rule or {}, camera_name=camera_name,
                          window_start=alert.window_start, window_end=alert.window_end, animal_name=animal_name,
-                         track_key=track_key)
+                         track_key=track_key, zone=zone)
 
 
 def create(session: Session, *, farm_id: str, kind: str, camera_id: str, track: Track | None, animal_id: str | None,
@@ -92,7 +93,7 @@ def list_alerts(session: Session, farm_id: str, *, status: str | None = None, ki
     return list(session.scalars(query.order_by(Alert.created_at.desc(), Alert.window_end.desc(), Alert.id)))
 
 
-def views(session: Session, farm_id: str, alerts: list[Alert]) -> list[dict]:
+def views(session: Session, farm_id: str, alerts: list[Alert], zone: tzinfo = UTC) -> list[dict]:
     """Alerts joined with the names a reviewer needs and the deterministic summary."""
     cameras = dict(session.execute(select(Camera.id, Camera.name).where(Camera.farm_id == farm_id)).all())
     animals = dict(session.execute(select(Animal.id, Animal.name).where(Animal.farm_id == farm_id)).all())
@@ -111,7 +112,8 @@ def views(session: Session, farm_id: str, alerts: list[Alert]) -> list[dict]:
             "window_end": alert.window_end, "baseline_start": alert.baseline_start,
             "baseline_end": alert.baseline_end, "rule": dict(alert.rule or {}),
             "clip": dict(alert.clip) if alert.clip else None, "notes": list(alert.notes or []),
-            "summary": summary_of(alert, camera_name=camera_name, animal_name=animal_name, track_key=track_key),
+            "summary": summary_of(alert, camera_name=camera_name, animal_name=animal_name, track_key=track_key,
+                                  zone=zone),
             "created_at": alert.created_at, "updated_at": alert.updated_at,
         })
     return out

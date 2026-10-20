@@ -23,6 +23,10 @@ export interface Column<T> {
   primary?: boolean;
   /** Stacked layout: sit in the left lead column (the tag), with no label. */
   lead?: boolean;
+  /** Shown beside the header text, such as one provenance chip for the whole column. */
+  headerAddon?: ReactNode;
+  /** Read with the header by assistive technology, such as what the addon means for every cell. */
+  headerDescription?: string;
 }
 
 export interface DataTableProps<T> {
@@ -44,6 +48,8 @@ export interface DataTableProps<T> {
   empty?: ReactNode;
   /** Rendered in place of rows when loading failed. */
   error?: ReactNode;
+  /** "narrow" keeps the table's columns down to a 34rem container (for a table that drops columns to fit). */
+  stack?: "default" | "narrow";
   className?: string;
 }
 
@@ -74,6 +80,7 @@ export function DataTable<T>({
   loadingRows = 4,
   empty,
   error,
+  stack = "default",
   className,
 }: DataTableProps<T>) {
   const [internalSort, setInternalSort] = useState<SortState | null>(defaultSort);
@@ -158,7 +165,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={cn("dt-wrap", className)}>
+    <div className={cn("dt-wrap", className)} data-stack={stack === "narrow" ? "narrow" : undefined}>
       <table className="dt" aria-busy={loading || undefined}>
         <caption className={captionVisible ? "pb-3 text-start text-muted" : "sr-only"}>
           {caption}
@@ -181,14 +188,18 @@ export function DataTable<T>({
                   data-align={column.align}
                   aria-sort={column.sortValue ? (active ? sort.direction : "none") : undefined}
                 >
-                  {column.sortValue ? (
-                    <button type="button" className="dt-sort" onClick={() => toggleSort(column.id)}>
-                      {column.header}
-                      <SortIcon aria-hidden="true" className={cn("size-4", !active && "opacity-60")} strokeWidth={2.5} />
-                    </button>
-                  ) : (
-                    column.header
-                  )}
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
+                    {column.sortValue ? (
+                      <button type="button" className="dt-sort" onClick={() => toggleSort(column.id)}>
+                        {column.header}
+                        <SortIcon aria-hidden="true" className={cn("size-4", !active && "opacity-60")} strokeWidth={2.5} />
+                      </button>
+                    ) : (
+                      column.header
+                    )}
+                    {column.headerAddon}
+                    {column.headerDescription && <span className="sr-only">{column.headerDescription}</span>}
+                  </span>
                 </th>
               );
             })}

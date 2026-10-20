@@ -2,7 +2,7 @@ import { EarTag } from "../../components/EarTag";
 import { Timestamp } from "../../components/figures";
 import { cn } from "../../lib/cn";
 import type { AnimalListItem, Camera } from "./api";
-import { FIELD_OF_VIEW, toMapPoint, type Box } from "./interpolate";
+import { FIELD_OF_VIEW, insidePen, toMapPoint, type Box } from "./interpolate";
 
 /** Map units: the SVG is drawn in a 1000 × 420 box; cameras and animals sit at normalized map_x / map_y. */
 const W = 1000;
@@ -54,7 +54,8 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
   for (const position of live) {
     const camera = camerasById.get(position.cameraId);
     if (!camera) continue;
-    const point = toMapPoint(camera, position.box);
+    // Inset by the tag's own size, so a track at the frame's edge still draws its tag inside the pen.
+    const point = insidePen(camera, toMapPoint(camera, position.box));
     const animal = position.animalId ? animals.find((a) => a.id === position.animalId) : undefined;
     markers.push({
       key: `live-${position.key}`,
@@ -78,10 +79,14 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
     const camera = camerasById.get(cameraId);
     if (!camera) continue;
     group.forEach((animal, i) => {
+      const point = insidePen(camera, {
+        x: camera.map_x + (i - (group.length - 1) / 2) * 0.065,
+        y: camera.map_y + FIELD_OF_VIEW.height / 2,
+      });
       markers.push({
         key: `rest-${animal.id}`,
-        x: clamp01(camera.map_x + (i - (group.length - 1) / 2) * 0.065),
-        y: clamp01(camera.map_y + FIELD_OF_VIEW.height / 2 - 0.1),
+        x: clamp01(point.x),
+        y: clamp01(point.y),
         animalId: animal.id,
         name: animal.name,
         state: animal.identity_status === "pending_review" ? "pending" : "confirmed",
@@ -123,9 +128,10 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
                 {/* The camera hangs on the pen's top edge, looking in. */}
                 <rect x={cx - 13} y={cy - fh / 2 - 11} width={26} height={22} rx={5} fill="var(--ink)" />
                 <circle cx={cx} cy={cy - fh / 2} r={5} fill="var(--tag)" />
+                {/* The pen's name prints inside its own box, so a neighbouring pen's edge never runs through it. */}
                 <text
-                  x={cx - fw / 2 + 4}
-                  y={cy - fh / 2 - 12}
+                  x={cx - fw / 2 + 14}
+                  y={cy - fh / 2 + 32}
                   fontSize={22}
                   fontWeight={700}
                   fill="var(--ink)"

@@ -587,7 +587,7 @@ function DecisionArea(props: DecisionAreaProps) {
   return (
     <div className="flex flex-col gap-3">
       {errorNotice}
-      {/* Decline sits apart from Approve: 32px beside it, or 24px below it on a phone. */}
+      {/* Decline sits apart from Approve: 20px beside it (room for both in the 440px passbook), or 24px below it on a phone. */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-0">
         <Button
           variant="primary"
@@ -601,7 +601,7 @@ function DecisionArea(props: DecisionAreaProps) {
         >
           Approve and stamp
         </Button>
-        <Button variant="danger" size="decision" className="flex-none sm:ml-8" onClick={props.onOpenDecline} disabled={busy}>
+        <Button variant="danger" size="decision" className="flex-none sm:ml-5" onClick={props.onOpenDecline} disabled={busy}>
           Decline
         </Button>
       </div>

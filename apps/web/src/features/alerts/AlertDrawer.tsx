@@ -12,7 +12,7 @@ import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { api } from "../../lib/api";
 import { cn } from "../../lib/cn";
-import { formatAbsolute, formatClockSeconds } from "../../lib/format";
+import { formatAbsolute, formatClockSeconds, localizeWindowText, zoneLabel } from "../../lib/format";
 import { ApiError } from "../../lib/errors";
 import { useRole } from "../../lib/role-store";
 import { toSource } from "../enrollment/ReviewStep";
@@ -47,7 +47,7 @@ function Window({ label, start, end }: { label: string; start: string | null; en
               <time dateTime={start}>{formatClockSeconds(start)}</time>
               <span aria-hidden="true"> – </span>
               <span className="sr-only"> to </span>
-              <time dateTime={end}>{formatClockSeconds(end)}</time>
+              <time dateTime={end}>{formatClockSeconds(end)}</time> {zoneLabel(start)}
             </span>
           </span>
         ) : (
@@ -239,7 +239,7 @@ export function AlertDrawer({ alertId, onClose }: AlertDrawerProps) {
               <StatusPill tone={STATUS_TONE[alert.status]} label={STATUS_LABEL[alert.status]} />
               <Provenance source={source} />
             </div>
-            <p className="text-md">{alert.summary}</p>
+            <p className="text-md">{localizeWindowText(alert.summary, alert.window_start, alert.window_end)}</p>
           </div>
 
           <section aria-label="Animal and camera" className="flex flex-col gap-4">

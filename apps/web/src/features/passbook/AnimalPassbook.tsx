@@ -9,6 +9,7 @@ import { cn } from "../../lib/cn";
 import { ActionReview } from "../actions/ActionReview";
 import { usePassport, type Passport } from "../passport/api";
 import { toPassbookLines, usePressedLines } from "./lines";
+import { awaitingScrollTop } from "./scroll";
 
 export interface AnimalPassbookProps {
   animalId: string;
@@ -81,15 +82,44 @@ export function AnimalPassbook({ animalId, headingLevel = 2, passportLink = fals
   const rootRef = useRef<HTMLDivElement>(null);
   const awaitingNo = passport?.passbook.lines.find((line) => line.status === "awaiting")?.no;
 
-  // When the lines scroll inside a fixed-height panel, bring the waiting line into view.
+  // When the lines scroll inside a fixed-height panel, seat the waiting line whole at the list's
+  // bottom, just above the decision bar. Fonts and the decision bar settle after first paint and
+  // change the list's height, so re-align on every resize until the reader scrolls themselves.
   useEffect(() => {
     const root = rootRef.current;
     if (!root || awaitingNo === undefined) return;
     const line = root.querySelector<HTMLElement>('.pb-line[data-status="awaiting"]');
     const list = line?.closest<HTMLElement>(".pb-list");
-    if (!line || !list || list.scrollHeight <= list.clientHeight) return;
-    list.scrollTop += line.getBoundingClientRect().top - list.getBoundingClientRect().top - 8;
-  }, [animalId, awaitingNo]);
+    if (!line || !list) return;
+    let frame = 0;
+    let userScrolled = false;
+    const align = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        if (userScrolled || list.scrollHeight <= list.clientHeight) return;
+        const lineOffset = line.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+        list.scrollTop = awaitingScrollTop({ lineOffset, lineHeight: line.offsetHeight, listHeight: list.clientHeight });
+      });
+    };
+    const stop = () => {
+      userScrolled = true;
+    };
+    align();
+    void document.fonts?.ready.then(align);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(align);
+    observer?.observe(list);
+    observer?.observe(line);
+    list.addEventListener("wheel", stop, { passive: true });
+    list.addEventListener("touchstart", stop, { passive: true });
+    list.addEventListener("keydown", stop);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer?.disconnect();
+      list.removeEventListener("wheel", stop);
+      list.removeEventListener("touchstart", stop);
+      list.removeEventListener("keydown", stop);
+    };
+  }, [animalId, awaitingNo, isPending]);
 
   if (isPending) return <PassbookSkeleton />;
   if (error || !passport) {

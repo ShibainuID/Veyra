@@ -51,6 +51,71 @@ export function missingCopy(code: string, animalName: string | null): string {
   }
 }
 
+/** Lower-case words only, without parenthesised IDs, so "Dewi (animal-demo-005)." matches "Dewi.". */
+function normalize(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Phrases that mean the answer already said this evidence is missing, in its own words. */
+const STATED: Record<string, RegExp> = {
+  last_observation: /\bno camera observation\b/,
+  active_policy: /\bno active (coverage|policy)\b/,
+  coverage: /\bno (active )?coverage\b/,
+  valuation: /\bno (confirmed )?valuation\b/,
+  alerts: /\bno (animals have )?open alerts\b/,
+};
+
+/** True when the answer sentence already states what the missing-evidence callout would say. */
+export function restatesMissing(answer: string, code: string, callout: string): boolean {
+  const said = normalize(answer);
+  const note = normalize(callout);
+  if (note && said.includes(note)) return true;
+  return STATED[code]?.test(said) ?? false;
+}
+
+export interface Callout {
+  text: string;
+  /** Set when the callout is the recovery rather than a restatement of the gap. */
+  link?: { to: string; label: string };
+}
+
+/** What to do about missing evidence, for when the answer already names the gap. */
+export function recoveryCopy(code: string, animal: { id: string; name: string } | null): Callout | null {
+  const subject = animal?.name ?? "the animal";
+  const id = animal ? encodeURIComponent(animal.id) : null;
+  switch (code) {
+    case "last_observation":
+      return {
+        text: `Link a pen camera track to ${subject} to place it.`,
+        link: { to: id ? `/monitor?animal=${id}` : "/monitor", label: "Open Monitor" },
+      };
+    case "active_policy":
+    case "coverage":
+      return {
+        text: "Prepare an application from the passport.",
+        link: id ? { to: `/animals/${id}/insurance`, label: "Compare cover" } : undefined,
+      };
+    case "valuation":
+      return { text: `Confirm ${subject}'s weight and age on the passport to value it.`, link: id ? { to: `/animals/${id}`, label: "Open passport" } : undefined };
+    default:
+      return null;
+  }
+}
+
+/**
+ * The callout for one missing-evidence code: the plain statement, or, when the answer already says it, the
+ * recovery. Null when the answer covers it and there is nothing to do.
+ */
+export function missingCallout(answer: string, code: string, animal: { id: string; name: string } | null): Callout | null {
+  const text = missingCopy(code, animal?.name ?? null);
+  if (!restatesMissing(answer, code, text)) return { text };
+  return recoveryCopy(code, animal);
+}
+
 export type FactLink = { to: string; label: string } | null;
 
 /** Where a fact's record lives in the app. Cameras open Monitor focused on the animal the answer is about. */

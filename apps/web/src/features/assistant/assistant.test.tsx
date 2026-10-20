@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
-import { factLink, missingCopy, type AssistantAnswer } from "./answer";
+import { factLink, missingCallout, missingCopy, restatesMissing, type AssistantAnswer } from "./answer";
 import { AnswerCard } from "./AnswerCard";
 
 const records = { animals: [], last_observations: [], coverage: [], alerts: [] };
@@ -15,7 +15,7 @@ function renderAnswer(answer: AssistantAnswer) {
 }
 
 describe("AnswerCard", () => {
-  it("states missing evidence plainly, with the animal's name", () => {
+  it("shows the recovery instead of repeating a gap the answer already states", () => {
     renderAnswer({
       intent: "location_lookup",
       parsed_by: "simulated",
@@ -26,7 +26,9 @@ describe("AnswerCard", () => {
       fallback_reason: "llm_offline",
     });
     const missing = screen.getByRole("list", { name: "Missing evidence" });
-    expect(within(missing).getByText("No camera observation is on record for Dewi.")).toBeInTheDocument();
+    expect(within(missing).queryByText("No camera observation is on record for Dewi.")).not.toBeInTheDocument();
+    expect(within(missing).getByText("Link a pen camera track to Dewi to place it.")).toBeInTheDocument();
+    expect(within(missing).getByRole("link", { name: /Open Monitor/ })).toHaveAttribute("href", "/monitor?animal=animal-demo-005");
     expect(screen.getByText(/Parsed offline/)).toBeInTheDocument();
   });
 
@@ -58,6 +60,25 @@ describe("answer helpers", () => {
   it("never drops an unknown missing code", () => {
     expect(missingCopy("teeth_photo", "Bima")).toBe("Not on record: teeth photo for Bima.");
     expect(missingCopy("last_observation", null)).toBe("No camera observation is on record for this animal.");
+  });
+
+  it("spots a callout the answer already states, ignoring IDs and wording", () => {
+    const dewi = "No camera observation is on record for Dewi (animal-demo-005).";
+    expect(restatesMissing(dewi, "last_observation", missingCopy("last_observation", "Dewi"))).toBe(true);
+    expect(restatesMissing("Sari has no active coverage.", "active_policy", missingCopy("active_policy", "Sari"))).toBe(true);
+    expect(restatesMissing("Sari was last observed on Pen A.", "active_policy", missingCopy("active_policy", "Sari"))).toBe(false);
+  });
+
+  it("keeps the plain statement when it is news, and the recovery when it is not", () => {
+    const sari = { id: "animal-demo-001", name: "Sari" };
+    expect(missingCallout("Sari was last observed on Pen A.", "active_policy", sari)).toEqual({
+      text: "No active policy is on record for Sari.",
+    });
+    expect(missingCallout("Sari has no active coverage.", "active_policy", sari)).toEqual({
+      text: "Prepare an application from the passport.",
+      link: { to: "/animals/animal-demo-001/insurance", label: "Compare cover" },
+    });
+    expect(missingCallout("No animals have open alerts.", "alerts", null)).toBeNull();
   });
 
   it("sends alerts to the drawer", () => {

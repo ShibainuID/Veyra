@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { boxAt, matchFlashing, matchTime, replayTimeAt, toMapPoint, type Frame } from "./interpolate";
+import { boxAt, FIELD_OF_VIEW, insidePen, matchFlashing, matchTime, replayTimeAt, toMapPoint, type Frame } from "./interpolate";
 
 const frames: Frame[] = [
   { t: 0, bbox: [0.1, 0.2, 0.2, 0.1], visibility: 0.9 },
@@ -71,5 +71,20 @@ describe("toMapPoint", () => {
     expect(toMapPoint({ map_x: 0.5, map_y: 0.5 }, [0.4, 0.4, 0.2, 0.2])).toEqual({ x: 0.5, y: 0.5 });
     const right = toMapPoint({ map_x: 0.22, map_y: 0.3 }, [0.8, 0.4, 0.2, 0.2]);
     expect(right.x).toBeGreaterThan(0.22);
+  });
+});
+
+describe("insidePen", () => {
+  it("keeps a tag at the frame edge inside its pen box", () => {
+    const camera = { map_x: 0.42, map_y: 0.74 };
+    const edge = insidePen(camera, toMapPoint(camera, [0, 0.9, 0.05, 0.1]));
+    expect(edge.x).toBeGreaterThan(camera.map_x - FIELD_OF_VIEW.width / 2);
+    expect(edge.y).toBeLessThan(camera.map_y + FIELD_OF_VIEW.height / 2);
+    const top = insidePen(camera, { x: 0.42, y: 0.5 });
+    expect(top.y).toBeGreaterThan(camera.map_y - FIELD_OF_VIEW.height / 2);
+  });
+
+  it("leaves a point well inside the pen where it is", () => {
+    expect(insidePen({ map_x: 0.5, map_y: 0.5 }, { x: 0.5, y: 0.55 })).toEqual({ x: 0.5, y: 0.55 });
   });
 });

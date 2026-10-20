@@ -305,9 +305,9 @@ def _coverage(out: _Answer, session: Session, farm_id: str, card: dict) -> None:
     out.records["coverage"].append(entry)
 
 
-def _alerts(out: _Answer, session: Session, farm_id: str, card: dict | None) -> None:
+def _alerts(out: _Answer, session: Session, farm_id: str, card: dict | None, zone: tzinfo = UTC) -> None:
     rows = alert_rules.list_alerts(session, farm_id, status="open", animal_id=card["id"] if card else None)
-    views = alert_rules.views(session, farm_id, rows)
+    views = alert_rules.views(session, farm_id, rows, zone)
     out.records["alerts"] += views
     for view in views:
         label = "Reduced movement" if view["kind"] == "reduced_movement" else "Observation quality warning"
@@ -367,7 +367,7 @@ def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetim
         if parsed.has_unmatched:
             pass
         elif "alerts" in wants:
-            _alerts(out, session, farm_id, None)
+            _alerts(out, session, farm_id, None, zone)
         elif "coverage" in wants:
             for card in cards.values():
                 _coverage(out, session, farm_id, card)
@@ -387,7 +387,7 @@ def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetim
             elif want == "coverage":
                 _coverage(out, session, farm_id, card)
             else:
-                _alerts(out, session, farm_id, card)
+                _alerts(out, session, farm_id, card, zone)
     return {"intent": intent.intent, "parsed_by": parsed.parsed_by, "answer": " ".join(out.sentences),
             "facts": out.facts, "records": out.records, "missing": out.missing,
             "fallback_reason": parsed.fallback_reason}

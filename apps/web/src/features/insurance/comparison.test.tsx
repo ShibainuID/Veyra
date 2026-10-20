@@ -75,7 +75,7 @@ describe("ComparisonTable", () => {
       />,
     );
     const table = screen.getByRole("table");
-    const headers = within(table).getAllByRole("columnheader").map((th) => th.textContent);
+    const headers = within(table.querySelector("thead")!).getAllByRole("columnheader").map((th) => th.textContent);
     expect(headers).toEqual([
       expect.stringContaining("Basic Mortality & Accident"),
       expect.stringContaining("Mortality + Theft"),
@@ -96,5 +96,25 @@ describe("ComparisonTable", () => {
 
     expect(within(table).getAllByRole("button", { name: "Prepare application" })).toHaveLength(1);
     expect(within(table).getByRole("rowheader", { name: "Exclusions in all 3" })).toBeInTheDocument();
+  });
+});
+
+describe("ComparisonTable groups", () => {
+  it("names perils and rules once as group rows, not as a label over every row", () => {
+    render(<ComparisonTable results={results} renderAction={() => <span>Not available</span>} />);
+    const table = screen.getByRole("table");
+    expect(within(table).getByRole("columnheader", { name: "Covered perils" })).toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Eligibility rules" })).toBeInTheDocument();
+    expect(within(table).queryByText("Covered peril")).not.toBeInTheDocument();
+    expect(within(table).queryByText("Eligibility rule")).not.toBeInTheDocument();
+  });
+
+  it("prints a shared action once in place of identical per-product actions", () => {
+    render(
+      <ComparisonTable results={results} renderAction={() => <span>per product</span>} sharedAction={<p>Already covered under Basic.</p>} />,
+    );
+    const table = screen.getByRole("table");
+    expect(within(table).getAllByText("Already covered under Basic.")).toHaveLength(1);
+    expect(within(table).queryByText("per product")).not.toBeInTheDocument();
   });
 });

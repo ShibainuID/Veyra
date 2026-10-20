@@ -55,6 +55,21 @@ export function groupActions(actions: readonly AgentAction[]): QueueGroup[] {
   ];
 }
 
+/**
+ * Each action's line number in its animal's passbook (the number the passport prints), read from
+ * the passbook lines that carry its action ID. Farm-level actions, or ones whose passbook has not
+ * loaded, fall back to their stable order among all prepared actions.
+ */
+export function passbookLineNumbers(
+  actions: readonly AgentAction[],
+  passbooks: readonly (readonly { no: number; action_id?: string | null }[] | undefined)[],
+): Map<string, number> {
+  const fromPassbook = new Map<string, number>();
+  for (const lines of passbooks) for (const line of lines ?? []) if (line.action_id) fromPassbook.set(line.action_id, line.no);
+  const fallback = lineNumbers(actions);
+  return new Map(actions.map((a) => [a.id, fromPassbook.get(a.id) ?? fallback.get(a.id) ?? 0]));
+}
+
 /** Line numbers follow the order the agent prepared the actions, so a number never changes. */
 export function lineNumbers(actions: readonly AgentAction[]): Map<string, number> {
   const ordered = [...actions].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));

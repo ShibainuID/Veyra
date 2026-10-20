@@ -1,5 +1,5 @@
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 
 import pytest
 
@@ -135,6 +135,11 @@ def test_rule_json_and_summary_are_transparent_and_not_a_diagnosis():
                             window_start=start, window_end=start, track_key="t-14")
     assert "unidentified track t-14" in warning and "mean visibility 45%" in warning
     assert "not a diagnosis" in warning
+
+    wita = timezone(timedelta(hours=8), "UTC+8")
+    local = alert_summary(kind="reduced_movement", rule=rule, camera_name="Pen A · feed line", window_start=start,
+                          window_end=start + timedelta(seconds=30), animal_name="Sari", zone=wita)
+    assert "(17:31:00–17:31:30 UTC+8)" in local
 
 
 def _scenario(name: str) -> dict:

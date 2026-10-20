@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "../lib/cn";
-import { formatAbsolute, formatClockSeconds, formatMoney, formatMoneyRange, formatRange, formatRelative } from "../lib/format";
+import { formatAbsolute, formatClockSeconds, formatMoney, formatMoneyRange, formatRange, formatRelative, zoneLabel } from "../lib/format";
 import { useNow } from "../lib/use-now";
 
 /** Figures, IDs, and codes: Atkinson Hyperlegible Mono with tabular numerals. */
@@ -61,7 +61,8 @@ export function Timestamp({ value, mode = "both", timeZone, className }: Timesta
 
 /**
  * An observation window, "20 Oct 2026, 13:40:23–13:40:53": windows are often shorter than a
- * minute, so both ends keep their seconds and the date prints once when they share a day.
+ * minute, so both ends keep their seconds, the date prints once when they share a day, and the
+ * viewer's zone closes it.
  */
 export function TimeWindow({ start, end, className }: { start: string; end: string; className?: string }) {
   const day = (value: string) => formatAbsolute(value).split(",")[0];
@@ -71,7 +72,7 @@ export function TimeWindow({ start, end, className }: { start: string; end: stri
       <span aria-hidden="true">–</span>
       <span className="sr-only"> to </span>
       {day(end) !== day(start) && <>{day(end)}, </>}
-      <time dateTime={end}>{formatClockSeconds(end)}</time>
+      <time dateTime={end}>{formatClockSeconds(end)}</time> {zoneLabel(start)}
     </span>
   );
 }

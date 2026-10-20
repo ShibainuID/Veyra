@@ -112,6 +112,8 @@ export interface ComparisonTableProps {
   results: readonly Recommendation[];
   /** What each product's column ends with (the prepare button, or why there is none). */
   renderAction: (result: Recommendation) => ReactNode;
+  /** One line printed once under every product, in place of identical per-product actions. */
+  sharedAction?: ReactNode;
 }
 
 interface Row {
@@ -122,13 +124,20 @@ interface Row {
   spanning?: ReactNode;
 }
 
+interface RowGroup {
+  key: string;
+  /** A full-width heading row over the group ("Covered perils"); the plain terms carry none. */
+  title?: string;
+  rows: Row[];
+}
+
 /**
  * A real comparison: products are columns, and every row lines up the same term across them.
  * Below 720px each product stacks as its own block with the same rows, labelled.
  */
-export function ComparisonTable({ results, renderAction }: ComparisonTableProps) {
+export function ComparisonTable({ results, renderAction, sharedAction }: ComparisonTableProps) {
   const comparison = buildComparison(results);
-  const rows: Row[] = [
+  const terms: Row[] = [
     { key: "outcome", header: "Outcome", cell: (r) => <OutcomeCell result={r} /> },
     {
       key: "premium",
@@ -140,26 +149,18 @@ export function ComparisonTable({ results, renderAction }: ComparisonTableProps)
       header: "Deductible",
       cell: (r) => <MoneyCell minor={r.deductible_minor} currency={r.currency} suffix="per claim" none="Not quoted" />,
     },
-    ...comparison.perils.map<Row>((peril) => ({
-      key: `peril-${peril}`,
-      header: (
-        <>
-          <span className="block text-sm font-regular text-muted">Covered peril</span>
-          {perilLabel(peril)}
-        </>
-      ),
-      cell: (r) => <PerilCell covered={r.covered_perils.includes(peril)} />,
-    })),
-    ...comparison.rules.map<Row>((rule) => ({
-      key: `rule-${rule.field}`,
-      header: (
-        <>
-          <span className="block text-sm font-regular text-muted">Eligibility rule</span>
-          {rule.label}
-        </>
-      ),
-      cell: (_r, i) => <RuleCell reason={rule.cells[i] ?? null} />,
-    })),
+  ];
+  const perils = comparison.perils.map<Row>((peril) => ({
+    key: `peril-${peril}`,
+    header: perilLabel(peril),
+    cell: (r) => <PerilCell covered={r.covered_perils.includes(peril)} />,
+  }));
+  const rules = comparison.rules.map<Row>((rule) => ({
+    key: `rule-${rule.field}`,
+    header: rule.label,
+    cell: (_r, i) => <RuleCell reason={rule.cells[i] ?? null} />,
+  }));
+  const closing: Row[] = [
     {
       key: "exclusions-shared",
       header: `Exclusions in all ${results.length}`,
@@ -193,6 +194,12 @@ export function ComparisonTable({ results, renderAction }: ComparisonTableProps)
     },
     { key: "payout", header: "Payout formula", cell: (r) => <PayoutCell formula={r.payout_formula} /> },
   ];
+  const groups: RowGroup[] = [
+    { key: "terms", rows: terms },
+    { key: "perils", title: "Covered perils", rows: perils },
+    { key: "rules", title: "Eligibility rules", rows: rules },
+    { key: "closing", rows: closing },
+  ].filter((group) => group.rows.length > 0);
 
   return (
     <>
@@ -216,56 +223,83 @@ export function ComparisonTable({ results, renderAction }: ComparisonTableProps)
               ))}
             </tr>
           </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr key={row.key} className="border-t border-line first:border-t-2 first:border-ink">
-                <th scope="row" className="py-4 pr-4 text-left align-top font-bold">
-                  {row.header}
-                </th>
-                {row.spanning ? (
-                  <td colSpan={results.length} className="px-4 py-4 align-top">
-                    {row.spanning}
-                  </td>
-                ) : (
-                  results.map((r, i) => (
-                    <td key={r.product_id} className="px-4 py-4 align-top">
-                      {row.cell(r, i)}
+          {groups.map((group, g) => (
+            <tbody key={group.key}>
+              {/* A group's name is one full-width row, not a label repeated over every row in it. */}
+              {group.title && (
+                <tr className="border-t-2 border-ink">
+                  <th scope="colgroup" colSpan={results.length + 1} className="pt-6 pb-3 text-left text-md font-bold">
+                    {group.title}
+                  </th>
+                </tr>
+              )}
+              {group.rows.map((row, r) => (
+                <tr
+                  key={row.key}
+                  className={cn("border-t", g === 0 && r === 0 ? "border-t-2 border-ink" : "border-line")}
+                >
+                  <th scope="row" className="py-4 pr-4 text-left align-top font-bold">
+                    {row.header}
+                  </th>
+                  {row.spanning ? (
+                    <td colSpan={results.length} className="px-4 py-4 align-top">
+                      {row.spanning}
                     </td>
-                  ))
-                )}
-              </tr>
-            ))}
-          </tbody>
+                  ) : (
+                    results.map((result, i) => (
+                      <td key={result.product_id} className="px-4 py-4 align-top">
+                        {row.cell(result, i)}
+                      </td>
+                    ))
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          ))}
           <tfoot>
             <tr className="border-t-2 border-ink">
               <td />
-              {results.map((r) => (
-                <td key={r.product_id} className="px-4 pt-5 align-top">
-                  {renderAction(r)}
+              {sharedAction ? (
+                <td colSpan={results.length} className="px-4 pt-5 align-top">
+                  {sharedAction}
                 </td>
-              ))}
+              ) : (
+                results.map((r) => (
+                  <td key={r.product_id} className="px-4 pt-5 align-top">
+                    {renderAction(r)}
+                  </td>
+                ))
+              )}
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <ol className="flex flex-col gap-10 md:hidden" aria-label="Sample products compared for this animal">
-        {results.map((r, i) => (
-          <li key={r.product_id} className={cn("border-t-4", OUTCOME_RULE[r.outcome])}>
-            <h3 className="pt-3 text-md font-bold">{r.product_name}</h3>
-            <p className="figures text-sm text-muted">{r.product_id}</p>
-            <dl className="mt-3">
-              {rows.map((row) => (
-                <div key={row.key} className="flex flex-col gap-1.5 border-t border-line py-3">
-                  <dt className="font-bold">{row.header}</dt>
-                  <dd>{row.spanning ?? row.cell(r, i)}</dd>
+      <div className="flex flex-col gap-10 md:hidden">
+        <ol className="flex flex-col gap-10" aria-label="Sample products compared for this animal">
+          {results.map((r, i) => (
+            <li key={r.product_id} className={cn("border-t-4", OUTCOME_RULE[r.outcome])}>
+              <h3 className="pt-3 text-md font-bold">{r.product_name}</h3>
+              <p className="figures text-sm text-muted">{r.product_id}</p>
+              {groups.map((group) => (
+                <div key={group.key} className="mt-3">
+                  {group.title && <h4 className="border-t-2 border-ink pt-3 font-bold">{group.title}</h4>}
+                  <dl>
+                    {group.rows.map((row) => (
+                      <div key={row.key} className={cn("flex flex-col gap-1.5 border-t border-line py-3", group.title && "first:border-t-0")}>
+                        <dt className="font-bold">{row.header}</dt>
+                        <dd>{row.spanning ?? row.cell(r, i)}</dd>
+                      </div>
+                    ))}
+                  </dl>
                 </div>
               ))}
-            </dl>
-            <div className="border-t-2 border-ink pt-4">{renderAction(r)}</div>
-          </li>
-        ))}
-      </ol>
+              {!sharedAction && <div className="border-t-2 border-ink pt-4">{renderAction(r)}</div>}
+            </li>
+          ))}
+        </ol>
+        {sharedAction && <div className="border-t-2 border-ink pt-4">{sharedAction}</div>}
+      </div>
     </>
   );
 }

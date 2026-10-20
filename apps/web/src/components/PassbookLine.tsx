@@ -25,6 +25,8 @@ export interface PassbookLineData {
   /** When the line was written (ISO 8601). */
   at: string;
   title: string;
+  /** Before the title, such as the animal's ear tag on a line outside its own passbook. */
+  titleLead?: ReactNode;
   detail?: ReactNode;
   amount?: PassbookAmount;
   /** Running wallet balance after this line, in minor units. */
@@ -63,6 +65,7 @@ export function PassbookLine({
   number,
   at,
   title,
+  titleLead,
   detail,
   amount,
   balanceMinor,
@@ -88,7 +91,10 @@ export function PassbookLine({
         </time>
       </div>
       <div className="min-w-0">
-        <p className="pb-title font-bold">{title}</p>
+        <p className="pb-title font-bold">
+          {titleLead && <span className="mr-2 inline-flex align-middle">{titleLead}</span>}
+          {title}
+        </p>
         {detail && <div className="mt-0.5 text-sm text-muted">{detail}</div>}
       </div>
       <div className="pb-amount">

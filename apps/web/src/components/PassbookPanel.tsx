@@ -158,7 +158,7 @@ export function PassbookPanel({
             Nothing has posted yet. Enrollment writes the first line.
           </p>
         ) : (
-          <ol className="pb-list relative min-h-0 flex-1 overflow-y-auto border-t border-line px-1">
+          <ol className="pb-list relative min-h-0 flex-1 overflow-y-auto border-t border-line px-1 [scrollbar-gutter:stable]">
             {lines.map((line) => (
               <PassbookLine key={line.id} {...line} timeZone={timeZone} />
             ))}
@@ -167,7 +167,7 @@ export function PassbookPanel({
       </div>
 
       {awaiting && decisionSlot && (
-        <div className={cn("border-t-2 border-ink bg-bg px-5 pt-4 pb-5", decisionSlotClassName)}>{decisionSlot}</div>
+        <div className={cn("border-t-2 border-ink bg-bg px-[22px] pt-4 pb-5", decisionSlotClassName)}>{decisionSlot}</div>
       )}
       {awaiting && decision && !decisionSlot && (
         <DecisionBar line={awaiting} decision={decision} currency={decision.currency ?? currency} />
@@ -182,7 +182,7 @@ function DecisionBar({ line, decision, currency }: { line: PassbookLineData; dec
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 border-t-2 border-ink bg-bg px-5 pt-4 pb-5",
+        "flex flex-col gap-3 border-t-2 border-ink bg-bg px-[22px] pt-4 pb-5",
         "max-tab:sticky max-tab:bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom))] max-tab:z-sticky max-tab:shadow-[0_-6px_16px_oklch(0.18_0.005_260/0.1)]",
       )}
     >
