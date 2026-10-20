@@ -1,0 +1,35 @@
+/* The approval queue: each passbook line is selectable through one stretched link. */
+.approval-list .pb-line {
+  position: relative;
+}
+.approval-list .pb-line:has(.approval-link:hover) {
+  background: var(--surface);
+}
+.approval-list .pb-line[data-status="awaiting"]:has(.approval-link:hover) {
+  background: var(--tag-soft);
+  border-color: var(--await-ink);
+}
+.approval-list .pb-line:has(.approval-link[aria-current="true"]) {
+  box-shadow: inset 0 0 0 3px var(--ink);
+  border-radius: var(--radius-control);
+}
+.approval-list .pb-line:has(.approval-link:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
+}
+.approval-link {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+.approval-link:focus-visible {
+  outline: none;
+}
+.approval-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
