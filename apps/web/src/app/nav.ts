@@ -6,7 +6,7 @@ export interface NavItem {
   icon: LucideIcon;
   /** Whether a pathname belongs to this section (animal pages belong to the herd). */
   matches: (pathname: string) => boolean;
-  /** Shown in the bottom tab bar below 1024px. */
+  /** Shown in the bottom tab bar below 1024px; the rest open from its "More" sheet. */
   inTabs: boolean;
   badge?: "approvals";
 }
@@ -19,6 +19,6 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { to: "/enroll", label: "Enroll", icon: ScanLine, matches: under("/enroll"), inTabs: true },
   { to: "/monitor", label: "Monitor", icon: Cctv, matches: under("/monitor", "/alerts"), inTabs: true },
   { to: "/approvals", label: "Approvals", icon: Stamp, matches: under("/approvals"), inTabs: true, badge: "approvals" },
-  { to: "/claims", label: "Claims", icon: FileCheck2, matches: under("/claims"), inTabs: true },
+  { to: "/claims", label: "Claims", icon: FileCheck2, matches: under("/claims"), inTabs: false },
   { to: "/audit", label: "Audit", icon: ScrollText, matches: under("/audit"), inTabs: false },
 ];
