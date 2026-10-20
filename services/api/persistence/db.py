@@ -11,7 +11,11 @@ savepoints roll back with their outer transaction. Two kinds of session:
   timeout, and then fails with "database is locked". A deferred transaction that read and then tried to
   write after another commit would instead fail at once, which is why writing sessions are immediate.
 - `read_session()` / `get_read_session` (read-only) start with a deferred `BEGIN`: they read a WAL snapshot,
-  never block writers, and raise if asked to flush changes.
+  never block writers, and raise if asked to flush changes or to execute an INSERT, UPDATE, or DELETE.
+
+A thread holds at most one writing transaction: starting a second one while the first is open raises
+`RuntimeError` at once instead of waiting on itself until the busy timeout. The slot is released when that
+transaction commits, rolls back, or its connection returns to the pool, from whichever thread does it.
 
 JSON columns track in-place changes to the top-level dict or list (`notes.append(...)` is saved), but not
 changes nested deeper; reassign the attribute for those. A JSON `None` is stored as SQL `NULL`.
@@ -19,7 +23,7 @@ changes nested deeper; reassign the attribute for those. A JSON `None` is stored
 Session rules (the API runs as a single uvicorn worker process):
 - GET routes and other read-only work use the read session; anything that writes uses the writing session.
 - One session per request, job, or thread; never share a session across threads, and never open a writing
-  session while the same thread holds another one (it would wait on itself until the busy timeout).
+  session while the same thread holds another one (the guard above raises).
 - Keep writing transactions short: never hold one across slow calls (perception, sandbox providers). Commit
   first, call, then open a new session to record the result.
 - Make state transitions guarded updates, `UPDATE ... WHERE id = :id AND status = :expected`, and check the
@@ -35,13 +39,16 @@ from pathlib import Path
 from sqlalchemy import JSON, DateTime, Engine, create_engine, event
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.mutable import MutableDict, MutableList
-from sqlalchemy.orm import DeclarativeBase, Session
+from sqlalchemy.orm import DeclarativeBase, ORMExecuteState, Session
+from sqlalchemy.sql.dml import UpdateBase
 from sqlalchemy.types import TypeDecorator
 
 from config import get_settings
 
 SQLITE_BUSY_TIMEOUT_S = 15
 _BEGIN_OPTION = "sqlite_begin"
+_WRITER_KEY = "veyra_writer_slot"
+_READ_ONLY = "read_session() is read-only; use SessionLocal() to write"
 
 
 class UTCDateTime(TypeDecorator):
@@ -81,9 +88,50 @@ def _sqlite_connect(dbapi_connection, connection_record) -> None:
     cursor.close()
 
 
+class _WriterSlot:
+    """Whether one thread holds a writing transaction. The holding connection keeps a reference, so the slot
+    is released wherever that transaction ends."""
+
+    held = False
+
+
+_threads = threading.local()
+
+
+def _thread_slot() -> _WriterSlot:
+    slot = getattr(_threads, "writer", None)
+    if slot is None:
+        slot = _threads.writer = _WriterSlot()
+    return slot
+
+
 def _sqlite_begin(connection) -> None:
     mode = connection.get_execution_options().get(_BEGIN_OPTION, "IMMEDIATE")
-    connection.exec_driver_sql(f"BEGIN {mode}")
+    if mode != "IMMEDIATE":
+        connection.exec_driver_sql(f"BEGIN {mode}")
+        return
+    slot = _thread_slot()
+    if slot.held:
+        raise RuntimeError("this thread already holds a writing transaction; commit or close that session before "
+                           "opening another writing session, or read with read_session()")
+    connection.exec_driver_sql("BEGIN IMMEDIATE")
+    slot.held = True
+    connection.info[_WRITER_KEY] = slot
+
+
+def _release_writer(info: dict) -> None:
+    slot = info.pop(_WRITER_KEY, None)
+    if slot is not None:
+        slot.held = False
+
+
+def _on_transaction_end(connection) -> None:
+    _release_writer(connection.info)
+
+
+def _on_checkin(dbapi_connection, connection_record) -> None:
+    if connection_record is not None:
+        _release_writer(connection_record.info)
 
 
 def _create_engine(url: str) -> Engine:
@@ -95,6 +143,9 @@ def _create_engine(url: str) -> Engine:
     engine = create_engine(url, connect_args={"check_same_thread": False, "timeout": SQLITE_BUSY_TIMEOUT_S})
     event.listen(engine, "connect", _sqlite_connect)
     event.listen(engine, "begin", _sqlite_begin)
+    event.listen(engine, "commit", _on_transaction_end)
+    event.listen(engine, "rollback", _on_transaction_end)
+    event.listen(engine, "checkin", _on_checkin)
     return engine
 
 
@@ -121,8 +172,14 @@ def SessionLocal() -> Session:
 class _ReadSession(Session):
     def flush(self, objects=None) -> None:
         if self.new or self.dirty or self.deleted:
-            raise RuntimeError("read_session() is read-only; use SessionLocal() to write")
+            raise RuntimeError(_READ_ONLY)
         super().flush(objects)
+
+
+@event.listens_for(_ReadSession, "do_orm_execute")
+def _refuse_dml(state: ORMExecuteState) -> None:
+    if isinstance(state.statement, UpdateBase):
+        raise RuntimeError(_READ_ONLY)
 
 
 def read_session() -> Session:
