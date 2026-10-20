@@ -97,9 +97,9 @@ export function replayTimeAt(sample: ClockSample, now: number, maxLeadS = 3): nu
 
 /**
  * Where a camera-frame point lands on the pen map: the camera's field of view is a box around the camera's map
- * position, in map units (the map is 1000 × 420, so 0.18 × 0.24 keeps the frame's 16:9).
+ * position, in map units (the map is 1000 × 420, so 0.27 × 0.36 keeps the frame's 16:9).
  */
-export const FIELD_OF_VIEW = { width: 0.18, height: 0.24 } as const;
+export const FIELD_OF_VIEW = { width: 0.27, height: 0.36 } as const;
 
 export function toMapPoint(camera: { map_x: number; map_y: number }, box: Box): { x: number; y: number } {
   const cx = box[0] + box[2] / 2;

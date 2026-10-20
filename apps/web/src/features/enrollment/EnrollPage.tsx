@@ -353,6 +353,8 @@ export function EnrollPage() {
               linkTo={flow.linkTo}
               onDecisionChange={(decision, linkTo) => setFlow({ ...flow, decision, linkTo })}
               onBack={() => setFlow({ step: "review", enrollment: flow.enrollment })}
+              onRecheck={() => void retry(flow.enrollment)}
+              rechecking={retrying}
               onConfirmed={(enrollment, animal) => {
                 void queryClient.invalidateQueries({ queryKey: animalsQueryKey });
                 setFlow({ step: "done", enrollment, animal });

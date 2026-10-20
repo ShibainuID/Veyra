@@ -4,7 +4,7 @@ import { useEffect, useId, useMemo } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "../../components/Button";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
-import { Mono } from "../../components/figures";
+import { Mono, Timestamp } from "../../components/figures";
 import { PageHeader, Section } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
@@ -304,6 +304,17 @@ export function MonitorScreen() {
             </Mono>
             {status && <StatusPill tone={status.tone} label={status.label} />}
           </div>
+          {scenarioReplay?.anchor_at && (
+            <p className="text-sm text-muted">
+              Observed at{" "}
+              <Timestamp
+                value={new Date(new Date(scenarioReplay.anchor_at).getTime() + clock.t * 1000).toISOString()}
+                mode="absolute"
+                className="text-ink"
+              />{" "}
+              in the recording.
+            </p>
+          )}
           {live && <p className="text-sm text-muted">The overlay follows the replay as the server ingests it. Scrub once it finishes.</p>}
 
           <Section title="Pen map" description="Cameras where they hang, and each tag by the camera that last saw it.">

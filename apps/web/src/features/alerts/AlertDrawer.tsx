@@ -12,6 +12,7 @@ import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { api } from "../../lib/api";
 import { cn } from "../../lib/cn";
+import { formatAbsolute, formatClock } from "../../lib/format";
 import { ApiError } from "../../lib/errors";
 import { useRole } from "../../lib/role-store";
 import { toSource } from "../enrollment/ReviewStep";
@@ -43,7 +44,13 @@ function Window({ label, start, end }: { label: string; start: string | null; en
             <Timestamp value={start} mode="absolute" />
             <span aria-hidden="true">–</span>
             <span className="sr-only">to</span>
-            <Timestamp value={end} mode="absolute" />
+            {formatAbsolute(start).slice(0, -5) === formatAbsolute(end).slice(0, -5) ? (
+              <time dateTime={end} className="figures">
+                {formatClock(end)}
+              </time>
+            ) : (
+              <Timestamp value={end} mode="absolute" />
+            )}
           </span>
         ) : (
           <span className="text-muted">None recorded</span>
@@ -258,7 +265,7 @@ export function AlertDrawer({ alertId, onClose }: AlertDrawerProps) {
               </div>
             )}
             <p className="text-sm">
-              Camera <strong>{alert.camera_name}</strong>{" "}
+              Camera <strong>{alert.camera_name}</strong> ·{" "}
               <Link
                 to={`/monitor?camera=${encodeURIComponent(alert.camera_id)}${alert.animal_id ? `&animal=${encodeURIComponent(alert.animal_id)}` : ""}`}
                 className="font-bold"

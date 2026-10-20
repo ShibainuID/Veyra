@@ -12,7 +12,8 @@ import { cn } from "../../lib/cn";
 import { ApiError } from "../../lib/errors";
 import { confirmEnrollment, type ConfirmInput } from "./api";
 import {
-  OVERRIDE_COPY,
+  candidateTagState,
+  overrideCopy,
   overrideReasons,
   proposedCandidate,
   registersPending,
@@ -58,9 +59,21 @@ export interface ConfirmStepProps {
   onDecisionChange: (decision: Decision, linkTo: string | null) => void;
   onBack: () => void;
   onConfirmed: (enrollment: Enrollment, animal: { id: string | null; name: string | null }) => void;
+  /** Re-run processing (a retry), for when the herd changed after the duplicate check ran. */
+  onRecheck: () => void;
+  rechecking?: boolean;
 }
 
-export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, onBack, onConfirmed }: ConfirmStepProps) {
+export function ConfirmStep({
+  enrollment,
+  decision,
+  linkTo,
+  onDecisionChange,
+  onBack,
+  onConfirmed,
+  onRecheck,
+  rechecking,
+}: ConfirmStepProps) {
   const proposed = sampleFor(enrollment.sample_key)?.proposed;
   const candidate = proposedCandidate(enrollment.identity);
   const [animal, setAnimal] = useState<AnimalIn>({
@@ -75,6 +88,12 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<unknown>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  // Overrides only the server can know about (the herd changed since processing), from a refused confirm.
+  const [serverOverrides, setServerOverrides] = useState<{ decision: Decision; reasons: string[]; changed: string[] }>({
+    decision,
+    reasons: [],
+    changed: [],
+  });
   const groupId = useId();
 
   const herd = useQuery({
@@ -83,7 +102,9 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
     enabled: decision === "link_existing",
   });
 
-  const overrides = overrideReasons(enrollment, decision, linkTo);
+  const extra = serverOverrides.decision === decision ? serverOverrides.reasons : [];
+  const overrides: string[] = [...new Set<string>([...overrideReasons(enrollment, decision, linkTo), ...extra])];
+  const herdChanged = extra.includes("herd_changed_since_processing") ? serverOverrides.changed : null;
   const needsNote = overrides.length > 0;
   const pending = decision === "register_new" && registersPending(enrollment);
   const linkedName =
@@ -126,6 +147,19 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
       });
     } catch (err) {
       setError(err);
+      if (err instanceof ApiError) {
+        const required = err.details.override_required;
+        const changed = err.details.changed_animal_ids;
+        const reasons = Array.isArray(required) ? required.filter((r): r is string => typeof r === "string") : [];
+        const changedIds = Array.isArray(changed) ? changed.filter((r): r is string => typeof r === "string") : [];
+        if (reasons.length > 0 || err.details.reason === "herd_changed_since_processing") {
+          setServerOverrides({
+            decision,
+            reasons: err.details.reason === "herd_changed_since_processing" ? [...reasons, "herd_changed_since_processing"] : reasons,
+            changed: changedIds,
+          });
+        }
+      }
       if (err instanceof ApiError && typeof err.details.field === "string") {
         const field = err.details.field.replace(/^animal\./, "");
         setFieldErrors((prev) => ({ ...prev, [field === "animal" ? "name" : field]: err.message }));
@@ -138,7 +172,7 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
   const noteField = needsNote && (
     <Field
       label={decision === "link_existing" ? "Reason for linking to this animal" : "Reason for registering as new"}
-      hint={`Needed because ${overrides.map((o) => OVERRIDE_COPY[o]).join(", and ")}. It is kept with the decision in the audit trail.`}
+      hint={`Needed because ${overrides.map(overrideCopy).join(", and ")}. It is kept with the decision in the audit trail.`}
       error={fieldErrors.override_note}
     >
       {(id, describedBy) => (
@@ -291,7 +325,16 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
           </Field>
           {linkTo && (
             <div className="flex items-center gap-4">
-              <EarTag animalId={linkTo} state="confirmed" size="md" />
+              <EarTag
+                animalId={linkTo}
+                state={
+                  herd.data?.items.find((a) => a.id === linkTo)?.identity_status === "pending_review" ||
+                  (candidate?.animal_id === linkTo && candidateTagState(candidate) === "pending")
+                    ? "pending"
+                    : "confirmed"
+                }
+                size="md"
+              />
               <p>
                 <span className="font-bold">{linkedName}</span> <Mono className="text-muted">{linkTo}</Mono>
               </p>
@@ -318,7 +361,24 @@ export function ConfirmStep({ enrollment, decision, linkTo, onDecisionChange, on
         </Field>
       )}
 
-      {error ? <ErrorNotice error={error} title={error instanceof ApiError ? error.message : undefined} /> : null}
+      {herdChanged && (
+        <div className="flex flex-col items-start gap-3 rounded-control border-2 border-uncertain bg-uncertain-soft p-4">
+          <p>
+            <strong>The herd changed after this enrollment was checked for duplicates.</strong>{" "}
+            {herdChanged.length > 0 ? (
+              <>
+                New since then: <Mono>{herdChanged.join(", ")}</Mono>.
+              </>
+            ) : null}{" "}
+            Re-run the check, or register anyway with a reason.
+          </p>
+          <Button variant="secondary" onClick={onRecheck} loading={rechecking} loadingLabel="Re-running…">
+            Re-run the duplicate check
+          </Button>
+        </div>
+      )}
+
+      {error && !herdChanged ? <ErrorNotice error={error} title={error instanceof ApiError ? error.message : undefined} /> : null}
 
       <div className="flex flex-wrap items-center gap-3 border-t-2 border-ink pt-5">
         {decision === "register_new" && (
