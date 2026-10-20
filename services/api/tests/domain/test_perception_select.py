@@ -317,6 +317,37 @@ def test_weight_prototype_gets_the_body_frame(tmp_path, monkeypatch, fake_ultral
     assert (result["source"], result["range_low"]) == ("prototype", 400.0)
 
 
+def test_weight_prototype_reuses_the_video_marker_scale(tmp_path, monkeypatch, fake_ultralytics):
+    calls = {}
+
+    def fake_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None, scale_override=None):
+        calls.update(marker_cm=marker_cm, scale_override=scale_override)
+        return {"source": "prototype", "range_low": 400.0, "range_high": 450.0, "unit": "kg"}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", fake_estimate)
+    scale = {"marker_id": 7, "px_per_cm": 8.25, "marker_cm": 12.0}
+
+    Perception(ALL).weight(_image(tmp_path / "body.jpg"), "sample-enrollment-001", scale=scale)
+
+    assert calls == {"marker_cm": 12.0, "scale_override": scale}
+
+
+def test_yolo_weights_come_from_settings(tmp_path, monkeypatch, fake_ultralytics):
+    calls = {}
+
+    def fake_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None):
+        calls["weights"] = model.weights
+        return {"source": "prototype", "range_low": 400.0, "range_high": 450.0, "unit": "kg"}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", fake_estimate)
+    monkeypatch.setenv("VEYRA_YOLO_WEIGHTS", str(tmp_path / "models" / "yolov8x-seg.pt"))
+    get_settings.cache_clear()
+
+    Perception(ALL).weight(_image(tmp_path / "body.jpg"), "sample-enrollment-001")
+
+    assert calls["weights"] == str(tmp_path / "models" / "yolov8x-seg.pt")
+
+
 def test_weight_prototype_error_falls_back_to_the_fixture(tmp_path, monkeypatch, fake_ultralytics):
     def broken(*args, **kwargs):
         raise RuntimeError("segmentation failed")

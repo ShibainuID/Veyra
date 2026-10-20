@@ -140,7 +140,7 @@ def _get_yolo():
         if _yolo is None:
             from ultralytics import YOLO
 
-            _yolo = YOLO(YOLO_WEIGHTS)
+            _yolo = YOLO(get_settings().yolo_weights)
         return _yolo
 
 
@@ -421,19 +421,20 @@ class Perception:
 
     # ----- weight ------------------------------------------------------------------------------------------
 
-    def weight(self, body_frame_path: Path | None, sample_key: str | None) -> dict:
-        return _jsonable(self._weight(body_frame_path, sample_key))
+    def weight(self, body_frame_path: Path | None, sample_key: str | None, scale: dict | None = None) -> dict:
+        """`scale` is the video worker's ArUco reading for the body frame; reusing it skips a second detection."""
+        return _jsonable(self._weight(body_frame_path, sample_key, scale))
 
-    def _weight(self, body_frame_path: Path | None, sample_key: str | None) -> dict:
+    def _weight(self, body_frame_path: Path | None, sample_key: str | None, scale: dict | None) -> dict:
         if body_frame_path is not None and self.capabilities.get("weight"):
             try:
-                return self._prototype_weight(Path(body_frame_path))
+                return self._prototype_weight(Path(body_frame_path), scale)
             except Exception:
                 logger.exception("weight prototype failed; using the fixture weight")
                 return _fallback(self._fixture_weight(sample_key), "prototype_error")
         return self._fixture_weight(sample_key)
 
-    def _prototype_weight(self, body_frame_path: Path) -> dict:
+    def _prototype_weight(self, body_frame_path: Path, scale: dict | None) -> dict:
         import cv2
 
         from adapters.weight import estimate_weight
@@ -441,8 +442,9 @@ class Perception:
         image = cv2.imread(str(body_frame_path))
         if image is None:
             raise OSError(f"body frame is unreadable: {body_frame_path.name}")
+        scale_args = {"marker_cm": scale.get("marker_cm") or 15.0, "scale_override": scale} if scale else {}
         with _model_lock:
-            result = dict(estimate_weight(image, _get_yolo()))
+            result = dict(estimate_weight(image, _get_yolo(), **scale_args))
         result.setdefault("source", "prototype")
         result.setdefault("method_version", "weight_side_view_v2")
         result.setdefault("unit", "kg")
