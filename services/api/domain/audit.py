@@ -42,6 +42,10 @@ def user_names(session: Session, farm_id: str) -> dict[str, str]:
     return dict(session.execute(select(User.id, User.name).where(User.farm_id == farm_id)).all())
 
 
+# The sandbox providers in words (the insurer's name is the catalog's; demo/fixtures/policies.json).
+PROVIDER_NAMES = {"sandbox-insurer": "Sandbox Mutual", "sandbox-payment": "Sandbox payments"}
+
+
 def actor_ref(actor_type: str, actor_id: str, names: dict[str, str]) -> dict:
     if actor_type == "user":
         name = names.get(actor_id, actor_id)
@@ -49,6 +53,8 @@ def actor_ref(actor_type: str, actor_id: str, names: dict[str, str]) -> dict:
         name = AGENT_NAME
     elif actor_type == "system":
         name = SYSTEM_ACTOR_NAMES.get(actor_id, SYSTEM_NAME)
+    elif actor_type == "provider":
+        name = PROVIDER_NAMES.get(actor_id, actor_id)
     else:
         name = actor_id
     return {"type": actor_type, "id": actor_id, "name": name}

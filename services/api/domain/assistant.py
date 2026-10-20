@@ -226,9 +226,10 @@ def _passport(out: _Answer, card: dict) -> None:
     for kind in ("age", "weight"):
         estimate = card.get(kind)
         if estimate and estimate.get("range_low") is not None:
-            out.facts.append(_fact(f"{kind.title()} estimate",
-                                   f"{estimate['range_low']:g}–{estimate['range_high']:g} {estimate['unit']} "
-                                   f"({estimate['source']})", "animal", card["id"]))
+            low, high = estimate["range_low"], estimate["range_high"]
+            span = f"{low:g}" if high is None or high == low else f"{low:g}–{high:g}"
+            out.facts.append(_fact(f"{kind.title()} estimate", f"{span} {estimate['unit']} ({estimate['source']})",
+                                   "animal", card["id"]))
     valuation = card.get("valuation")
     if valuation:
         value = (f"{_money(valuation['value_low_minor'], None)}–"

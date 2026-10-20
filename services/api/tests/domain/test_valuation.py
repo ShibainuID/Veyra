@@ -96,7 +96,7 @@ def test_route_confirms_and_passbook_shows_valued_line(client):
     passport = client.get("/api/v1/animals/animal-demo-001/passport", headers=MANAGER).json()
     line = [line for line in passport["passbook"]["lines"] if line["event_type"] == "valuation.confirmed"][-1]
     assert line["title"] == "Valued"
-    assert line["detail"] == "480–560 kg × 5.20 USD/kg · price 2026-10-01"
+    assert line["detail"] == "480–560 kg × 5.20 USD/kg = 2,496.00–2,912.00 USD · price 2026-10-01"
     assert line["amount_minor"] == 249600
 
 

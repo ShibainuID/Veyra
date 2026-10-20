@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation } from "react-router";
 import { AskButton } from "../features/assistant/Ask";
 import { cn } from "../lib/cn";
 import { formatMoney } from "../lib/format";
+import { DemoReset } from "./DemoReset";
 import { inMore, MoreSheet } from "./MoreSheet";
 import { NAV_ITEMS, type NavItem } from "./nav";
 import { RoleSwitcher } from "./RoleSwitcher";
@@ -82,6 +83,9 @@ function TopBar({ pathname, summary }: { pathname: string; summary: HerdSummary 
         <div className="ml-auto flex min-w-0 items-center gap-2 xl:gap-4">
           <AskButton pathname={pathname} />
           <WalletBalance summary={summary} />
+          <div className="hidden lg:block">
+            <DemoReset />
+          </div>
           <RoleSwitcher />
         </div>
       </div>

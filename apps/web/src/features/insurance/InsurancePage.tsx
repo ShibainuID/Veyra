@@ -13,7 +13,7 @@ import { tagStateFor } from "../../lib/animal";
 import { useRole } from "../../lib/role-store";
 import { Page } from "../../pages/Page";
 import { useActions, type AgentAction } from "../actions";
-import { approvalsHref, isOpen, latestAction } from "../finance/actions";
+import { approvalsHref, closedNote, isOpen, latestAction } from "../finance/actions";
 import { financeKeys, usePassport, usePolicies, useProposeAction, type Passport, type Recommendation } from "../finance/api";
 import { formatDate } from "../finance/dates";
 import { ComparisonTable } from "./ComparisonTable";
@@ -70,6 +70,8 @@ interface ActionContext {
   hasCover: boolean;
   coverName?: string;
   pendingApplication?: AgentAction;
+  /** The newest application, when it closed without running (declined, expired, stale). */
+  closedApplication?: AgentAction;
   preparing: string | null;
   onPrepare: (result: Recommendation) => void;
 }
@@ -93,8 +95,11 @@ function ProductAction({ result, ctx }: { result: Recommendation; ctx: ActionCon
   }
   if (result.outcome === "ineligible") return <p className="text-sm text-muted">Not available for this animal under the sample terms.</p>;
   if (result.outcome === "unknown") return <p className="text-sm text-muted">Resolve the review item above before applying.</p>;
+  const closed = ctx.closedApplication;
+  const note = closed && (closed.payload as { product_id?: string }).product_id === result.product_id ? closedNote(closed, "application") : null;
   return (
     <div className="flex flex-col items-start gap-2">
+      {note && <p className="text-sm text-muted">{note}</p>}
       <Button
         variant="primary"
         icon={FileSignature}
@@ -160,6 +165,7 @@ export function InsurancePage() {
     hasCover: Boolean(policy),
     coverName: policy?.product_name ?? undefined,
     pendingApplication,
+    closedApplication: application && !isOpen(application) ? application : undefined,
     preparing: propose.isPending ? ((propose.variables?.product_id as string | undefined) ?? null) : null,
     onPrepare: (result) =>
       propose.mutate(

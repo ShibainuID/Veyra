@@ -117,8 +117,13 @@ def _kg(value) -> str:
 @register_formatter("valuation.confirmed")
 def _valuation_confirmed(event: AuditEvent, ctx: PassbookContext) -> dict:
     data = event.data
+    currency = data.get("currency", CURRENCY)
     detail = (f"{_kg(data['weight_low_kg'])}–{_kg(data['weight_high_kg'])} kg × "
-              f"{money(data['unit_price_minor_per_kg'])} {data.get('currency', CURRENCY)}/kg · price {data['price_date']}")
+              f"{money(data['unit_price_minor_per_kg'])} {currency}/kg")
+    if data.get("value_high_minor") is not None:
+        # The whole range, since the amount column prints only its low bound (what cover is written up to).
+        detail += f" = {money(data['value_low_minor'])}–{money(data['value_high_minor'])} {currency}"
+    detail += f" · price {data['price_date']}"
     if data.get("override"):
         detail += " · weight override"
     return {"title": "Valued", "detail": detail, "amount_minor": data["value_low_minor"],

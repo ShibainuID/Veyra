@@ -16,7 +16,7 @@ import { formatMoney } from "../../lib/format";
 import { useRole, type Role } from "../../lib/role-store";
 import { Page } from "../../pages/Page";
 import { ActionReview, useActions, type AgentAction } from "../actions";
-import { isOpen, latestAction } from "../finance/actions";
+import { closedNote, isOpen, latestAction } from "../finance/actions";
 import { refreshFinance, useReviseAction, useAlerts, useAnimals, usePolicies, useProposeAction, type ChecklistItem, type Claim } from "../finance/api";
 import { useClaim, useConfirmDeclaration, useIncident } from "./api";
 import { EvidenceChecklist } from "./EvidenceChecklist";
@@ -171,7 +171,9 @@ function Submission({ claim, actions, role, animal }: { claim: Claim; actions: r
         </div>
       )}
       {propose.error && !missingFromError ? <ErrorNotice error={propose.error} /> : null}
-      {submission?.status === "failed" && <p className="text-danger">The last submission failed. Prepare it again.</p>}
+      {closedNote(submission, "submission") && (
+        <p className={submission?.status === "failed" ? "text-danger" : "text-muted"}>{closedNote(submission, "submission")}</p>
+      )}
       <p className="text-muted">
         The agent assembles the evidence manifest and the claim for Sandbox Mutual. It waits for a manager's stamp before anything is
         sent.
