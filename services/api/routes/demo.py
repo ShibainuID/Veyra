@@ -1,7 +1,8 @@
 """Demo controls: reset to a scenario and the sandbox provider switches (plan Section 5: `/demo/*`).
 
-Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on; that check runs before auth. Reset and changing the settings
-need a manager; any signed-in user may read their farm's settings.
+Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on; that check runs before auth. Reset (which reseeds every farm)
+needs a manager of the demo farm; changing the settings needs a manager; any signed-in user may read their farm's
+settings.
 """
 
 from datetime import datetime
@@ -17,7 +18,7 @@ from domain.auth import APPROVERS, Principal
 from domain.errors import DomainError
 from persistence.db import get_read_session, get_session
 from persistence.models import DemoSettings
-from persistence.seed import reset_database
+from persistence.seed import DEMO_FARM_ID, reset_database
 from routes.deps import current_principal, require_roles
 from schemas import error_responses
 
@@ -62,8 +63,14 @@ def _out(row: DemoSettings) -> DemoSettingsOut:
                            insurer_activation=row.insurer_activation, updated_at=row.updated_at)
 
 
-@router.post("/reset", dependencies=[Depends(require_roles(*APPROVERS))],
-             responses=error_responses(401, 403, 404, 422))
+def require_demo_farm_manager(principal: Principal = Depends(require_roles(*APPROVERS))) -> Principal:
+    if principal.farm_id != DEMO_FARM_ID:
+        raise DomainError("FORBIDDEN_ROLE", "Only a manager of the demo farm can reset the demo.",
+                          {"required": list(APPROVERS), "role": principal.role, "farm_id": DEMO_FARM_ID})
+    return principal
+
+
+@router.post("/reset", dependencies=[Depends(require_demo_farm_manager)], responses=error_responses(401, 403, 404, 422))
 def reset(scenario: Scenario = "fresh") -> ResetResult:
     return ResetResult(status="reset", scenario=scenario, animals=reset_database(scenario))
 

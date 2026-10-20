@@ -1,10 +1,11 @@
+import contextvars
 import threading
 import time
 
 import pytest
 from sqlalchemy import delete, func, insert, select, text, update
 
-from persistence.db import SessionLocal, init_db, read_session
+from persistence.db import SessionLocal, init_db, read_session, writer_scope
 from persistence.models import Farm
 
 
@@ -57,6 +58,31 @@ def test_writer_slot_is_released_when_another_thread_closes_the_session():
     closer.join(5)
 
     _write_one("farm-after-cross-thread-close")
+
+
+def test_a_new_writer_scope_on_the_same_thread_waits_instead_of_raising():
+    with writer_scope():
+        first = SessionLocal()
+        _farm_count(first)
+    closer = threading.Timer(0.2, first.close)
+    closer.start()
+
+    with writer_scope():
+        _write_one("farm-next-request")
+    closer.join(5)
+
+
+def test_threads_sharing_a_writer_scope_share_its_slot():
+    with writer_scope():
+        session = SessionLocal()
+        worker = threading.Thread(target=contextvars.copy_context().run, args=(_farm_count, session))
+        worker.start()
+        worker.join(5)
+        with SessionLocal() as second:
+            with pytest.raises(RuntimeError, match="already holds a writing transaction"):
+                _farm_count(second)
+        session.close()
+        _write_one("farm-after-release")
 
 
 def test_reading_while_holding_a_writer_is_allowed():
