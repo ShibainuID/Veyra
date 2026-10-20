@@ -14,3 +14,4 @@ dist/
 .env
 .impeccable/questions/
 .impeccable/hook.cache.json
+.claude/worktrees/
