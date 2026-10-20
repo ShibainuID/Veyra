@@ -24,6 +24,8 @@ Perception adapters and workers behind the enrollment flow (PRD Sections 4.1–4
 
 ```bash
 cd services/api
-uv venv --python 3.12
-uv pip install -r pyproject.toml
+uv sync                                        # API service (perception falls back to fixtures)
+uv sync --extra perception                     # adds torch, ultralytics, open_clip for the prototype ML pipeline
+uv run uvicorn main:app --reload --port 8000   # http://localhost:8000/api/v1/health
+uv run pytest -q
 ```
