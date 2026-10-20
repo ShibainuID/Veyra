@@ -1,0 +1,27 @@
+/* The live alert feed's one authored motion: a new alert slides down into place and its border settles. */
+@media (prefers-reduced-motion: no-preference) {
+  .alert-feed-item[data-fresh] {
+    animation: alert-arrive var(--dur-slow) var(--ease-out-quart) backwards;
+  }
+  .alert-feed-item[data-fresh] > a {
+    animation: alert-settle 1.2s var(--ease-out-quart) backwards;
+  }
+}
+@keyframes alert-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes alert-settle {
+  from {
+    border-color: var(--uncertain);
+    background: var(--uncertain-soft);
+  }
+}
