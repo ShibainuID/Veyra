@@ -4,19 +4,18 @@ import { ErrorNotice, LoadingRegion, Skeleton } from "../components/feedback";
 import { PageHeader } from "../components/layout";
 import { Page } from "../pages/Page";
 import {
-  AlertPage,
   ApprovalsPage,
-  AskPage,
   AuditPage,
   ClaimPage,
   ClaimsPage,
-  EnrollPage,
   HerdPage,
   InsurancePage,
-  MonitorPage,
   NotFoundPage,
   PassportPage,
 } from "../pages/placeholders";
+import { AskPage } from "../features/assistant/Ask";
+import { EnrollPage } from "../features/enrollment/EnrollPage";
+import { MonitorScreen } from "../features/monitor/MonitorScreen";
 import { AppShell } from "./AppShell";
 
 function RouteError() {
@@ -63,8 +62,14 @@ export const routes: RouteObject[] = [
       { path: "enroll", element: <EnrollPage /> },
       { path: "animals/:animalId", element: <PassportPage /> },
       { path: "animals/:animalId/insurance", element: <InsurancePage /> },
-      { path: "monitor", element: <MonitorPage /> },
-      { path: "alerts/:alertId", element: <AlertPage /> },
+      // One Monitor element for both paths, so opening an alert's drawer keeps the replay running beneath it.
+      {
+        element: <MonitorScreen />,
+        children: [
+          { path: "monitor", element: null },
+          { path: "alerts/:alertId", element: null },
+        ],
+      },
       { path: "approvals", element: <ApprovalsPage /> },
       { path: "claims", element: <ClaimsPage /> },
       { path: "claims/:claimId", element: <ClaimPage /> },
