@@ -24,7 +24,9 @@ def create_app(settings: Settings | None = None, db: Database | None = None) -> 
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, exc: RequestValidationError) -> JSONResponse:
-        err = APIError(ErrorCode.VALIDATION_FAILED, "Request validation failed.", {"errors": exc.errors()})
+        # Drop `ctx`, which can hold exception objects that are not JSON-serialisable.
+        errors = [{k: v for k, v in e.items() if k != "ctx"} for e in exc.errors()]
+        err = APIError(ErrorCode.VALIDATION_FAILED, "Request validation failed.", {"errors": errors})
         return JSONResponse(err.body(), status_code=err.status_code)
 
     app.include_router(foundation.router, prefix="/api/v1")
