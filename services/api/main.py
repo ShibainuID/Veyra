@@ -8,7 +8,7 @@ from config import Settings
 from domain.errors import APIError, ErrorCode
 from persistence.db import Database
 from persistence.storage import MediaStore
-from routes import animals, enrollments, foundation
+from routes import alerts, animals, cameras, demo, enrollments, foundation
 
 
 def create_app(settings: Settings | None = None, db: Database | None = None) -> FastAPI:
@@ -29,7 +29,7 @@ def create_app(settings: Settings | None = None, db: Database | None = None) -> 
         err = APIError(ErrorCode.VALIDATION_FAILED, "Request validation failed.", {"errors": errors})
         return JSONResponse(err.body(), status_code=err.status_code)
 
-    for router in (foundation.router, enrollments.router, animals.router):
+    for router in (foundation.router, enrollments.router, animals.router, cameras.router, alerts.router, demo.router):
         app.include_router(router, prefix="/api/v1")
     return app
 

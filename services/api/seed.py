@@ -20,6 +20,7 @@ DEMO_USERS = (
     ("Farm Operator", "operator"),
     ("Farm Veterinarian", "veterinarian"),
     ("Sandbox Insurance Assessor", "assessor"),
+    ("Camera Worker", "service"),
 )
 
 
