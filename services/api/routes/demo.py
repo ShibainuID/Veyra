@@ -6,9 +6,11 @@ settings.
 """
 
 from datetime import datetime
+from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -68,6 +70,39 @@ def require_demo_farm_manager(principal: Principal = Depends(require_roles(*APPR
         raise DomainError("FORBIDDEN_ROLE", "Only a manager of the demo farm can reset the demo.",
                           {"required": list(APPROVERS), "role": principal.role, "farm_id": DEMO_FARM_ID})
     return principal
+
+
+# The demo's AI-generated (Google Veo) clips, by the only names this route serves (demo/media/veo/VEO_PROMPTS.md).
+FOOTAGE = {
+    "video_cctv.mp4": "video_cctv.mp4",  # the CCTV clip the veo_barn scenario overlays
+    "video_cctv_tracked.mp4": "out/video_cctv_tracked.mp4",  # the ML teammate's tracker render of the same clip
+    "video_hp.mp4": "video_hp.mp4",  # the phone enrollment video
+}
+FOOTAGE_PROVENANCE = "simulated; AI-generated footage (Google Veo), not a real farm"
+_LFS_POINTER = b"version https://git-lfs"
+
+
+def footage_dir() -> Path:
+    return get_settings().repo_root / "demo" / "media" / "veo"
+
+
+@router.get("/footage/{name}", response_class=FileResponse,
+            responses={200: {"content": {"video/mp4": {}}, "description": "The clip; supports HTTP Range."},
+                       **error_responses(404)})
+def footage(name: str) -> FileResponse:
+    """Stream one of the demo's AI-generated clips (read-only, demo mode only, no sign-in: a `<video>` element
+    cannot send a bearer token, and these clips hold no farm data). Unknown names are 404; so is a clip whose Git LFS
+    content was never pulled."""
+    relative = FOOTAGE.get(name)
+    path = footage_dir() / relative if relative else None
+    if path is None or not path.is_file():
+        raise DomainError("NOT_FOUND", "Footage not found.", {"name": name})
+    with path.open("rb") as handle:
+        if handle.read(len(_LFS_POINTER)) == _LFS_POINTER:
+            raise DomainError("NOT_FOUND", "This clip is a Git LFS pointer; run `git lfs pull` to fetch it.",
+                              {"name": name})
+    return FileResponse(path, media_type="video/mp4", filename=name, content_disposition_type="inline",
+                        headers={"Cache-Control": "public, max-age=3600", "X-Veyra-Provenance": FOOTAGE_PROVENANCE})
 
 
 @router.post("/reset", dependencies=[Depends(require_demo_farm_manager)], responses=error_responses(401, 403, 404, 422))

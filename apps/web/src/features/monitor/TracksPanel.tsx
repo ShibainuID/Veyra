@@ -12,20 +12,13 @@ import { ApiError } from "../../lib/errors";
 import { animalsQueryKey } from "../../app/use-shell-summary";
 import { monitorKeys, reviewTrack, type AnimalListItem, type Replay, type Scenario, type Track } from "./api";
 import { boxAt, type TrackEvent } from "./interpolate";
-import { identityAt } from "./track-state";
+import { associationNote, evidenceTime, identityAt, identityContext } from "./track-state";
 
-function methodText(track: Track): string | null {
+/** A crowded scan reads as a warning once the scan has happened: it is why the track has no identity. */
+function isCrowdedNote(track: Track, t: number, anchorMs: number | null | undefined): boolean {
   const evidence = (track.association_evidence ?? {}) as Record<string, unknown>;
-  if (track.association_method === "muzzle_match") {
-    const inliers = typeof evidence.inliers === "number" ? evidence.inliers : null;
-    return inliers !== null ? `Muzzle match · ${inliers} verified points` : "Muzzle match";
-  }
-  if (track.association_method === "manual_review" || track.association_method === "human_review") {
-    return track.association_status === "unassigned" ? "Unassigned by review" : "Assigned by review";
-  }
-  if (track.association_method) return track.association_method.replace(/_/g, " ");
-  if (evidence.event === "track_lost") return "Lost behind an obstruction";
-  return null;
+  const at = evidenceTime(evidence.observed_at, anchorMs);
+  return evidence.reason === "multiple_tracks_in_zone" && (at === null || t >= at);
 }
 
 function AssignForm({
@@ -146,17 +139,19 @@ export function TracksPanel({ replay, scenario, t, animals, selectedAnimalId, ca
     return <p className="text-muted">The replay has started; the first tracks appear within a few seconds.</p>;
   }
   const byKey = new Map(scenario?.tracks.map((st) => [st.track_key, st]));
+  const context = identityContext(replay, animals);
   return (
     <ul className="flex flex-col border-t border-line">
       {replay.tracks.map((track) => {
         const st = byKey.get(track.track_key);
-        const identity = identityAt(st, track, t);
+        const identity = identityAt(st, track, t, context);
         const frame = st ? boxAt(st.frames, t, st.events as TrackEvent[]) : null;
         const visibility =
           frame && st ? st.frames.reduce((best, f) => (Math.abs(f.t - t) < Math.abs(best.t - t) ? f : best), st.frames[0]!) : null;
         const lost = (st?.events ?? []).find((e) => e.type === "track_lost");
-        const isSelected = identity.status !== "unassigned" && identity.animalId === selectedAnimalId;
-        const method = methodText(track);
+        const isSelected = identity.status !== "unassigned" && identity.animalId === selectedAnimalId && selectedAnimalId !== null;
+        const note = associationNote(track, t, context);
+        const crowded = isCrowdedNote(track, t, context.anchorMs);
         return (
           <li key={track.id} className={cn("border-b border-line py-3", isSelected && "bg-tag-soft")}>
             <div className="flex items-start gap-3 px-2">
@@ -194,7 +189,8 @@ export function TracksPanel({ replay, scenario, t, animals, selectedAnimalId, ca
                     <> · out of view</>
                   ) : null}
                 </p>
-                {method && <p className="text-sm text-muted">{identity.status === "unassigned" && track.association_method === "muzzle_match" ? "Muzzle match pending" : method}</p>}
+                {note && <p className={cn("text-sm", crowded ? "font-bold text-uncertain-ink" : "text-muted")}>{note}</p>}
+                {crowded && <p className="text-sm">Scan one animal at a time: the scanned identity can't go to any track in the zone.</p>}
                 {identity.status === "unassigned" && (
                   <p className="text-sm">Cannot be linked to a passport until someone assigns it.</p>
                 )}

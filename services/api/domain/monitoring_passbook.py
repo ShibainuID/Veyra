@@ -42,6 +42,9 @@ def _track_associated(event: AuditEvent, ctx: PassbookContext) -> dict:
     data = event.data
     if data.get("method") == "human_review":
         detail = "Human review" + (f" · {data['note']}" if data.get("note") else "")
+    elif data.get("method") == "zone_handoff":
+        detail = (f"Scanned alone in the scan zone · muzzle scan {data.get('inliers')} inliers · "
+                  f"quality {data.get('quality')}")
     else:
         detail = f"Muzzle match · {data.get('inliers')} inliers · quality {data.get('quality')}"
     return {"title": f"Identified on camera {_camera_name(event, ctx)}", "detail": detail,

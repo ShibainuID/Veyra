@@ -11,7 +11,8 @@
     {"id": "user-other-manager", "farm_id": "farm-other", "name": "Other Manager", "role": "manager", "token": "other-farm-manager"}
   ],
   "cameras": [
-    {"id": "cam-pen-a", "farm_id": "farm-wahyu", "name": "Pen A · feed line", "location": "Pen A", "map_x": 0.22, "map_y": 0.30},
+    {"id": "cam-pen-a", "farm_id": "farm-wahyu", "name": "Pen A · feed line", "location": "Pen A", "map_x": 0.22, "map_y": 0.30,
+     "scan_zone": {"label": "Gate scan zone", "source": "prototype", "polygon": [[0.4781, 0.6611], [0.7021, 0.6611], [0.7021, 0.8463], [0.4781, 0.8463]]}},
     {"id": "cam-pen-b", "farm_id": "farm-wahyu", "name": "Pen B · water trough", "location": "Pen B", "map_x": 0.64, "map_y": 0.28},
     {"id": "cam-pen-c", "farm_id": "farm-wahyu", "name": "Pen C · shade", "location": "Pen C", "map_x": 0.42, "map_y": 0.74}
   ],

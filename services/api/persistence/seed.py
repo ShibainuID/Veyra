@@ -22,7 +22,7 @@ from domain.ids import new_id
 from persistence.db import Base, SessionLocal, init_db
 from persistence.lifecycle import run_reset_hooks
 from persistence.models import (
-    Alert, Animal, AnimalReference, Camera, DemoSettings, Enrollment, Estimate, Farm, Observation,
+    Alert, Animal, AnimalReference, Camera, CameraScanZone, DemoSettings, Enrollment, Estimate, Farm, Observation,
     Policy, Track, User, Valuation, WalletEntry,
 )
 
@@ -190,7 +190,9 @@ def seed(session: Session, scenario: str = "fresh") -> None:
     session.add_all(Farm(**farm) for farm in herd["farms"])
     session.flush()
     session.add_all(User(**user) for user in herd["users"])
-    session.add_all(Camera(**camera) for camera in herd["cameras"])
+    session.add_all(Camera(**{k: v for k, v in camera.items() if k != "scan_zone"}) for camera in herd["cameras"])
+    session.flush()
+    ensure_scan_zones(session, herd, now)
     session.add(DemoSettings(farm_id=DEMO_FARM_ID, updated_at=now))
     # The opening top-up lands a second before the seeded premiums, so the ledger reads in order.
     session.add_all(WalletEntry(id=new_id("wal"), currency=price["currency"], created_at=now - timedelta(seconds=1),
@@ -220,9 +222,26 @@ def reset_database(scenario: str = "fresh") -> int:
     return animals
 
 
+def ensure_scan_zones(session: Session, herd: dict | None = None, now: datetime | None = None) -> int:
+    """Add the fixture scan zone of every seeded camera that has none yet (a database created before scan zones
+    existed gains them on startup). Returns how many were added. The caller commits."""
+    herd = herd or _load("herd.json")
+    added = 0
+    for camera in herd["cameras"]:
+        zone = camera.get("scan_zone")
+        if not zone or session.get(Camera, camera["id"]) is None or session.get(CameraScanZone, camera["id"]):
+            continue
+        session.add(CameraScanZone(camera_id=camera["id"], polygon=[list(p) for p in zone["polygon"]],
+                                   label=zone["label"], source=zone["source"], calibrated_at=now or clock.now()))
+        added += 1
+    return added
+
+
 def seed_if_empty() -> bool:
     with SessionLocal() as session:
         if session.scalar(select(Farm.id).limit(1)) is not None:
+            if ensure_scan_zones(session):
+                session.commit()
             return False
         seed(session)
         session.commit()
