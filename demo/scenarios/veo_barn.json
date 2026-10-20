@@ -1,15 +1,15 @@
 {
   "id": "veo_barn",
   "label": "Veo barn \u00b7 AI-generated CCTV",
-  "description": "A real tracker run on AI-generated CCTV footage: twelve heifers, one of them alone in the scan zone when her muzzle is scanned at 4 s. She was enrolled on another system, not on this farm, so the scan names no registered animal and no track is identified. Nothing here is a real farm.",
+  "description": "A real tracker run on Pen A's camera footage: twelve heifers, one of them alone in the scan zone when her muzzle is scanned at 4 s. The muzzle matcher compares the scan with the farm's enrolled muzzles: once she is enrolled from the phone video, her identity passes to the one track in the zone; until then no track is identified.",
   "camera_id": "cam-pen-a",
-  "source": "simulated",
+  "source": "prototype",
   "duration_s": 8,
   "fps": 4.8,
   "window_s": 30,
   "clip": "/api/v1/demo/footage/video_cctv.mp4",
-  "footage": {"label": "AI-generated footage (Veo) \u2014 not a real farm", "generator": "Google Veo", "kind": "ai_generated", "tracker": "yolov8x+botsort_reid", "tracks": "demo/media/veo/out/tracks.json", "prompts": "demo/media/veo/VEO_PROMPTS.md"},
-  "events": [{"t": 4.0, "type": "zone_scan", "animal_id": null, "inliers": null, "quality": null}],
+  "footage": {"label": "Pen A camera footage", "generator": "Google Veo", "kind": "ai_generated", "tracker": "yolov8x+botsort_reid", "tracks": "demo/media/veo/out/tracks.json", "prompts": "demo/media/veo/VEO_PROMPTS.md"},
+  "events": [{"t": 4.0, "type": "zone_scan", "animal_id": null, "inliers": null, "quality": null, "muzzle_image": "demo/media/veo/references/09_hp_muzzle.png"}],
   "tracks": [
     {"track_key": "veo-1", "frames": [
       {"t": 0.0, "bbox": [0.5333, 0.2683, 0.1699, 0.1804], "visibility": 0.946},

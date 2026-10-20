@@ -1,7 +1,7 @@
 import { ScanLine, TriangleAlert, VideoOff } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { EarTag } from "../../components/EarTag";
-import { Provenance } from "../../components/Provenance";
+import { Provenance, type Source } from "../../components/Provenance";
 import { cn } from "../../lib/cn";
 import type { AnimalListItem, Replay, Scenario, ScenarioTrack, Track } from "./api";
 import { boxAt, matchFlashing, type TrackEvent } from "./interpolate";
@@ -310,7 +310,7 @@ export function CameraStage({ scenario, replay, clock, selectedAnimalId, cameraN
         role="img"
         aria-label={
           active
-            ? `Camera ${cameraName ?? ""}: ${tracks.length} tracks drawn from recorded track data${clip ? " over AI-generated footage" : ""}${zone ? ", with its scan zone outlined" : ""}`
+            ? `Camera ${cameraName ?? ""}: ${tracks.length} tracks drawn from recorded track data${clip ? " over camera footage" : ""}${zone ? ", with its scan zone outlined" : ""}`
             : `Camera ${cameraName ?? ""}: no replay running`
         }
       >
@@ -371,8 +371,8 @@ export function CameraStage({ scenario, replay, clock, selectedAnimalId, cameraN
           )}
           {clip && (
             <span className="inline-flex items-center gap-2 rounded-control bg-shell/85 py-1 pr-2.5 pl-1 text-sm font-bold">
-              <Provenance source="simulated" className="border-on-shell-muted! text-on-shell!" />
-              {footage?.label ?? "AI-generated footage — not a real farm"}
+              <Provenance source={scenario?.source === "prototype" ? "prototype" : "simulated" satisfies Source} className="border-on-shell-muted! text-on-shell!" />
+              Tracked on this footage
             </span>
           )}
         </div>
@@ -387,8 +387,8 @@ export function CameraStage({ scenario, replay, clock, selectedAnimalId, cameraN
       </div>
       {clip && (
         <figcaption className="text-sm text-muted">
-          {footage?.label ?? "AI-generated footage — not a real farm"}. Boxes come from {footage?.tracker ?? "a tracker"} run on
-          this clip; identity and the scan zone are VEYRA's own rules drawn on top.
+          Boxes come from {footage?.tracker ?? "a tracker"} run on this clip; identity and the scan zone are VEYRA's own
+          rules drawn on top.
         </figcaption>
       )}
     </figure>

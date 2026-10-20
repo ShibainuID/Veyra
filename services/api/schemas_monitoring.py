@@ -43,6 +43,8 @@ class ScenarioCameraEvent(BaseModel):
     animal_id: str | None = Field(default=None, description="Who the muzzle matcher says was scanned.")
     inliers: int | None = None
     quality: float | None = None
+    muzzle_image: str | None = Field(default=None, description="A repo-relative scan image: when set, the real muzzle "
+                                      "matcher decides `animal_id` against the farm's gallery as the replay starts.")
 
 
 class ScanZone(BaseModel):

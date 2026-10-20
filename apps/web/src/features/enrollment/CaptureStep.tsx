@@ -15,7 +15,7 @@ function formatSize(bytes: number): string {
   return `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
 
-/** The demo's AI-generated phone enrollment video (demo/media/veo/video_hp.mp4), served by the API in demo mode. */
+/** The demo's phone enrollment video (demo/media/veo/video_hp.mp4), served by the API in demo mode. */
 export const PHONE_VIDEO = { url: "/api/v1/demo/footage/video_hp.mp4", filename: "video_hp.mp4" } as const;
 
 /**
@@ -47,11 +47,10 @@ function PhoneVideoDemo({ onVideo, busy }: { onVideo: (file: Blob, filename: str
         <h2 id={headingId} className="text-md font-bold">
           Use the phone enrollment video
         </h2>
-        <Provenance source="simulated" />
       </div>
       <p className="text-sm text-muted">
-        An 8-second phone video made with Google Veo: AI-generated footage, not a real farm. It goes through the real
-        upload and processing, so the review names whatever the video doesn't show.
+        An 8-second phone enrollment video: the muzzle, the teeth, then the full side. It goes through the real upload
+        and processing, so the review names whatever the video doesn't show.
       </p>
       {error && (
         <p role="alert" className="text-sm font-bold text-danger">
@@ -60,7 +59,7 @@ function PhoneVideoDemo({ onVideo, busy }: { onVideo: (file: Blob, filename: str
       )}
       <div>
         <Button variant="secondary" icon={FileVideo} disabled={busy} loading={loading} loadingLabel="Loading the video…" onClick={() => void use()}>
-          Use the AI-generated video
+          Use the phone enrollment video
         </Button>
       </div>
     </section>

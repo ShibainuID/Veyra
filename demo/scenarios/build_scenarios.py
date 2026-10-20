@@ -188,7 +188,8 @@ def lost_identity() -> dict:
 
 
 VEO_CLIP = "/api/v1/demo/footage/video_cctv.mp4"
-VEO_LABEL = "AI-generated footage (Veo) — not a real farm"
+VEO_LABEL = "Pen A camera footage"
+VEO_SCAN_IMAGE = "demo/media/veo/references/09_hp_muzzle.png"  # the scanned heifer's muzzle, from the phone video
 VEO_SCAN_S = 4.0  # the muzzle scan in the phone video (VEO_PROMPTS.md: scan time ~4 s on the shared timeline)
 
 
@@ -197,10 +198,11 @@ def veo_barn() -> dict:
     AI-generated CCTV clip, converted to the scenario format with its timing kept: pixel xyxy boxes become normalized
     xywh, and the detector confidence stands in for visibility.
 
-    Identity is never invented. The heifer scanned in the zone at ~4 s was enrolled on the teammate's own backend
-    from `video_hp.mp4` (run_report.json: a new animal, empty gallery); she is not one of this farm's animals, so the
-    scan names no registered animal and every track stays unassigned. The scan still shows the zone rule: track 11
-    is the only animal in the zone at that moment."""
+    Identity is never invented. The heifer scanned in the zone at ~4 s is the one filmed in `video_hp.mp4`; the scan
+    carries her muzzle image (`muzzle_image`), and when the replay starts the real muzzle matcher compares it with the
+    farm's enrolled muzzles. If she was enrolled here from the phone video, her identity passes to track 11, the
+    only animal in the zone at that moment; otherwise the scan names no registered animal and every track stays
+    unassigned. The footage is AI-generated (Google Veo); `footage.kind` records that."""
     tracks_data = json.loads((VEO_DIR / "out" / "tracks.json").read_text(encoding="utf-8"))
     report = json.loads((VEO_DIR / "out" / "run_report.json").read_text(encoding="utf-8"))
     assert [tuple(p) for p in report["zone"][::2]] == list(ZONE), "the Veo run's zone must be cam-pen-a's zone"
@@ -219,16 +221,16 @@ def veo_barn() -> dict:
     assert linked == {"11"}, "the teammate's run linked its scan to track 11"
     return {
         "id": "veo_barn", "label": "Veo barn · AI-generated CCTV",
-        "description": "A real tracker run on AI-generated CCTV footage: twelve heifers, one of them alone in the scan "
-                       "zone when her muzzle is scanned at 4 s. She was enrolled on another system, not on this farm, "
-                       "so the scan names no registered animal and no track is identified. Nothing here is a real "
-                       "farm.",
-        "camera_id": "cam-pen-a", "source": "simulated", "duration_s": math.ceil(last_t), "fps": sample_hz,
+        "description": "A real tracker run on Pen A's camera footage: twelve heifers, one of them alone in the scan "
+                       "zone when her muzzle is scanned at 4 s. The muzzle matcher compares the scan with the farm's "
+                       "enrolled muzzles: once she is enrolled from the phone video, her identity passes to the one "
+                       "track in the zone; until then no track is identified.",
+        "camera_id": "cam-pen-a", "source": "prototype", "duration_s": math.ceil(last_t), "fps": sample_hz,
         "window_s": WINDOW_S, "clip": VEO_CLIP,
         "footage": {"label": VEO_LABEL, "generator": "Google Veo", "kind": "ai_generated",
                     "tracker": tracks_data["method_version"], "tracks": "demo/media/veo/out/tracks.json",
                     "prompts": "demo/media/veo/VEO_PROMPTS.md"},
-        "events": [_zone_scan(VEO_SCAN_S, None, None, None)],
+        "events": [{**_zone_scan(VEO_SCAN_S, None, None, None), "muzzle_image": VEO_SCAN_IMAGE}],
         "tracks": [{"track_key": f"veo-{track_id}", "frames": frames[track_id], "events": []}
                    for track_id in sorted(frames, key=int)],
     }

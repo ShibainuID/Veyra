@@ -3269,6 +3269,11 @@ export interface components {
             inliers?: number | null;
             /** Quality */
             quality?: number | null;
+            /**
+             * Muzzle Image
+             * @description A repo-relative scan image: when set, the real muzzle matcher decides `animal_id` against the farm's gallery as the replay starts.
+             */
+            muzzle_image?: string | null;
         };
         /** ScenarioEvent */
         ScenarioEvent: {

@@ -37,7 +37,8 @@ def test_cameras_and_scenarios_expose_the_calibrated_scan_zone(farm):
     assert scenarios["healthy"]["scan_zone"]["polygon"] == ZONE
     assert scenarios["lost_identity"]["scan_zone"] is None
     assert scenarios["crowded_scan"]["events"] == [
-        {"t": 3.0, "type": "zone_scan", "animal_id": "animal-demo-001", "inliers": 31, "quality": 0.88}]
+        {"t": 3.0, "type": "zone_scan", "animal_id": "animal-demo-001", "inliers": 31, "quality": 0.88,
+         "muzzle_image": None}]
 
 
 def test_healthy_replay_identifies_sari_through_the_scan_zone(farm):
@@ -82,8 +83,9 @@ def test_veo_barn_replays_the_real_tracker_run_without_inventing_identity(farm):
     scenarios = {s["id"]: s for s in farm.get(f"{API}/demo/replays", headers=VET).json()["scenarios"]}
     veo = scenarios["veo_barn"]
     assert (veo["source"], veo["clip"], veo["camera_id"], veo["duration_s"]) == (
-        "simulated", "/api/v1/demo/footage/video_cctv.mp4", "cam-pen-a", 8)
-    assert veo["footage"]["label"] == "AI-generated footage (Veo) — not a real farm"
+        "prototype", "/api/v1/demo/footage/video_cctv.mp4", "cam-pen-a", 8)
+    assert veo["footage"]["label"] == "Pen A camera footage"
+    assert veo["events"][0]["muzzle_image"] == "demo/media/veo/references/09_hp_muzzle.png"
     assert veo["footage"]["kind"] == "ai_generated" and veo["footage"]["tracker"] == "yolov8x+botsort_reid"
     assert len(veo["tracks"]) == 13 and veo["tracks"][10]["track_key"] == "veo-11"
     first = veo["tracks"][0]["frames"][0]
@@ -167,3 +169,43 @@ def test_footage_route_reports_an_unpulled_lfs_pointer(farm, monkeypatch, tmp_pa
 
 def test_other_farms_see_no_scan_zone_of_ours(farm):
     assert farm.get(f"{API}/cameras", headers=OTHER_FARM).json()["items"] == []
+
+
+def test_veo_barn_scan_is_decided_by_the_real_matcher(farm, monkeypatch):
+    """With Sari's muzzle in the gallery and the matcher verifying her, the scanned heifer's track becomes Sari."""
+    import adapters.muzzle
+    from adapters import perception
+    from tests.integration.test_identity_checks import _attach_reference
+
+    calls = []
+
+    class FakeIdentifier:
+        def __init__(self, model_path):
+            pass
+
+        def reference(self, image_id, crop_bgr):
+            return f"ref:{image_id}"
+
+        def check_duplicate(self, crop_bgr, gallery):
+            calls.append(sorted(gallery.animals))
+            return {"source": "prototype", "method_version": "muzzle_hybrid_v1", "outcome": "candidate",
+                    "reason": None, "animal_id": "animal-demo-001", "possible_duplicate": True,
+                    "candidates": [{"animal_id": "animal-demo-001", "inliers": 312, "cosine": 0.93}]}
+
+    monkeypatch.setenv("VEYRA_PERCEPTION_MODE", "auto")
+    monkeypatch.setattr(perception, "probe_capabilities",
+                        lambda: {"video": False, "muzzle": True, "weight": False, "age": True})
+    monkeypatch.setattr(adapters.muzzle, "MuzzleIdentifier", FakeIdentifier)
+    get_settings.cache_clear()
+    perception.clear_caches()
+    try:
+        _attach_reference("animal-demo-001")
+        replay = _run(farm, "veo_barn")
+    finally:
+        perception.clear_caches()
+    assert calls == [["animal-demo-001"]]
+    tracks = {t["track_key"]: t for t in replay["tracks"]}
+    assert tracks["veo-11"]["animal_id"] == "animal-demo-001"
+    evidence = tracks["veo-11"]["association_evidence"]
+    assert (evidence["event"], evidence["inliers"], evidence["quality"]) == ("zone_scan", 312, 0.93)
+    assert all(t["animal_id"] is None for key, t in tracks.items() if key != "veo-11")

@@ -43,7 +43,7 @@ const SCENARIO_LABEL: Record<string, string> = {
   anomaly: "Reduced-movement replay",
   lost_identity: "Lost identity replay",
   crowded_scan: "Crowded scan replay",
-  veo_barn: "Veo barn footage",
+  veo_barn: "Pen A camera footage",
 };
 const SCENARIO_ORDER = ["healthy", "anomaly", "lost_identity", "crowded_scan", "veo_barn"];
 
@@ -79,7 +79,7 @@ function ScenarioPicker({
               <input type="radio" name={name} value={s.id} checked={checked} onChange={() => onChange(s.id)} className="sr-only" />
               <span className="font-bold">{scenarioLabel(s)}</span>
               <span className={cn("text-sm", checked ? "text-on-shell-muted" : "text-muted")}>
-                {s.footage ? "AI-generated footage" : "Recorded scenario"} · {s.source}
+                {s.footage ? "Camera footage" : "Recorded scenario"} · {s.source}
               </span>
             </label>
           );
