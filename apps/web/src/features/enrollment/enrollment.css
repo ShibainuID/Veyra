@@ -1,0 +1,26 @@
+/* Enrollment: the indeterminate progress sweep, still under reduced motion. */
+
+.progress-indeterminate {
+  width: 36%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .progress-indeterminate {
+    animation: progress-sweep 1.4s var(--ease-out-quart) infinite;
+  }
+}
+@keyframes progress-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(280%);
+  }
+}
+
+/* The muzzle crop sits in the registered frame with the guide box it was cut from drawn around it. */
+.evidence-frame > .crop-label {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  max-width: calc(100% - 20px);
+}
