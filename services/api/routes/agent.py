@@ -10,6 +10,7 @@ from typing import TypeVar
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 
+import domain.claims  # noqa: F401  (registers CLAIM_SUBMISSION and the claim passbook lines)
 from domain import actions
 from domain.auth import APPROVERS, ENROLLERS, Principal
 from persistence.db import get_read_session, get_session, read_session

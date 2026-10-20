@@ -126,7 +126,7 @@ def active_policy(session: Session, farm_id: str, animal_id: str) -> Policy | No
                           .order_by(Policy.created_at.desc(), Policy.id).limit(1))
 
 
-def _in_flight(session: Session, farm_id: str, action_type: str, subject_type: str, subject_id: str) -> str | None:
+def in_flight(session: Session, farm_id: str, action_type: str, subject_type: str, subject_id: str) -> str | None:
     return session.scalar(select(AgentAction.id).where(
         AgentAction.farm_id == farm_id, AgentAction.action_type == action_type,
         AgentAction.subject_type == subject_type, AgentAction.subject_id == subject_id,
@@ -147,7 +147,7 @@ def build_application(session: Session, farm_id: str, refs: dict) -> Built:
     open_policy = session.scalar(select(Policy.id).where(
         Policy.farm_id == farm_id, Policy.animal_id == animal.id,
         Policy.status.in_(("awaiting_payment", "paid_pending_activation", "active"))).limit(1))
-    if open_policy or _in_flight(session, farm_id, "POLICY_APPLICATION", "animal", animal.id):
+    if open_policy or in_flight(session, farm_id, "POLICY_APPLICATION", "animal", animal.id):
         raise DomainError("INVALID_STATE", "This animal already has a policy or an application in progress.",
                           {"animal_id": animal.id, "policy_id": open_policy})
     valuation = latest_valuation(session, animal.id)
@@ -185,7 +185,7 @@ def build_payment(session: Session, farm_id: str, refs: dict) -> Built:
     if application.status != "accepted" or policy is None or policy.status != "awaiting_payment":
         raise DomainError("INVALID_STATE", "The premium can be paid only for an accepted application awaiting payment.",
                           {"application_status": application.status, "policy_status": policy.status if policy else None})
-    if _in_flight(session, farm_id, "PREMIUM_PAYMENT", "policy_application", application.id):
+    if in_flight(session, farm_id, "PREMIUM_PAYMENT", "policy_application", application.id):
         raise DomainError("INVALID_STATE", "A premium payment for this application is already in progress.",
                           {"policy_application_id": application.id})
     items = evidence.animal_items(session, animal) + evidence.application_items(application, policy)
@@ -751,3 +751,6 @@ def _activation_pending(event: AuditEvent, ctx: PassbookContext) -> dict:
     return {"title": f"Activation pending · {product_name(event.data.get('product_id'))}",
             "detail": (receipt.get("status") or "pending").replace("_", " "), "stamp": {"kind": "unknown"}}
 
+
+
+import domain.claims  # noqa: E402,F401  (registers CLAIM_SUBMISSION; imported last because it builds on this module)
