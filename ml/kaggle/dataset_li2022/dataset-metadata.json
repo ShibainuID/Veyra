@@ -1,0 +1,6 @@
+{
+  "title": "Beef Cattle Muzzle Li2022",
+  "id": "athillazaidan/beef-cattle-muzzle-li2022",
+  "licenses": [{"name": "CC-BY-4.0"}],
+  "description": "Private mirror of the Beef Cattle Muzzle/Noseprint database (Li, Erickson, and Xiong, 2022), Zenodo record 6324361, CC BY 4.0. 268 cattle, 4,923 cropped muzzle images, one folder per animal. Used for Veyra muzzle identification experiments."
+}

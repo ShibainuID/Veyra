@@ -1,0 +1,108 @@
+{
+ "video": "pmfeed_4_3_16.mp4",
+ "frames": 12000,
+ "seconds": 600.0,
+ "model": "calf_detector_v1.pt",
+ "resolution": [
+  800,
+  600
+ ],
+ "match_iou": 0.5,
+ "policy": {
+  "gap_frames": 10,
+  "overlap_iou": 0.3
+ },
+ "bytetrack": {
+  "detection": {
+   "precision": 0.9820002873386285,
+   "recall": 0.996905895467189
+  },
+  "mot": {
+   "mota": 0.9771640500474013,
+   "idf1": 0.666218626411973,
+   "num_switches": 143.0,
+   "num_fragmentations": 103.0,
+   "mostly_tracked": 8.0
+  },
+  "handoff_naive": {
+   "correct": 0.3945989310384347,
+   "wrong": 2.083745741344641e-05,
+   "uncertain": 0.6022962878069618,
+   "not_detected": 0.0030839436971900687,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 538.6,
+   "calves_ever_wrong": 1
+  },
+  "handoff_policy": {
+   "correct": 0.051593544555693316,
+   "wrong": 0.0,
+   "uncertain": 0.9453225117471166,
+   "not_detected": 0.0030839436971900687,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": null,
+   "calves_ever_wrong": 0
+  }
+ },
+ "botsort": {
+  "detection": {
+   "precision": 0.9817347849732692,
+   "recall": 0.9967079561199721
+  },
+  "mot": {
+   "mota": 0.9769765285605643,
+   "idf1": 0.66841740676792,
+   "num_switches": 116.0,
+   "num_fragmentations": 95.0,
+   "mostly_tracked": 8.0
+  },
+  "handoff_naive": {
+   "correct": 0.47266646523791167,
+   "wrong": 3.125618612016962e-05,
+   "uncertain": 0.5240203790333503,
+   "not_detected": 0.0032818995426178096,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 540.45,
+   "calves_ever_wrong": 1
+  },
+  "handoff_policy": {
+   "correct": 0.04915556203832008,
+   "wrong": 0.0,
+   "uncertain": 0.9475625384190621,
+   "not_detected": 0.0032818995426178096,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": null,
+   "calves_ever_wrong": 0
+  }
+ },
+ "botsort_reid": {
+  "detection": {
+   "precision": 0.9804379681719901,
+   "recall": 0.9967600454218712
+  },
+  "mot": {
+   "mota": 0.9756222067111857,
+   "idf1": 0.7087965450262429,
+   "num_switches": 120.0,
+   "num_fragmentations": 96.0,
+   "mostly_tracked": 8.0
+  },
+  "handoff_naive": {
+   "correct": 0.5428470218063992,
+   "wrong": 0.011668976151529991,
+   "uncertain": 0.4422541961429866,
+   "not_detected": 0.003229805899084194,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 540.45,
+   "calves_ever_wrong": 1
+  },
+  "handoff_policy": {
+   "correct": 0.04911388712349319,
+   "wrong": 0.0,
+   "uncertain": 0.9476563069774226,
+   "not_detected": 0.003229805899084194,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": null,
+   "calves_ever_wrong": 0
+  }
+ }
+}

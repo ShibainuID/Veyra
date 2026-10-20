@@ -1,0 +1,27 @@
+{
+  "_note": "Simulated camera replays (PRD Section 7 seed data). Tracks are generated deterministically from these parameters by services/api/domain/replays.py and are labelled source=simulated everywhere they appear.",
+  "camera": {"name": "Barn A side-wall camera", "location": "Barn A, high side wall"},
+  "scan_zone": {"name": "Scan crate", "polygon": [[0.02, 0.70], [0.22, 0.70], [0.22, 0.98], [0.02, 0.98]]},
+  "scenarios": {
+    "healthy": {
+      "label": "Three hours of a calm pen; every scanned animal moves normally",
+      "duration_s": 10800,
+      "tracks": 5,
+      "seed": 7
+    },
+    "anomaly": {
+      "label": "The first scanned animal moves much less during the last 40 minutes",
+      "duration_s": 10800,
+      "tracks": 5,
+      "seed": 7,
+      "anomaly": {"track": 0, "from_s": 8400, "activity_factor": 0.1, "speed_factor": 0.5}
+    },
+    "lost_identity": {
+      "label": "An unscanned animal stands in the scan zone during the first scan, so that handoff stays uncertain",
+      "duration_s": 1800,
+      "tracks": 3,
+      "seed": 11,
+      "crowded_scan": true
+    }
+  }
+}
