@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: veyra
+      POSTGRES_PASSWORD: veyra
+      POSTGRES_DB: veyra
+    ports:
+      - "5432:5432"
+    volumes:
+      - veyra-pg:/var/lib/postgresql
+      - ./services/api/scripts/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U veyra -d veyra"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  veyra-pg:
