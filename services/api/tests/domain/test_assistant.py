@@ -59,11 +59,22 @@ def test_live_parser_output_is_used_and_refs_outside_the_farm_are_dropped():
     assert (parsed.parsed_by, parsed.fallback_reason) == ("live", None)
     assert (parsed.intent.intent, parsed.intent.animal_refs, parsed.intent.wants) == (
         "location_lookup", ["animal-demo-001"], ["location", "coverage"])
-    assert parsed.unmatched_refs == ["animal-other-001"]
+    # The model's ref is not in the user's text, so it is not echoed back, only counted.
+    assert (parsed.unmatched_refs, parsed.dropped_refs) == ([], 1)
     call = client.messages.calls[0]
     assert call["output_format"] is QueryIntent
     assert "<user_text>\nwhere's the brown one and is she covered\n</user_text>" in call["messages"][0]["content"]
     assert '"animal-demo-005"' in call["messages"][0]["content"] and "<records>" in call["messages"][0]["content"]
+
+
+def test_live_ref_typed_by_the_user_is_echoed_and_long_refs_are_capped():
+    typed = parse(get_settings(), "where is animal-other-001", ANIMALS,
+                  client=_client(QueryIntent(intent="location_lookup", animal_refs=["animal-other-001"],
+                                             wants=["location"])))
+    assert (typed.unmatched_refs, typed.dropped_refs) == (["animal-other-001"], 0)
+    long_name = "Z" * 60
+    offline = parse(get_settings(), f"Where is {long_name}?", ANIMALS)
+    assert offline.unmatched_refs == ["Z" * assistant.MAX_ECHO]
 
 
 def test_live_parser_defaults_wants_from_the_intent():
@@ -124,6 +135,15 @@ def test_resolver_coverage_and_unknown_animal(herd):
 
     unknown = _resolve("location_lookup", [], ["location"], unmatched=["Bobo"])
     assert unknown["answer"] == "I couldn't find an animal matching 'Bobo' in this farm."
+
+
+def test_resolver_does_not_echo_refs_the_user_did_not_type(herd):
+    parsed = ParsedQuery(QueryIntent(intent="location_lookup", animal_refs=[], wants=["location"]), [],
+                         dropped_refs=1)
+    with read_session() as session:
+        result = resolve(session, "farm-wahyu", parsed)
+    assert result["answer"] == "I couldn't find a matching animal in this farm."
+    assert result["records"]["last_observations"] == []
 
 
 def test_resolver_unknown_intent_explains_what_it_can_answer(herd):

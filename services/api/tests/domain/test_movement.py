@@ -87,6 +87,14 @@ def test_unusable_window_warns_the_animal_or_the_track():
     assert (on_track.outcome, on_track.subject) == ("observation_quality", "track")
 
 
+def test_window_associated_partway_is_skipped_unless_its_associated_frames_are_usable():
+    short = _stats(_walk(20, 30, 0.01))  # associated at 20 s: 20 of 60 frames
+    assert assess(short, associated=True, baseline=None, partial_association=True).outcome == "unassessed"
+    assert assess(short, associated=True, baseline=None).outcome == "observation_quality"
+    enough = _stats(_walk(4, 30, 0.01))  # associated at 4 s: 52 of 60 frames
+    assert assess(enough, associated=True, baseline=None, partial_association=True).outcome == "baseline"
+
+
 def test_partial_windows_at_track_start_or_loss_are_not_assessed():
     kwargs = {"start_s": 60, "end_s": 90, "frame_interval_s": 0.5}
     assert window_applies(first_seen_s=0, lost_at_s=None, **kwargs)
