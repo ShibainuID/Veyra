@@ -12,6 +12,7 @@ from persistence.db import read_session
 from persistence.models import Animal, AnimalReference, AuditEvent, Enrollment, Estimate, Media
 from tests.support import MANAGER, OPERATOR, OTHER_FARM, VET
 from tests.video_support import write_enrollment_video
+from workers import jobs
 
 API = "/api/v1"
 
@@ -373,6 +374,20 @@ def test_post_enrollment_scenario_numbers_the_next_animal(client):
     confirmed = _confirm(client, detail["id"], SARI)
 
     assert confirmed.json()["animal_id"] == "animal-demo-007"
+
+
+def test_pool_mode_processes_in_the_background(client, video_bytes, monkeypatch):
+    monkeypatch.setenv("VEYRA_SYNC_JOBS", "0")
+    get_settings.cache_clear()
+    created = _create(client, "sample-enrollment-001")
+    assert _upload(client, created["id"], video_bytes).status_code == 200
+
+    job = _process(client, created["id"])
+    jobs.drain(timeout_s=30)
+
+    assert client.get(f"{API}/jobs/{job['job_id']}", headers=OPERATOR).json()["status"] == "succeeded"
+    detail = client.get(f"{API}/enrollments/{created['id']}", headers=OPERATOR).json()
+    assert detail["status"] == "review" and len(detail["manifest"]["views"]) == 3
 
 
 @pytest.mark.skipif(not probe_capabilities()["muzzle"], reason="muzzle model or onnxruntime not available")
