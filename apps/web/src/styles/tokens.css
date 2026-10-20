@@ -136,6 +136,7 @@
   --breakpoint-tab: 56.25rem; /* 900px: passbook decision bar becomes sticky below */
   --breakpoint-lg: 64rem; /* 1024px: full top bar from here, bottom tabs below */
   --breakpoint-xl: 80rem;
+  --breakpoint-2xl: 90rem; /* 1440px: the herd table shows every column beside the passbook */
 }
 
 /* Type, radii, depth, and easing are emitted on :root by Tailwind (static) and double as utilities. */

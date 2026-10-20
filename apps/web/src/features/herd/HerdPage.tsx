@@ -72,10 +72,10 @@ function awaitingLabel(count: number): string {
 }
 
 /**
- * Beside the passbook on a tablet (lg up to xl) a cell keeps to its first line so the table fits
- * at 64px rows: the rest is visually hidden but still read, and it rides in the row's tooltip.
+ * Beside the passbook (lg up to 2xl) a cell keeps to its first line so the table fits at 64px
+ * rows: the rest is visually hidden but still read, and it rides in the row's tooltip.
  */
-const TABLET_HIDDEN = "lg:max-xl:sr-only";
+const TABLET_HIDDEN = "lg:max-2xl:sr-only";
 
 /** The row's tooltip: what the tablet layout moves out of the cells, so a hover still finds it. */
 export function rowTitle(row: HerdItem): string {
@@ -118,8 +118,8 @@ const COLUMNS: readonly Column<HerdItem>[] = [
       <span className="flex min-w-0 flex-col">
         <span>{row.name}</span>
         <span className="flex flex-col text-sm font-regular text-muted">
-          {/* Below xl the tag's printed number carries the ID, so the row keeps to 64px. */}
-          <Mono className="hidden whitespace-nowrap xl:inline">{row.id}</Mono>
+          {/* Below 2xl the tag's printed number carries the ID, so the row keeps to 64px. */}
+          <Mono className="hidden whitespace-nowrap 2xl:inline">{row.id}</Mono>
           {/* Beside the passbook the breed steps out of sight (row tooltip, passbook, passport) but is still read. */}
           <span className={TABLET_HIDDEN}>{row.breed}</span>
         </span>
@@ -259,7 +259,7 @@ export function HerdPage() {
   const q = params.get("q") ?? "";
   const selectedParam = params.get("animal");
   const wide = useMediaQuery("(min-width: 64rem)");
-  const roomy = useMediaQuery("(min-width: 80rem)");
+  const roomy = useMediaQuery("(min-width: 90rem)");
   const [draft, setDraft] = useState(q);
 
   // Debounce the search field into the URL, so a search can be shared and survives reload.
@@ -285,7 +285,7 @@ export function HerdPage() {
   const rows = useMemo(() => (herd.data?.items ?? []).filter((item) => matchesFilter(item, filter)), [herd.data, filter]);
   const source = columnSource(rows);
   // Beside the passbook on a tablet, the tag's solid or dashed outline already says the identity
-  // state and the passbook carries the last observation, so those columns step aside below xl.
+  // state and the passbook carries the last observation, so those columns step aside below 2xl.
   const columns = useMemo(
     () =>
       COLUMNS.filter((column) => roomy || (column.id !== "identity" && column.id !== "observed")).map((column) =>
