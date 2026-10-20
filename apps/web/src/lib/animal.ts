@@ -25,10 +25,10 @@ export function identityPill(identityStatus: string | null | undefined): { tone:
   }
 }
 
-export function coveragePill(status: string | null | undefined): { tone: StatusTone; label: string } {
+export function coveragePill(status: string | null | undefined): { tone: StatusTone; label: string; shortLabel?: string } {
   if (status === "active") return { tone: "ok", label: "Active" };
   if (status === "pending") return { tone: "awaiting", label: "Pending" };
-  return { tone: "danger", label: "Not covered" };
+  return { tone: "danger", label: "Not covered", shortLabel: "None" };
 }
 
 export type HealthStatus =
@@ -39,17 +39,19 @@ export type HealthStatus =
   | "normal"
   | "not_monitored";
 
-const HEALTH_PILL: Record<HealthStatus, { tone: StatusTone; label: string; icon?: LucideIcon }> = {
-  needs_inspection: { tone: "danger", label: "Needs inspection", icon: Eye },
-  under_review: { tone: "uncertain", label: "Under review", icon: Hourglass },
-  observation_gap: { tone: "uncertain", label: "Observation gap", icon: EyeOff },
-  veterinary_reviewed: { tone: "ok", label: "Vet reviewed", icon: Stethoscope },
+type HealthPill = { tone: StatusTone; label: string; shortLabel?: string; icon?: LucideIcon };
+
+const HEALTH_PILL: Record<HealthStatus, HealthPill> = {
+  needs_inspection: { tone: "danger", label: "Needs inspection", shortLabel: "Inspect", icon: Eye },
+  under_review: { tone: "uncertain", label: "Under review", shortLabel: "Review", icon: Hourglass },
+  observation_gap: { tone: "uncertain", label: "Observation gap", shortLabel: "Gap", icon: EyeOff },
+  veterinary_reviewed: { tone: "ok", label: "Vet reviewed", shortLabel: "Vetted", icon: Stethoscope },
   normal: { tone: "ok", label: "Normal" },
-  not_monitored: { tone: "neutral", label: "Not monitored" },
+  not_monitored: { tone: "neutral", label: "Not monitored", shortLabel: "None" },
 };
 
 /** A monitoring state from records, never a diagnosis: icon plus plain words. */
-export function healthPill(status: HealthStatus | null | undefined): { tone: StatusTone; label: string; icon?: LucideIcon } {
+export function healthPill(status: HealthStatus | null | undefined): HealthPill {
   return HEALTH_PILL[status ?? "not_monitored"] ?? HEALTH_PILL.not_monitored;
 }
 

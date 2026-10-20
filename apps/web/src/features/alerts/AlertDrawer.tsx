@@ -43,11 +43,15 @@ function Window({ label, start, end }: { label: string; start: string | null; en
         {start && end ? (
           <span className="flex flex-col">
             <span className="figures">{formatAbsolute(start).split(",")[0]}</span>
-            <span className="figures whitespace-nowrap">
-              <time dateTime={start}>{formatClockSeconds(start)}</time>
-              <span aria-hidden="true"> – </span>
-              <span className="sr-only"> to </span>
-              <time dateTime={end}>{formatClockSeconds(end)}</time> {zoneLabel(start)}
+            {/* The zone may drop under the times in a narrow column rather than run into its neighbour. */}
+            <span className="figures flex flex-wrap gap-x-2">
+              <span className="whitespace-nowrap">
+                <time dateTime={start}>{formatClockSeconds(start)}</time>
+                <span aria-hidden="true"> – </span>
+                <span className="sr-only"> to </span>
+                <time dateTime={end}>{formatClockSeconds(end)}</time>
+              </span>
+              <span className="whitespace-nowrap">{zoneLabel(start)}</span>
             </span>
           </span>
         ) : (
@@ -277,7 +281,7 @@ export function AlertDrawer({ alertId, onClose }: AlertDrawerProps) {
             <h3 id={`${noteId}-win`} className="text-md font-bold">
               Observation against baseline
             </h3>
-            <dl className="grid gap-4 sm:grid-cols-2">
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
               <Window label="Observation window" start={alert.window_start} end={alert.window_end} />
               <Window
                 label={alert.kind === "reduced_movement" ? "Baseline window" : "Baseline"}

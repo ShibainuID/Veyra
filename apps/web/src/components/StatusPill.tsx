@@ -22,12 +22,17 @@ const TONE_ICON: Record<StatusTone, LucideIcon> = {
 export interface StatusPillProps {
   tone: StatusTone;
   label: string;
+  /**
+   * A shorter word shown where a narrow table can't fit the full label (beside the passbook at
+   * 1024px). The full label stays in the accessible name.
+   */
+  shortLabel?: string;
   /** Replace the tone's default icon. State is always icon plus text, never color alone. */
   icon?: LucideIcon;
   className?: string;
 }
 
-export function StatusPill({ tone, label, icon, className }: StatusPillProps) {
+export function StatusPill({ tone, label, shortLabel, icon, className }: StatusPillProps) {
   const Icon = icon ?? TONE_ICON[tone];
   return (
     <span
@@ -38,7 +43,12 @@ export function StatusPill({ tone, label, icon, className }: StatusPillProps) {
       )}
     >
       <Icon aria-hidden="true" className="size-4 flex-none" strokeWidth={2.25} />
-      <span className="truncate">{label}</span>
+      <span className={cn("truncate", shortLabel && "pill-label-full")}>{label}</span>
+      {shortLabel && (
+        <span className="pill-label-short" aria-hidden="true">
+          {shortLabel}
+        </span>
+      )}
     </span>
   );
 }

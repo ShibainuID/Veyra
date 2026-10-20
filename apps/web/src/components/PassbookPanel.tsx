@@ -1,6 +1,7 @@
 import { Lock, Stamp as StampIcon } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "../lib/cn";
+import { useMediaQuery } from "../lib/use-media-query";
 import { formatMoney, lineNumber } from "../lib/format";
 import { Money } from "./figures";
 import { Button } from "./Button";
@@ -92,25 +93,49 @@ export function PassbookPanel({
   const currency = summary?.currency ?? "USD";
   const uninsuredLow = summary ? Math.max(0, summary.exposureLowMinor - summary.insuredMinor) : 0;
   const uninsuredHigh = summary ? Math.max(0, summary.exposureHighMinor - summary.insuredMinor) : 0;
+  // On a short screen (a 1024×768 tablet) the header compacts so the waiting line and its stamp
+  // slot stay above the decision bar: a smaller tag, one meta line, and a one-row exposure strip.
+  const compact = useMediaQuery("(max-height: 820px)");
+  const cell = compact ? "py-2" : "py-3";
+  const listRef = useRef<HTMLOListElement>(null);
+
+  // Fade the top edge once lines scroll under it, so a cut-off earlier line reads as "more above".
+  useEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const update = () => {
+      if (list.scrollTop > 0) list.setAttribute("data-scrolled", "");
+      else list.removeAttribute("data-scrolled");
+    };
+    update();
+    list.addEventListener("scroll", update, { passive: true });
+    return () => list.removeEventListener("scroll", update);
+  }, [lines.length]);
 
   return (
     <section aria-labelledby={headingId} className={cn("flex min-h-0 flex-col bg-bg", className)}>
-      <div className="flex flex-col gap-5 px-5 pt-6 pb-5">
-        <div className="flex items-center gap-5">
-          <EarTag animalId={animal.id} state={animal.tagState} size="xl" />
+      <div className={cn("flex flex-col", compact ? "gap-3 px-5 pt-4 pb-3" : "gap-5 px-5 pt-6 pb-5")} data-compact={compact || undefined}>
+        <div className={cn("flex items-center", compact ? "gap-4" : "gap-5")}>
+          <EarTag animalId={animal.id} state={animal.tagState} size={compact ? "md" : "xl"} />
           <div className="flex min-w-0 flex-col gap-1">
             <Heading id={headingId} className="text-xl font-bold">
               {animal.name}
             </Heading>
-            <p className="text-muted">
-              <span className="figures whitespace-nowrap text-ink">{animal.id}</span>
-              <br />
-              {IDENTITY_WORDS[animal.tagState]}
-            </p>
+            {compact ? (
+              <p className="truncate text-sm text-muted">
+                <span className="figures whitespace-nowrap text-ink">{animal.id}</span> · {IDENTITY_WORDS[animal.tagState]}
+              </p>
+            ) : (
+              <p className="text-muted">
+                <span className="figures whitespace-nowrap text-ink">{animal.id}</span>
+                <br />
+                {IDENTITY_WORDS[animal.tagState]}
+              </p>
+            )}
           </div>
         </div>
         {/* Full width under the tag, so breed, age, and weight with their sources read on as few lines as possible. */}
-        {animal.description && <div className="-mt-2 text-muted">{animal.description}</div>}
+        {animal.description && <div className={cn("text-muted", !compact && "-mt-2")}>{animal.description}</div>}
 
         {facts && facts.length > 0 && (
           <dl className="grid grid-cols-2 gap-x-5">
@@ -127,16 +152,22 @@ export function PassbookPanel({
         )}
 
         {summary && (
-          <dl className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] border-y-2 border-ink">
-            <div className="flex flex-col gap-1 py-3 pr-3">
+          <dl
+            className={cn(
+              "grid border-y-2 border-ink",
+              // Compact: each figure keeps to one line, so the strip is a single row of three cells.
+              compact ? "grid-cols-[auto_auto_minmax(0,1fr)] [&_dd]:text-sm [&_dd]:whitespace-nowrap" : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
+            )}
+          >
+            <div className={cn("flex flex-col gap-1 pr-3", cell)}>
               <dt className="text-sm text-muted">Exposure</dt>
               <dd className="figures font-bold"><Money low={summary.exposureLowMinor} high={summary.exposureHighMinor} currency={currency} /></dd>
             </div>
-            <div className="flex flex-col gap-1 border-l border-line px-3 py-3">
+            <div className={cn("flex flex-col gap-1 border-l border-line px-3", cell)}>
               <dt className="text-sm text-muted">Insured</dt>
               <dd className="figures font-bold"><Money minor={summary.insuredMinor} currency={currency} whole /></dd>
             </div>
-            <div className="flex flex-col gap-1 border-l border-line py-3 pl-3">
+            <div className={cn("flex flex-col gap-1 border-l border-line pl-3", cell)}>
               <dt className="text-sm text-muted">Uninsured</dt>
               <dd className={cn("figures font-bold", uninsuredHigh > 0 && "text-danger")}>
                 {uninsuredHigh === 0 ? <Money minor={0} currency={currency} whole /> : <Money low={uninsuredLow} high={uninsuredHigh} currency={currency} />}
@@ -158,7 +189,7 @@ export function PassbookPanel({
             Nothing has posted yet. Enrollment writes the first line.
           </p>
         ) : (
-          <ol className="pb-list relative min-h-0 flex-1 overflow-y-auto border-t border-line px-1 [scrollbar-gutter:stable]">
+          <ol ref={listRef} className="pb-list relative min-h-0 flex-1 overflow-y-auto border-t border-line px-1 [scrollbar-gutter:stable]">
             {lines.map((line) => (
               <PassbookLine key={line.id} {...line} timeZone={timeZone} />
             ))}
