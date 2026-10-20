@@ -1,0 +1,88 @@
+{
+  "catalog_version": "sample-v1",
+  "currency": "USD",
+  "provider": {
+    "id": "sandbox-insurer",
+    "name": "Sandbox Mutual",
+    "mode": "sandbox",
+    "note": "Fictional insurer for demonstration. Terms are not market quotes."
+  },
+  "insured_value_rule": {
+    "basis": "valuation_low",
+    "terms_ref": "sample-v1 §1.2",
+    "text": "Cover is written up to the lower bound of the manager-confirmed indicative value range."
+  },
+  "products": [
+    {
+      "product_id": "basic-mortality",
+      "name": "Basic Mortality & Accident",
+      "summary": "Pays toward the loss of an insured animal that dies or is injured in an accident.",
+      "eligibility": [
+        {"field": "identity_status", "op": "eq", "value": "confirmed", "terms_ref": "sample-v1 §2.1", "text": "The animal has a confirmed identity reference."},
+        {"field": "age_months", "op": "between", "value": [6, 120], "terms_ref": "sample-v1 §2.2", "text": "Age between 6 and 120 months."},
+        {"field": "valuation_confirmed", "op": "eq", "value": true, "terms_ref": "sample-v1 §2.3", "text": "A manager-confirmed valuation is on file."}
+      ],
+      "premium": {"basis": "rate_of_insured_value", "rate_bps": 350, "period": "annual", "terms_ref": "sample-v1 §3.1"},
+      "deductible": {"basis": "percent_of_insured_value", "bps": 1000, "terms_ref": "sample-v1 §3.2"},
+      "covered_perils": ["accidental_injury", "death"],
+      "exclusions": [
+        {"text": "Pre-existing injury or illness before the effective date.", "terms_ref": "sample-v1 §4.1"},
+        {"text": "Neglect, starvation, or failure to provide veterinary care.", "terms_ref": "sample-v1 §4.2"},
+        {"text": "Animals not recorded in the passport at the time of loss.", "terms_ref": "sample-v1 §4.3"},
+        {"text": "Loss caused by war, civil unrest, or confiscation.", "terms_ref": "sample-v1 §4.4"}
+      ],
+      "payout_formula": {
+        "expression": "max(0, min(eligible_loss, remaining_limit) - deductible)",
+        "terms_ref": "sample-v1 §5.1",
+        "note": "Illustrative formula for this sample product only."
+      },
+      "claim_requirements": ["identity_reference", "active_policy", "incident_facts", "farmer_declaration", "observation_evidence", "vet_assessment"]
+    },
+    {
+      "product_id": "mortality-theft",
+      "name": "Mortality + Theft",
+      "summary": "Adds theft cover to death and accident cover for animals with an ownership document on file.",
+      "eligibility": [
+        {"field": "identity_status", "op": "eq", "value": "confirmed", "terms_ref": "sample-v1 §2.1", "text": "The animal has a confirmed identity reference."},
+        {"field": "age_months", "op": "between", "value": [6, 120], "terms_ref": "sample-v1 §2.2", "text": "Age between 6 and 120 months."},
+        {"field": "valuation_confirmed", "op": "eq", "value": true, "terms_ref": "sample-v1 §2.3", "text": "A manager-confirmed valuation is on file."},
+        {"field": "ownership_document", "op": "eq", "value": "present", "terms_ref": "sample-v1 §2.4", "text": "An ownership document reference is on file."}
+      ],
+      "premium": {"basis": "rate_of_insured_value", "rate_bps": 520, "period": "annual", "terms_ref": "sample-v1 §3.1"},
+      "deductible": {"basis": "flat", "amount_minor": 15000, "terms_ref": "sample-v1 §3.2"},
+      "covered_perils": ["accidental_injury", "death", "theft"],
+      "exclusions": [
+        {"text": "Pre-existing injury or illness before the effective date.", "terms_ref": "sample-v1 §4.1"},
+        {"text": "Neglect, starvation, or failure to provide veterinary care.", "terms_ref": "sample-v1 §4.2"},
+        {"text": "Animals not recorded in the passport at the time of loss.", "terms_ref": "sample-v1 §4.3"},
+        {"text": "Loss caused by war, civil unrest, or confiscation.", "terms_ref": "sample-v1 §4.4"},
+        {"text": "Theft without a police report filed within 72 hours.", "terms_ref": "sample-v1 §4.5"}
+      ],
+      "payout_formula": null,
+      "claim_requirements": ["identity_reference", "active_policy", "incident_facts", "farmer_declaration", "observation_evidence", "vet_assessment", "ownership_document"]
+    },
+    {
+      "product_id": "dairy-health-plus",
+      "name": "Dairy Health Plus",
+      "summary": "Covers illness and accidental injury for dairy cows with a recent veterinary health check.",
+      "eligibility": [
+        {"field": "identity_status", "op": "eq", "value": "confirmed", "terms_ref": "sample-v1 §2.1", "text": "The animal has a confirmed identity reference."},
+        {"field": "breed_category", "op": "eq", "value": "dairy", "terms_ref": "sample-v1 §2.5", "text": "Dairy breeds only."},
+        {"field": "age_months", "op": "lte", "value": 96, "terms_ref": "sample-v1 §2.6", "text": "Age up to 96 months."},
+        {"field": "vet_health_check_days", "op": "lte", "value": 30, "terms_ref": "sample-v1 §2.7", "text": "A veterinary health check within the last 30 days."}
+      ],
+      "premium": {"basis": "rate_of_insured_value", "rate_bps": 680, "period": "annual", "terms_ref": "sample-v1 §3.1"},
+      "deductible": {"basis": "percent_of_insured_value", "bps": 500, "terms_ref": "sample-v1 §3.2"},
+      "covered_perils": ["illness", "accidental_injury"],
+      "exclusions": [
+        {"text": "Pre-existing injury or illness before the effective date.", "terms_ref": "sample-v1 §4.1"},
+        {"text": "Neglect, starvation, or failure to provide veterinary care.", "terms_ref": "sample-v1 §4.2"},
+        {"text": "Animals not recorded in the passport at the time of loss.", "terms_ref": "sample-v1 §4.3"},
+        {"text": "Loss caused by war, civil unrest, or confiscation.", "terms_ref": "sample-v1 §4.4"},
+        {"text": "Illness first diagnosed within 14 days of the effective date.", "terms_ref": "sample-v1 §4.6"}
+      ],
+      "payout_formula": null,
+      "claim_requirements": ["identity_reference", "active_policy", "incident_facts", "farmer_declaration", "observation_evidence", "vet_assessment", "vet_health_record"]
+    }
+  ]
+}
