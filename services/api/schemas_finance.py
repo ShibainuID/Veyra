@@ -245,12 +245,97 @@ class IllustrativePayout(BaseModel):
     note: str
 
 
+IdentityOutcome = Literal["match", "mismatch", "uncertain"]
+IdentitySource = Literal["prototype", "simulated"]
+
+
+class IdentityCheckRequest(BaseModel):
+    """The demo path without a camera: a fixture outcome, labeled simulated."""
+
+    sample: Literal["match", "mismatch"]
+
+
+class IdentityCandidate(BaseModel):
+    animal_id: str | None
+    animal_name: str | None = None
+    inliers: int | None = None
+    cosine: float | None = None
+
+
+class IdentityScan(BaseModel):
+    media_url: str | None
+    content_type: str | None
+    crop_url: str | None
+
+
+class IdentityReference(BaseModel):
+    reference_id: str
+    crop_url: str | None
+    frame_url: str | None
+    note: str | None = None
+
+
+class IdentityCheckOut(BaseModel):
+    id: str
+    claim_id: str
+    animal_id: str
+    outcome: IdentityOutcome
+    reason: str | None
+    matched_animal_id: str | None
+    matched_animal_name: str | None
+    candidates: list[IdentityCandidate]
+    inliers: int | None
+    accept_inliers: int
+    source: IdentitySource
+    method_version: str
+    input: Literal["photo", "video", "sample"] | None
+    fallback: dict[str, Any] | None = None
+    checked_by: str
+    checked_by_name: str | None
+    created_at: UTCDateTime
+    scan: IdentityScan
+    reference: IdentityReference | None
+
+
+class InsurerUpdateOut(BaseModel):
+    """An assessment update the sandbox insurer reported; the settlement and disbursement are the insurer's words."""
+
+    id: str
+    status: Literal["under_review", "more_info_requested", "approved", "declined"]
+    label: str
+    note: str | None
+    settlement_minor: int | None
+    currency: str
+    disbursement: Literal["scheduled", "paid"] | None
+    provider_id: str
+    source: Literal["sandbox"]
+    created_at: UTCDateTime
+
+
+class InsurerUpdateRequest(BaseModel):
+    status: Literal["under_review", "more_info_requested", "approved", "declined"]
+    note: str | None = Field(default=None, max_length=1000)
+    settlement_minor: int | None = Field(default=None, ge=0)
+    disbursement: Literal["scheduled", "paid"] | None = None
+
+
 class ClaimDetail(ClaimOut):
     animal_id: str
     checklist: list[ChecklistItem]
     missing: list[str]
     product_id: str | None
     illustrative_payout: IllustrativePayout | None
+    incident_kind: str | None = None
+    # A death claim needs a matching muzzle re-scan (`identity_verified`) before it can be submitted.
+    identity_check_required: bool = False
+    identity_checks: list[IdentityCheckOut] = Field(default_factory=list)
+    # What the insurer reported after submission, oldest first (sandbox). Empty until the insurer posts an update.
+    insurer_updates: list[InsurerUpdateOut] = Field(default_factory=list)
+
+
+class IdentityCheckResult(BaseModel):
+    check: IdentityCheckOut
+    claim: ClaimDetail
 
 
 class ClaimList(BaseModel):

@@ -1,4 +1,4 @@
-"""Sandbox insurer and payment providers (plan Section 4: sandbox providers).
+"""Sandbox insurer and payment providers.
 
 Deterministic and idempotent: every request is stored in `provider_records` under (provider, operation,
 idempotency key), and the same key returns the stored response without acting again. The caller owns the

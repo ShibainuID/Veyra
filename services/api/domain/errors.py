@@ -1,4 +1,4 @@
-"""Domain errors and the API error codes (plan Section 0: error envelope).
+"""Domain errors and the API error codes (the error envelope).
 
 The HTTP status is derived from the code, so a rule can only raise a code the API documents.
 `HTTP_ERROR` has no fixed status: the API uses it only for framework HTTP errors without a code of

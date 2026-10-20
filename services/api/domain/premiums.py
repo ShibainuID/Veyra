@@ -1,4 +1,4 @@
-"""Premium and deductible arithmetic (plan Section 4: eligibility and premiums).
+"""Premium and deductible arithmetic.
 
 Integer minor units only. Rates are basis points; `premium = round_half_up(insured × rate_bps / 10000)`.
 """

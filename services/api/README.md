@@ -1,6 +1,6 @@
 # Veyra API service
 
-Perception adapters and workers behind the enrollment flow (PRD Sections 4.1–4.3). Every result carries a source label (`prototype`, `simulated`, or `documented`) and a `review_required` flag; none of them is an automatic decision.
+Perception adapters and workers behind the enrollment flow. Every result carries a source label (`prototype`, `simulated`, or `documented`) and a `review_required` flag; none of them is an automatic decision.
 
 | Module | Input | Output | Evidence |
 | --- | --- | --- | --- |

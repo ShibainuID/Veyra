@@ -1,4 +1,4 @@
-"""Hooks that run before a demo reset (plan Section 5: `POST /demo/reset`).
+"""Hooks that run before a demo reset (`POST /demo/reset`).
 
 Background work that writes to the database (camera replays, the job runner) registers a hook that stops or
 drains it, so a reset never races a writer that would recreate rows from the previous scenario.

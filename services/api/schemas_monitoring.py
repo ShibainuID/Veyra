@@ -1,11 +1,11 @@
-"""Request and response models for monitoring, alerts, and the assistant (plan Section 5; OpenAPI source).
+"""Request and response models for monitoring, alerts, and the assistant (OpenAPI source).
 
 Kept apart from `schemas.py` so parallel tasks do not edit one file. Datetimes serialize as UTC ending in `Z`.
 """
 
 from typing import Any, Literal
 
-from pydantic import AwareDatetime, BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field, model_validator
 
 from schemas import UTCDateTime
 
@@ -36,6 +36,33 @@ class ScenarioEvent(BaseModel):
     reason: str | None = None
 
 
+class ScenarioCameraEvent(BaseModel):
+    """A camera event: a muzzle scan made in the scan zone, handed to the one track inside it (or to none)."""
+    t: float
+    type: Literal["zone_scan"]
+    animal_id: str | None = Field(default=None, description="Who the muzzle matcher says was scanned.")
+    inliers: int | None = None
+    quality: float | None = None
+    muzzle_image: str | None = Field(default=None, description="A repo-relative scan image: when set, the real muzzle "
+                                      "matcher decides `animal_id` against the farm's gallery as the replay starts.")
+
+
+class ScanZone(BaseModel):
+    polygon: list[list[float]] = Field(description="[[x, y], ...] normalized 0-1 to the camera frame.")
+    label: str
+    source: str
+    calibrated_at: UTCDateTime
+
+
+class ScenarioFootage(BaseModel):
+    label: str = Field(description="The caption shown with the clip, e.g. that it is AI-generated.")
+    generator: str
+    kind: Literal["ai_generated"]
+    tracker: str
+    tracks: str
+    prompts: str
+
+
 class ScenarioTrack(BaseModel):
     track_key: str
     frames: list[ScenarioFrame]
@@ -53,6 +80,9 @@ class Scenario(BaseModel):
     fps: float
     window_s: float
     clip: str | None
+    footage: ScenarioFootage | None = None
+    events: list[ScenarioCameraEvent] = []
+    scan_zone: ScanZone | None = None
     tracks: list[ScenarioTrack]
 
 
@@ -67,13 +97,25 @@ class CameraLastObservation(BaseModel):
     bbox: Bbox
 
 
+class CameraGalleryStatus(BaseModel):
+    """Whether this camera holds the farm's current muzzle gallery (`domain.gallery`)."""
+
+    current_version: int
+    synced_version: int | None
+    synced_at: UTCDateTime | None
+    in_sync: bool
+    source: Literal["prototype", "simulated"] | None = None
+
+
 class CameraOut(BaseModel):
     id: str
     name: str
     location: str
     map_x: float
     map_y: float
+    scan_zone: ScanZone | None = Field(default=None, description="The calibrated scan zone, if the camera has one.")
     last_observation: CameraLastObservation | None
+    gallery: CameraGalleryStatus | None = None
 
 
 class CameraList(BaseModel):
@@ -142,6 +184,7 @@ class ReplayOut(BaseModel):
     anchor_at: UTCDateTime
     duration_s: float
     progress_s: float
+    scan_zone: ScanZone | None
     tracks: list[TrackOut]
     alerts: list[AlertView]
 
@@ -150,17 +193,26 @@ class ReplayOut(BaseModel):
 
 
 class ObservationIn(BaseModel):
-    track_key: str = Field(min_length=1, max_length=64)
+    """One track observation, or (`event: "zone_scan"`) a muzzle scan in the camera's scan zone, which needs no
+    track, box, or visibility: it is handed to the one track inside the zone at `observed_at`, or to none."""
+    track_key: str | None = Field(default=None, min_length=1, max_length=64)
     observed_at: AwareDatetime
-    bbox: Bbox = Field(min_length=4, max_length=4)
-    visibility: float = Field(ge=0, le=1)
-    event: Literal["frame", "muzzle_match", "track_lost"] = "frame"
-    candidate_animal_id: str | None = None
+    bbox: Bbox | None = Field(default=None, min_length=4, max_length=4)
+    visibility: float | None = Field(default=None, ge=0, le=1)
+    event: Literal["frame", "muzzle_match", "track_lost", "zone_scan"] = "frame"
+    candidate_animal_id: str | None = Field(default=None,
+                                            description="The matched animal; for a zone_scan, the scanned one.")
     inliers: int | None = Field(default=None, ge=0)
     quality: float | None = Field(default=None, ge=0, le=1)
     reason: str | None = Field(default=None, max_length=200)
     media_ref: str | None = Field(default=None, max_length=500)
     replay_id: str | None = None
+
+    @model_validator(mode="after")
+    def _track_fields(self) -> "ObservationIn":
+        if self.event != "zone_scan" and (self.track_key is None or self.bbox is None or self.visibility is None):
+            raise ValueError("track_key, bbox, and visibility are required unless event is zone_scan")
+        return self
 
 
 class ObservationOut(BaseModel):
@@ -177,9 +229,21 @@ class ObservationOut(BaseModel):
     source: str
 
 
+class ZoneHandoffOut(BaseModel):
+    outcome: Literal["associated", "already_associated", "rejected", "no_track", "crowded", "track_uncertain",
+                     "conflict"]
+    reason: str | None
+    message: str
+    track_ids: list[str]
+    track_keys: list[str]
+    tracks_in_zone: int
+
+
 class ObservationIngested(BaseModel):
-    observation: ObservationOut
-    track: TrackOut
+    observation: ObservationOut | None = Field(description="Null for a zone_scan without exactly one track in "
+                                                           "the zone.")
+    track: TrackOut | None
+    handoff: ZoneHandoffOut | None = Field(default=None, description="What a zone_scan did.")
 
 
 class AnimalLastObservation(BaseModel):

@@ -1,8 +1,9 @@
+import { agentHref } from "../agent/api";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, FlaskConical, Send } from "lucide-react";
+import { ArrowLeft, FlaskConical, Send, Bot } from "lucide-react";
 import { useId } from "react";
 import { Link, useParams } from "react-router";
-import { Button } from "../../components/Button";
+import { Button, ButtonLink } from "../../components/Button";
 import { EarTag } from "../../components/EarTag";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { Money, Mono, Timestamp } from "../../components/figures";
@@ -20,6 +21,7 @@ import { closedNote, isOpen, latestAction } from "../finance/actions";
 import { refreshFinance, useReviseAction, useAlerts, useAnimals, usePolicies, useProposeAction, type ChecklistItem, type Claim } from "../finance/api";
 import { useClaim, useConfirmDeclaration, useIncident } from "./api";
 import { EvidenceChecklist } from "./EvidenceChecklist";
+import { IdentityCheckStep } from "./IdentityCheck";
 import { FarmerReport, ObservedAlerts, ProfessionalFindings } from "./EvidenceKinds";
 import { checklistLabel, claimStatus, isSubmitted } from "./labels";
 
@@ -67,6 +69,12 @@ function fixFor(item: ChecklistItem, claim: Claim, role: Role) {
       return <Link to={`/animals/${claim.animal_id}`}>Add an ownership document on the passport</Link>;
     case "active_policy":
       return <Link to={`/animals/${claim.animal_id}/insurance`}>Check the cover for this animal</Link>;
+    case "identity_verified":
+      return (
+        <a href="#verify-identity" className="font-bold">
+          Scan the muzzle to verify identity
+        </a>
+      );
     default:
       return null;
   }
@@ -241,6 +249,9 @@ export function ClaimPage() {
         actions={
           <>
             <StatusPill tone={status.tone} label={status.label} />
+            <ButtonLink to={agentHref(animal.id, isSubmitted(c.status) ? "track_claim" : "file_claim")} variant="secondary" icon={Bot}>
+              Help me with this claim
+            </ButtonLink>
             <Link to="/claims" className="inline-flex min-h-11 items-center gap-2 font-bold">
               <ArrowLeft aria-hidden="true" className="size-5" strokeWidth={2.25} />
               All claims
@@ -272,6 +283,16 @@ export function ClaimPage() {
         </div>
 
         <div className="flex min-w-0 flex-col">
+          {(c.identity_check_required || (c.identity_checks ?? []).length > 0) && (
+            <Section
+              anchor="verify-identity"
+              className="scroll-mt-24"
+              title="Verify identity"
+              description={`Scan the muzzle of the dead animal; VEYRA compares it with the muzzle enrolled for ${animal.name}.`}
+            >
+              <IdentityCheckStep claim={c} animalName={animal.name} role={role.role} locked={submitted} />
+            </Section>
+          )}
           <Section title="Evidence checklist" description="What the sample claim terms require before submission.">
             <EvidenceChecklist items={c.checklist} renderFix={(item) => (submitted ? null : fixFor(item, c, role.role))} />
           </Section>

@@ -1,4 +1,4 @@
-"""Alert review (plan Section 5: `/alerts`). Any role may read its farm's alerts; managers, operators, and vets
+"""Alert review (`/alerts`). Any role may read its farm's alerts; managers, operators, and vets
 review them under the rules in `domain/alerts.py`."""
 
 from fastapi import APIRouter, Depends

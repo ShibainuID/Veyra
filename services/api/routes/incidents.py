@@ -1,4 +1,4 @@
-"""Incidents and professional findings (plan Section 5: `/incidents`). Managers and operators record incidents;
+"""Incidents and professional findings (`/incidents`). Managers and operators record incidents;
 vets and managers add findings; any role of the farm may read."""
 
 from fastapi import APIRouter, Depends

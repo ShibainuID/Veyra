@@ -1,4 +1,4 @@
-"""Signed media download (plan Section 5: `GET /media/{id}?exp&sig`).
+"""Signed media download (`GET /media/{id}?exp&sig`).
 
 The signature is the credential. Every failure (bad or expired signature, unknown id, missing file) is the
 same `NOT_FOUND`, so a caller cannot probe which media ids exist. Responses are never content-sniffed, and

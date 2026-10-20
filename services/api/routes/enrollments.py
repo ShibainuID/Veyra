@@ -1,4 +1,4 @@
-"""Guided-video enrollment (plan Section 5: `/enrollments`). Managers and operators only; farm-scoped.
+"""Guided-video enrollment (`/enrollments`). Managers and operators only; farm-scoped.
 
 Writes use explicit `SessionLocal()` blocks instead of the `get_session` dependency where a job is submitted:
 the job may run inline in this thread (`VEYRA_SYNC_JOBS=1`), so the request's writing session must be

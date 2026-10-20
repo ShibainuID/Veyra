@@ -1,4 +1,4 @@
-"""Policy catalog, recommendations, and farm policies (plan Section 5: `/policies/*`,
+"""Policy catalog, recommendations, and farm policies (`/policies/*`,
 `/animals/{id}/insurance-recommendations`).
 
 Recommendations read in a short read session and call the language model after it closes, so no transaction is

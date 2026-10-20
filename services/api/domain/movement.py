@@ -1,4 +1,4 @@
-"""The transparent movement rule (plan Section 4: movement rule).
+"""The transparent movement rule.
 
 Per track and per window (`window_s`, aligned to scenario time 0):
 - speed = the mean centroid displacement per second between consecutive frames, in normalized frame units;

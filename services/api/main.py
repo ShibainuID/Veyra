@@ -1,10 +1,12 @@
-"""VEYRA API app factory: routers under `/api/v1`, one error envelope, and DB setup on startup (plan Sections 0-1).
+"""VEYRA API app factory: routers under `/api/v1`, one error envelope, and DB setup on startup.
 
 Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 """
 
 import logging
+import mimetypes
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,6 +18,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from config import load_env_file
 from domain.actions import recover_stranded
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine, writer_scope
@@ -24,6 +27,8 @@ from routes import (
     alerts, animals, assistant, audit, auth_routes, demo, enrollments, health, jobs, media, monitoring,
 )
 from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
+from routes import gallery  # camera muzzle gallery sync
+from routes import agent_chat  # the in-app VEYRA agent conversations
 from workers.jobs import recover_interrupted
 
 API_PREFIX = "/api/v1"
@@ -37,12 +42,14 @@ ROUTERS = [
     jobs.router,
     media.router,
     demo.router,
+    gallery.router,  # before monitoring: `/cameras/gallery/publish` is a fixed path
     monitoring.router,
     alerts.router,
     assistant.router,
     valuations.router,
     insurance.router,
     agent.router,
+    agent_chat.router,
     wallet.router,
     incidents.router,
     claims.router,
@@ -118,6 +125,7 @@ def create_app() -> FastAPI:
 
 def _mount_web(app: FastAPI, dist: Path) -> None:
     """Serve the built web app from the same origin (the Docker image); `/api` keeps its JSON 404s."""
+    mimetypes.add_type("application/manifest+json", ".webmanifest")  # the PWA manifest
     if (dist / "assets").is_dir():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 
@@ -131,4 +139,7 @@ def _mount_web(app: FastAPI, dist: Path) -> None:
         return FileResponse(dist / "index.html")  # client-side routes such as /animals/:id
 
 
+# `uv run uvicorn main:app` reads the repo's .env like docker compose does; tests keep their own environment.
+if "pytest" not in sys.modules:
+    load_env_file()
 app = create_app()

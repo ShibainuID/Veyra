@@ -15,6 +15,7 @@ import { ClaimsPage } from "../features/claims/ClaimsPage";
 import { EnrollPage } from "../features/enrollment/EnrollPage";
 import { InsurancePage } from "../features/insurance/InsurancePage";
 import { MonitorScreen } from "../features/monitor/MonitorScreen";
+import { AgentPage } from "../features/agent/AgentPage";
 import { AppShell } from "./AppShell";
 
 function RouteError() {
@@ -76,6 +77,7 @@ export const routes: RouteObject[] = [
       { path: "claims/:claimId", element: <ClaimPage /> },
       { path: "audit", element: <AuditPage /> },
       { path: "ask", element: <AskPage /> },
+      { path: "agent", element: <AgentPage /> },
       ...devRoutes,
       { path: "*", element: <NotFoundPage /> },
     ],

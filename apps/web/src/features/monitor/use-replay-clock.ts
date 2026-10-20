@@ -13,6 +13,8 @@ export interface ReplayClock {
   /** "live" while the server replay runs; "local" once the operator scrubs or plays back. */
   mode: "idle" | "live" | "local";
   playing: boolean;
+  /** Local playback speed: simulated seconds per real second. */
+  rate: number;
   play: () => void;
   pause: () => void;
   seek: (t: number) => void;
@@ -23,7 +25,7 @@ export interface ReplayClock {
  * on at the replay speed between polls, never ahead of what was reported by more than a few seconds and never
  * backwards. When the replay is over, the operator can scrub or play the recorded tracks back locally.
  */
-export function useReplayClock(replay: Replay | undefined, durationS: number): ReplayClock {
+export function useReplayClock(replay: Replay | undefined, durationS: number, rate: number = LOCAL_RATE): ReplayClock {
   const sampleRef = useRef<ClockSample | null>(null);
   const shownRef = useRef(0);
   const localRef = useRef<{ base: number; at: number; playing: boolean } | null>(null);
@@ -58,7 +60,7 @@ export function useReplayClock(replay: Replay | undefined, durationS: number): R
   const now = useCallback(() => {
     const local = localRef.current;
     if (local) {
-      const value = local.playing ? local.base + ((Date.now() - local.at) / 1000) * LOCAL_RATE : local.base;
+      const value = local.playing ? local.base + ((Date.now() - local.at) / 1000) * rate : local.base;
       if (value >= durationS && local.playing) {
         localRef.current = { base: durationS, at: Date.now(), playing: false };
         setPlaying(false);
@@ -71,7 +73,7 @@ export function useReplayClock(replay: Replay | undefined, durationS: number): R
     const value = Math.max(shownRef.current, replayTimeAt(sample, Date.now()));
     shownRef.current = value;
     return value;
-  }, [durationS]);
+  }, [durationS, rate]);
 
   useEffect(() => {
     const id = window.setInterval(() => setT(now()), 250);
@@ -103,5 +105,5 @@ export function useReplayClock(replay: Replay | undefined, durationS: number): R
     setT(value);
   }, [now]);
 
-  return { now, t, mode, playing, play, pause, seek };
+  return { now, t, mode, playing, rate, play, pause, seek };
 }

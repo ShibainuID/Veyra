@@ -38,6 +38,8 @@ import { ERROR_COPY, type ErrorCode } from "../lib/errors";
 import { formatStampTime } from "../lib/format";
 import { useRole } from "../lib/role-store";
 import { Page } from "./Page";
+import { QualityMeter } from "../features/enrollment/QualityMeter";
+import { scoreGray, type ScanQuality } from "../features/enrollment/scan-quality";
 
 const TZ = "Asia/Jakarta";
 const minutesAgo = (m: number) => new Date(Date.now() - m * 60_000).toISOString();
@@ -210,6 +212,63 @@ function premiumLine(expiresAt: string): PassbookLineData {
     status: "awaiting",
     expiresAt,
   };
+}
+
+/* ---------- Capture quality specimens ---------- */
+
+/** A synthetic 160x136 guide-box sample: ridged texture at `level` grey, softened by `blurPasses` box blurs. */
+function syntheticQuality(level: number, contrast: number, blurPasses: number): ScanQuality {
+  const w = 160;
+  const h = 136;
+  let gray = new Float32Array(w * h);
+  let seed = 11;
+  for (let i = 0; i < gray.length; i++) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const x = i % w;
+    const y = Math.floor(i / w);
+    gray[i] = Math.min(255, Math.max(0, level + contrast * (0.6 * Math.sin(x * 0.9) * Math.cos(y * 0.7) + 0.8 * (seed / 2 ** 32 - 0.5))));
+  }
+  for (let pass = 0; pass < blurPasses; pass++) {
+    const next = new Float32Array(gray.length);
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let sum = 0;
+        let n = 0;
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
+            if (y + dy < 0 || y + dy >= h || x + dx < 0 || x + dx >= w) continue;
+            sum += gray[(y + dy) * w + x + dx]!;
+            n++;
+          }
+        }
+        next[y * w + x] = sum / n;
+      }
+    }
+    gray = next;
+  }
+  return scoreGray(gray, w, h);
+}
+
+function QualitySpecimens() {
+  const samples = useMemo(
+    () => [
+      { label: "Sharp, close muzzle", quality: syntheticQuality(128, 120, 0) },
+      { label: "Blurred or too far", quality: syntheticQuality(128, 120, 2) },
+      { label: "Too dark", quality: syntheticQuality(26, 30, 0) },
+    ],
+    [],
+  );
+  return (
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {samples.map((sample) => (
+        <Specimen key={sample.label} label={`${sample.label} (synthetic frame)`}>
+          <div className="rounded-panel bg-shell p-4">
+            <QualityMeter quality={sample.quality} />
+          </div>
+        </Specimen>
+      ))}
+    </div>
+  );
 }
 
 /* ---------- Gallery helpers ---------- */
@@ -602,6 +661,13 @@ export default function DesignPage() {
             source="simulated"
           />
         </div>
+      </Section>
+
+      <Section
+        title="Capture quality meter"
+        description="Enroll's live hint: the guide box is sampled every 250 ms and scored for sharpness, light, and steadiness. These meters score synthetic frames. A hint about the picture, never identity confidence."
+      >
+        <QualitySpecimens />
       </Section>
 
       <Section title="Drawer" description="A native modal dialog from the right: focus stays inside, Esc closes it, and focus returns to the button.">

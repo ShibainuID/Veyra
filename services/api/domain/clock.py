@@ -1,4 +1,4 @@
-"""UTC clock with a test override (plan Section 0: time is UTC, ISO 8601 with `Z`)."""
+"""UTC clock with a test override (time is UTC, ISO 8601 with `Z`)."""
 
 from collections.abc import Callable
 from datetime import UTC, datetime

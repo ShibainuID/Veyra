@@ -1,4 +1,4 @@
-"""Who is signed in (plan Section 5: `/auth/whoami`): the user, role, and farm behind the bearer token."""
+"""Who is signed in (`/auth/whoami`): the user, role, and farm behind the bearer token."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

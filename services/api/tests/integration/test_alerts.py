@@ -1,4 +1,4 @@
-"""Alert listing and review (PRD verification: operator acknowledges, vet adds notes, transitions validated)."""
+"""Alert listing and review (operator acknowledges, vet adds notes, transitions validated)."""
 
 import pytest
 from sqlalchemy import select

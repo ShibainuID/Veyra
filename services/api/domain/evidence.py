@@ -1,4 +1,4 @@
-"""Evidence manifests (plan Section 4: a matching evidence manifest version is created or reused).
+"""Evidence manifests (a matching evidence manifest version is created or reused).
 
 A manifest lists the records an agent action relies on: `{type, ref, label, sha256?}` items, hashed as canonical
 JSON. Each subject keeps its own version sequence. Proposing reuses the latest version when the hash is
@@ -61,6 +61,9 @@ def _media_sha(session: Session, media_id: str | None) -> str | None:
     return media.sha256 if media else None
 
 
+media_sha = _media_sha
+
+
 def _num(value) -> str:
     """A range bound without a trailing `.0` (480, not 480.0)."""
     return f"{value:g}" if isinstance(value, float) else str(value)
@@ -79,9 +82,12 @@ def animal_items(session: Session, animal: Animal) -> list[dict]:
     for kind in ("weight", "age"):
         estimate = latest_estimate(session, animal.id, kind)
         if estimate is not None:
-            items.append(item(f"{kind}_estimate", estimate.id,
-                              f"{kind.title()} estimate {_num(estimate.range_low)}–{_num(estimate.range_high)} {estimate.unit} "
-                              f"({estimate.source})"))
+            if estimate.range_low is None or estimate.range_high is None:
+                label = f"{kind.title()} estimate · no range, review required ({estimate.source})"
+            else:
+                label = (f"{kind.title()} estimate {_num(estimate.range_low)}–{_num(estimate.range_high)} {estimate.unit} "
+                         f"({estimate.source})")
+            items.append(item(f"{kind}_estimate", estimate.id, label))
     valuation = latest_valuation(session, animal.id)
     if valuation is not None:
         items.append(item("valuation", valuation.id,

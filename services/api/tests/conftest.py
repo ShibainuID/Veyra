@@ -16,6 +16,9 @@ def settings_env(tmp_path, monkeypatch):
     monkeypatch.setenv("VEYRA_SYNC_JOBS", "1")
     monkeypatch.setenv("VEYRA_REPLAY_SPEED", "0")
     monkeypatch.setenv("VEYRA_LLM_MODE", "offline")
+    # The fake model clients in the suite speak the Anthropic SDK's shape; test_llm_openai covers OpenAI.
+    monkeypatch.setenv("VEYRA_LLM_PROVIDER", "anthropic")
+    monkeypatch.delenv("VEYRA_LLM_MODEL", raising=False)
     monkeypatch.setenv("VEYRA_PERCEPTION_MODE", "fixture")
     get_settings.cache_clear()
     yield get_settings()

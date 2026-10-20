@@ -1,4 +1,4 @@
-"""Perception capability probe and facade (PRD Sections 4.1-4.3; plan Section 1: capability facade).
+"""Perception capability probe and facade.
 
 A capability is available when the prototype adapter's dependencies import and its model is present.
 Anything unavailable falls back to labeled fixtures. Age is always available: it is fixture-based.

@@ -1,4 +1,4 @@
-"""API response models, the source of the OpenAPI contract (plan Section 1: `schemas.py`).
+"""API response models, the source of the OpenAPI contract.
 
 Money fields are integers in minor units named `*_minor`, next to a `currency`. Datetimes serialize as ISO 8601
 UTC ending in `Z` (`UTCDateTime`); passbook lines already carry ISO strings (`IsoTimestamp`). Routes list
@@ -345,6 +345,29 @@ class Passport(BaseModel):
     claims: list[ClaimOut]
     pending_actions: list[PendingActionOut]
     passbook: Passbook
+
+
+DocumentKind = Literal["ownership", "purchase_receipt", "vet_record", "other"]
+
+
+class AnimalDocumentOut(BaseModel):
+    """A file on the passport. `url` is a signed, expiring download link; documents download as attachments."""
+
+    id: str
+    animal_id: str
+    kind: DocumentKind
+    title: str
+    filename: str
+    content_type: str
+    bytes: int
+    sha256: str
+    url: str
+    uploaded_by: str
+    created_at: UTCDateTime
+
+
+class AnimalDocumentList(BaseModel):
+    items: list[AnimalDocumentOut]
 
 
 class AuditEventOut(BaseModel):

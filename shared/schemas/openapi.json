@@ -233,6 +233,159 @@
         }
       }
     },
+    "/api/v1/animals/{animal_id}/documents": {
+      "get": {
+        "tags": [
+          "animals"
+        ],
+        "summary": "List Documents",
+        "operationId": "list_documents_api_v1_animals__animal_id__documents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "animal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Animal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalDocumentList"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "animals"
+        ],
+        "summary": "Add Document",
+        "description": "Keep a document on the passport. An `ownership` document also becomes the animal's ownership reference,\nwhich the Mortality + Theft eligibility rule reads.",
+        "operationId": "add_document_api_v1_animals__animal_id__documents_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "animal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Animal Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_document_api_v1_animals__animal_id__documents_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalDocumentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/audit-events": {
       "get": {
         "tags": [
@@ -1066,6 +1219,55 @@
         }
       }
     },
+    "/api/v1/demo/footage/{name}": {
+      "get": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Footage",
+        "description": "Stream one of the demo's AI-generated clips (read-only, demo mode only, no sign-in: a `<video>` element\ncannot send a bearer token, and these clips hold no farm data). Unknown names are 404; so is a clip whose Git LFS\ncontent was never pulled.",
+        "operationId": "footage_api_v1_demo_footage__name__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip; supports HTTP Range.",
+            "content": {
+              "video/mp4": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/demo/reset": {
       "post": {
         "tags": [
@@ -1266,6 +1468,307 @@
             "HTTPBearer": []
           }
         ]
+      }
+    },
+    "/api/v1/demo/claims/{claim_id}/insurer-update": {
+      "post": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Insurer Update",
+        "description": "Play the sandbox insurer's assessment of a submitted claim for the demo: record what the insurer reports\n(`under_review`, `more_info_requested`, `approved` with an optional stated settlement, `declined`). Recorded as a\nprovider event labeled sandbox; VEYRA never decides a claim or pays it.",
+        "operationId": "insurer_update_api_v1_demo_claims__claim_id__insurer_update_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InsurerUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimDetail"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/gallery/publish": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Publish Gallery",
+        "operationId": "publish_gallery_api_v1_cameras_gallery_publish_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryPublishOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_id}/gallery": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Camera Gallery",
+        "operationId": "camera_gallery_api_v1_cameras__camera_id__gallery_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraGallery"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{camera_id}/gallery/ack": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Acknowledge Gallery",
+        "operationId": "acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryAck"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryAckOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
       }
     },
     "/api/v1/demo/replays": {
@@ -1511,6 +2014,7 @@
           "monitoring"
         ],
         "summary": "Ingest Observation",
+        "description": "A track observation, or a `zone_scan`: a muzzle scan in the camera's scan zone, handed to the one track inside\nthe zone (`handoff` says what happened; `observation` and `track` are null unless exactly one track was there).",
         "operationId": "ingest_observation_api_v1_cameras__camera_id__observations_post",
         "security": [
           {
@@ -3165,6 +3669,248 @@
         }
       }
     },
+    "/api/v1/agent/conversations": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Start Conversation",
+        "description": "Open a conversation about one animal with an intent: `find_insurance`, `file_claim`, or `track_claim`.",
+        "operationId": "start_conversation_api_v1_agent_conversations_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/agent/conversations/{conversation_id}/messages": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Post Message",
+        "description": "Send the farmer's turn (typed text, or one of the choices the agent offered) and get the agent's next turns.\n`{\"choice\": {\"key\": \"continue\"}}` re-reads the records, for example after an approval.",
+        "operationId": "post_message_api_v1_agent_conversations__conversation_id__messages_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/agent/conversations/{conversation_id}": {
+      "get": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Get Conversation",
+        "operationId": "get_conversation_api_v1_agent_conversations__conversation_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/wallet": {
       "get": {
         "tags": [
@@ -3808,6 +4554,134 @@
           }
         }
       }
+    },
+    "/api/v1/claims/{claim_id}/identity-checks": {
+      "post": {
+        "tags": [
+          "claims"
+        ],
+        "summary": "Check Identity",
+        "description": "Compare a muzzle re-scan of the claimed animal with its enrolled references; a death claim needs a match.",
+        "operationId": "check_identity_api_v1_claims__claim_id__identity_checks_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityCheckResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A muzzle photo (JPEG, PNG, WebP) or short video (MP4, WebM, MOV)."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "description": "The demo path without a camera: a fixture outcome, labeled simulated.",
+                "properties": {
+                  "sample": {
+                    "enum": [
+                      "match",
+                      "mismatch"
+                    ],
+                    "title": "Sample",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sample"
+                ],
+                "title": "IdentityCheckRequest",
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4168,6 +5042,154 @@
         ],
         "title": "ActorRef"
       },
+      "AgentCard": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "passport_summary",
+              "eligibility_questions",
+              "plan_comparison",
+              "recommendation",
+              "application_draft",
+              "action_review",
+              "status_steps",
+              "claim_checklist",
+              "missing_items",
+              "receipt",
+              "claim_status"
+            ],
+            "title": "Type"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "data"
+        ],
+        "title": "AgentCard"
+      },
+      "AgentChoice": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "primary",
+              "secondary",
+              "link"
+            ],
+            "title": "Style"
+          },
+          "href": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Href"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value",
+          "label",
+          "style",
+          "href"
+        ],
+        "title": "AgentChoice"
+      },
+      "AgentMessageOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "seq": {
+            "type": "integer",
+            "title": "Seq"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "agent",
+              "user"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/AgentCard"
+            },
+            "type": "array",
+            "title": "Cards"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/AgentChoice"
+            },
+            "type": "array",
+            "title": "Choices"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "live",
+              "simulated",
+              "user"
+            ],
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "seq",
+          "role",
+          "text",
+          "cards",
+          "choices",
+          "source",
+          "created_at"
+        ],
+        "title": "AgentMessageOut"
+      },
       "AlertCounts": {
         "properties": {
           "open_count": {
@@ -4525,6 +5547,93 @@
           "updated_at"
         ],
         "title": "AlertView"
+      },
+      "AnimalDocumentList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnimalDocumentOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AnimalDocumentList"
+      },
+      "AnimalDocumentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ownership",
+              "purchase_receipt",
+              "vet_record",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "title": "Content Type"
+          },
+          "bytes": {
+            "type": "integer",
+            "title": "Bytes"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "uploaded_by": {
+            "type": "string",
+            "title": "Uploaded By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "animal_id",
+          "kind",
+          "title",
+          "filename",
+          "content_type",
+          "bytes",
+          "sha256",
+          "url",
+          "uploaded_by",
+          "created_at"
+        ],
+        "title": "AnimalDocumentOut",
+        "description": "A file on the passport. `url` is a signed, expiring download link; documents download as attachments."
       },
       "AnimalIn": {
         "properties": {
@@ -5114,6 +6223,43 @@
         ],
         "title": "AuditEventOut"
       },
+      "Body_add_document_api_v1_animals__animal_id__documents_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "A PDF, JPEG, or PNG, up to 10 MB."
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "ownership",
+              "purchase_receipt",
+              "vet_record",
+              "other"
+            ],
+            "title": "Kind"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "kind"
+        ],
+        "title": "Body_add_document_api_v1_animals__animal_id__documents_post"
+      },
       "Body_upload_video_api_v1_enrollments__enrollment_id__video_put": {
         "properties": {
           "file": {
@@ -5127,6 +6273,118 @@
           "file"
         ],
         "title": "Body_upload_video_api_v1_enrollments__enrollment_id__video_put"
+      },
+      "CameraGallery": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "farm_id": {
+            "type": "string",
+            "title": "Farm Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "animals": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryAnimal"
+            },
+            "type": "array",
+            "title": "Animals"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "farm_id",
+          "version",
+          "updated_at",
+          "animals",
+          "source"
+        ],
+        "title": "CameraGallery"
+      },
+      "CameraGalleryStatus": {
+        "properties": {
+          "current_version": {
+            "type": "integer",
+            "title": "Current Version"
+          },
+          "synced_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synced Version"
+          },
+          "synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synced At"
+          },
+          "in_sync": {
+            "type": "boolean",
+            "title": "In Sync"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "prototype",
+                  "simulated"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_version",
+          "synced_version",
+          "synced_at",
+          "in_sync"
+        ],
+        "title": "CameraGalleryStatus",
+        "description": "Whether this camera holds the farm's current muzzle gallery (`domain.gallery`)."
       },
       "CameraLastObservation": {
         "properties": {
@@ -5237,10 +6495,31 @@
             "type": "number",
             "title": "Map Y"
           },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The calibrated scan zone, if the camera has one."
+          },
           "last_observation": {
             "anyOf": [
               {
                 "$ref": "#/components/schemas/CameraLastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gallery": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CameraGalleryStatus"
               },
               {
                 "type": "null"
@@ -5392,6 +6671,33 @@
         ],
         "title": "ChecklistItem"
       },
+      "ChoicePick": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Key"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key"
+        ],
+        "title": "ChoicePick"
+      },
       "ClaimDetail": {
         "properties": {
           "id": {
@@ -5527,6 +6833,36 @@
                 "type": "null"
               }
             ]
+          },
+          "incident_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Kind"
+          },
+          "identity_check_required": {
+            "type": "boolean",
+            "title": "Identity Check Required",
+            "default": false
+          },
+          "identity_checks": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityCheckOut"
+            },
+            "type": "array",
+            "title": "Identity Checks"
+          },
+          "insurer_updates": {
+            "items": {
+              "$ref": "#/components/schemas/InsurerUpdateOut"
+            },
+            "type": "array",
+            "title": "Insurer Updates"
           }
         },
         "type": "object",
@@ -5786,6 +7122,154 @@
           "decision"
         ],
         "title": "ConfirmBody"
+      },
+      "ConversationAnimal": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "breed": {
+            "type": "string",
+            "title": "Breed"
+          },
+          "identity_status": {
+            "type": "string",
+            "title": "Identity Status"
+          },
+          "coverage_status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending",
+              "none"
+            ],
+            "title": "Coverage Status"
+          },
+          "coverage_label": {
+            "type": "string",
+            "title": "Coverage Label"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "breed",
+          "identity_status",
+          "coverage_status",
+          "coverage_label",
+          "product_name",
+          "policy_id"
+        ],
+        "title": "ConversationAnimal"
+      },
+      "ConversationCreate": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Animal Id"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "find_insurance",
+              "file_claim",
+              "track_claim"
+            ],
+            "title": "Intent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id",
+          "intent"
+        ],
+        "title": "ConversationCreate"
+      },
+      "ConversationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "find_insurance",
+              "file_claim",
+              "track_claim"
+            ],
+            "title": "Intent"
+          },
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "animal": {
+            "$ref": "#/components/schemas/ConversationAnimal"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/AgentMessageOut"
+            },
+            "type": "array",
+            "title": "Messages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "intent",
+          "animal_id",
+          "animal",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "messages"
+        ],
+        "title": "ConversationOut"
       },
       "Coverage": {
         "properties": {
@@ -6941,6 +8425,153 @@
         ],
         "title": "FindingRequest"
       },
+      "GalleryAck": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "GalleryAck"
+      },
+      "GalleryAckOut": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "gallery": {
+            "$ref": "#/components/schemas/CameraGalleryStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "gallery"
+        ],
+        "title": "GalleryAckOut"
+      },
+      "GalleryAnimal": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "identity_status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "pending_review"
+            ],
+            "title": "Identity Status"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryReference"
+            },
+            "type": "array",
+            "title": "References"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id",
+          "name",
+          "identity_status",
+          "references"
+        ],
+        "title": "GalleryAnimal"
+      },
+      "GalleryPublishOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "acknowledged": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Acknowledged"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          },
+          "cameras": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CameraGalleryStatus"
+            },
+            "type": "object",
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "published_at",
+          "acknowledged",
+          "source",
+          "cameras"
+        ],
+        "title": "GalleryPublishOut"
+      },
+      "GalleryReference": {
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "title": "Reference Id"
+          },
+          "view": {
+            "type": "string",
+            "const": "muzzle",
+            "title": "View"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_id",
+          "view",
+          "media_url",
+          "created_at"
+        ],
+        "title": "GalleryReference"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -7121,6 +8752,342 @@
           "possible_duplicate"
         ],
         "title": "Identity"
+      },
+      "IdentityCandidate": {
+        "properties": {
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "cosine": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cosine"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id"
+        ],
+        "title": "IdentityCandidate"
+      },
+      "IdentityCheckOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "match",
+              "mismatch",
+              "uncertain"
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "matched_animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Animal Id"
+          },
+          "matched_animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Animal Name"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "accept_inliers": {
+            "type": "integer",
+            "title": "Accept Inliers"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          },
+          "method_version": {
+            "type": "string",
+            "title": "Method Version"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "photo",
+                  "video",
+                  "sample"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback"
+          },
+          "checked_by": {
+            "type": "string",
+            "title": "Checked By"
+          },
+          "checked_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "scan": {
+            "$ref": "#/components/schemas/IdentityScan"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentityReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "claim_id",
+          "animal_id",
+          "outcome",
+          "reason",
+          "matched_animal_id",
+          "matched_animal_name",
+          "candidates",
+          "inliers",
+          "accept_inliers",
+          "source",
+          "method_version",
+          "input",
+          "checked_by",
+          "checked_by_name",
+          "created_at",
+          "scan",
+          "reference"
+        ],
+        "title": "IdentityCheckOut"
+      },
+      "IdentityCheckResult": {
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/IdentityCheckOut"
+          },
+          "claim": {
+            "$ref": "#/components/schemas/ClaimDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check",
+          "claim"
+        ],
+        "title": "IdentityCheckResult"
+      },
+      "IdentityReference": {
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "title": "Reference Id"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          },
+          "frame_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Url"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_id",
+          "crop_url",
+          "frame_url"
+        ],
+        "title": "IdentityReference"
+      },
+      "IdentityScan": {
+        "properties": {
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_url",
+          "content_type",
+          "crop_url"
+        ],
+        "title": "IdentityScan"
       },
       "IllustrativePayout": {
         "properties": {
@@ -7403,6 +9370,156 @@
         ],
         "title": "IncidentRequest"
       },
+      "InsurerUpdateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "under_review",
+              "more_info_requested",
+              "approved",
+              "declined"
+            ],
+            "title": "Status"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "settlement_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "disbursement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "paid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disbursement"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "source": {
+            "type": "string",
+            "const": "sandbox",
+            "title": "Source"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "label",
+          "note",
+          "settlement_minor",
+          "currency",
+          "disbursement",
+          "provider_id",
+          "source",
+          "created_at"
+        ],
+        "title": "InsurerUpdateOut",
+        "description": "An assessment update the sandbox insurer reported; the settlement and disbursement are the insurer's words."
+      },
+      "InsurerUpdateRequest": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "under_review",
+              "more_info_requested",
+              "approved",
+              "declined"
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "settlement_minor": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settlement Minor"
+          },
+          "disbursement": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "scheduled",
+                  "paid"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Disbursement"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "InsurerUpdateRequest"
+      },
       "JobAccepted": {
         "properties": {
           "job_id": {
@@ -7621,12 +9738,48 @@
         "type": "object",
         "title": "Manifest"
       },
+      "MessageCreate": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "choice": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChoicePick"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "MessageCreate",
+        "description": "Exactly one of `text` (the farmer's words, kept as data) or `choice` (one the agent offered)."
+      },
       "ObservationIn": {
         "properties": {
           "track_key": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Track Key"
           },
           "observed_at": {
@@ -7635,18 +9788,32 @@
             "title": "Observed At"
           },
           "bbox": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "maxItems": 4,
-            "minItems": 4,
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Bbox"
           },
           "visibility": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Visibility"
           },
           "event": {
@@ -7654,7 +9821,8 @@
             "enum": [
               "frame",
               "muzzle_match",
-              "track_lost"
+              "track_lost",
+              "zone_scan"
             ],
             "title": "Event",
             "default": "frame"
@@ -7668,7 +9836,8 @@
                 "type": "null"
               }
             ],
-            "title": "Candidate Animal Id"
+            "title": "Candidate Animal Id",
+            "description": "The matched animal; for a zone_scan, the scanned one."
           },
           "inliers": {
             "anyOf": [
@@ -7733,20 +9902,44 @@
         },
         "type": "object",
         "required": [
-          "track_key",
-          "observed_at",
-          "bbox",
-          "visibility"
+          "observed_at"
         ],
-        "title": "ObservationIn"
+        "title": "ObservationIn",
+        "description": "One track observation, or (`event: \"zone_scan\"`) a muzzle scan in the camera's scan zone, which needs no\ntrack, box, or visibility: it is handed to the one track inside the zone at `observed_at`, or to none."
       },
       "ObservationIngested": {
         "properties": {
           "observation": {
-            "$ref": "#/components/schemas/ObservationOut"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ObservationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for a zone_scan without exactly one track in the zone."
           },
           "track": {
-            "$ref": "#/components/schemas/TrackOut"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ZoneHandoffOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What a zone_scan did."
           }
         },
         "type": "object",
@@ -9110,6 +11303,16 @@
             "type": "number",
             "title": "Progress S"
           },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tracks": {
             "items": {
               "$ref": "#/components/schemas/TrackOut"
@@ -9137,6 +11340,7 @@
           "anchor_at",
           "duration_s",
           "progress_s",
+          "scan_zone",
           "tracks",
           "alerts"
         ],
@@ -9260,6 +11464,42 @@
         ],
         "title": "RuleReason"
       },
+      "ScanZone": {
+        "properties": {
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon",
+            "description": "[[x, y], ...] normalized 0-1 to the camera frame."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "calibrated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calibrated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "polygon",
+          "label",
+          "source",
+          "calibrated_at"
+        ],
+        "title": "ScanZone"
+      },
       "Scenario": {
         "properties": {
           "id": {
@@ -9316,6 +11556,34 @@
             ],
             "title": "Clip"
           },
+          "footage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioFootage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioCameraEvent"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tracks": {
             "items": {
               "$ref": "#/components/schemas/ScenarioTrack"
@@ -9339,6 +11607,72 @@
           "tracks"
         ],
         "title": "Scenario"
+      },
+      "ScenarioCameraEvent": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "type": {
+            "type": "string",
+            "const": "zone_scan",
+            "title": "Type"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id",
+            "description": "Who the muzzle matcher says was scanned."
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "muzzle_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Muzzle Image",
+            "description": "A repo-relative scan image: when set, the real muzzle matcher decides `animal_id` against the farm's gallery as the replay starts."
+          }
+        },
+        "type": "object",
+        "required": [
+          "t",
+          "type"
+        ],
+        "title": "ScenarioCameraEvent",
+        "description": "A camera event: a muzzle scan made in the scan zone, handed to the one track inside it (or to none)."
       },
       "ScenarioEvent": {
         "properties": {
@@ -9405,6 +11739,46 @@
           "type"
         ],
         "title": "ScenarioEvent"
+      },
+      "ScenarioFootage": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The caption shown with the clip, e.g. that it is AI-generated."
+          },
+          "generator": {
+            "type": "string",
+            "title": "Generator"
+          },
+          "kind": {
+            "type": "string",
+            "const": "ai_generated",
+            "title": "Kind"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "tracks": {
+            "type": "string",
+            "title": "Tracks"
+          },
+          "prompts": {
+            "type": "string",
+            "title": "Prompts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "generator",
+          "kind",
+          "tracker",
+          "tracks",
+          "prompts"
+        ],
+        "title": "ScenarioFootage"
       },
       "ScenarioFrame": {
         "properties": {
@@ -10120,6 +12494,66 @@
           "farm"
         ],
         "title": "WhoAmI"
+      },
+      "ZoneHandoffOut": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "associated",
+              "already_associated",
+              "rejected",
+              "no_track",
+              "crowded",
+              "track_uncertain",
+              "conflict"
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "track_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Track Ids"
+          },
+          "track_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Track Keys"
+          },
+          "tracks_in_zone": {
+            "type": "integer",
+            "title": "Tracks In Zone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "reason",
+          "message",
+          "track_ids",
+          "track_keys",
+          "tracks_in_zone"
+        ],
+        "title": "ZoneHandoffOut"
       }
     },
     "securitySchemes": {

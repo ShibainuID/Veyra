@@ -1,4 +1,4 @@
-"""The `enrollment.process` job: run perception on an enrollment and put it up for review (PRD Section 4.1).
+"""The `enrollment.process` job: run perception on an enrollment and put it up for review.
 
 Session rules (`persistence.db`): no transaction is open while perception runs.
 1. A read session loads the enrollment, its video path, and the farm's gallery (muzzle crops of every animal

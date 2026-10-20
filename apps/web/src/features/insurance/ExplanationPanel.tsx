@@ -10,7 +10,7 @@ export function ExplanationPanel({ explanation, results }: { explanation: Explan
     <div className="flex flex-col gap-5">
       <div className="flex flex-wrap items-center gap-3">
         <Provenance source={live ? "live" : "simulated"} />
-        <span className="font-bold">{live ? "Explained by Claude from the terms above" : "Template explanation (offline)"}</span>
+        <span className="font-bold">{live ? "Explained by the language model from the terms above" : "Template explanation (offline)"}</span>
         {live && explanation.model && <span className="figures text-sm text-muted">{explanation.model}</span>}
       </div>
       <p className="max-w-[70ch] text-md">{explanation.summary}</p>

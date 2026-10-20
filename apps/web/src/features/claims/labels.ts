@@ -37,6 +37,7 @@ export const CHECKLIST_LABEL: Record<string, string> = {
   vet_assessment: "Veterinary assessment",
   ownership_document: "Ownership document",
   vet_health_record: "Veterinary health record",
+  identity_verified: "Muzzle re-scan matches the enrolled animal",
 };
 
 export function checklistLabel(key: string): string {

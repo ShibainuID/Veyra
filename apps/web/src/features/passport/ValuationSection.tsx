@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { ErrorNotice } from "../../components/feedback";
 import { Money, Mono, Range, Timestamp } from "../../components/figures";
 import { Section } from "../../components/layout";
+import { NotGuaranteed } from "../../components/NotGuaranteed";
 import { Provenance } from "../../components/Provenance";
 import { useToast } from "../../components/Toast";
 import { asSource } from "../../lib/animal";
@@ -108,6 +109,7 @@ export function ValuationSection({ passport }: { passport: Passport }) {
       {current ? (
         <div className="flex flex-col gap-3">
           <ValuationLine valuation={current} weightSource={weightEstimate(current.estimate_id)?.source} />
+          <NotGuaranteed />
           <p className="text-muted">
             Version <Mono className="text-ink">{current.version}</Mono> · {current.price_source} · price date{" "}
             <Mono className="text-ink">{current.price_date}</Mono> · weight {current.weight_basis === "override" ? "entered by hand" : "from the estimate"} ·

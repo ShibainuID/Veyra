@@ -19,5 +19,6 @@ def health() -> dict:
         "version": VERSION,
         "perception": {"mode": settings.perception_mode, "capabilities": probe_capabilities(),
                        "effective": effective_capabilities(settings)},
-        "llm": {"mode": resolve_llm_mode(settings), "model": settings.llm_model},
+        "llm": {"mode": resolve_llm_mode(settings), "provider": settings.llm_provider,
+                "model": settings.llm_model},
     }

@@ -8,6 +8,7 @@
   "fps": 2,
   "window_s": 30,
   "clip": null,
+  "events": [],
   "tracks": [
     {"track_key": "t-03", "frames": [
       {"t": 0.0, "bbox": [0.2865, 0.4123, 0.24, 0.18], "visibility": 0.8533},

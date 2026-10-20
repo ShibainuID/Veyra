@@ -1,8 +1,8 @@
-"""FastAPI auth dependencies (plan Section 0: auth). Failures raise `DomainError`, so they use the error envelope.
+"""FastAPI auth dependencies. Failures raise `DomainError`, so they use the error envelope.
 
 `current_principal` reads `Authorization: Bearer <token>` and looks the user up in its own short read session,
 so it never holds the write lock. `require_roles(*roles)` builds a dependency that also checks the role.
-`service_principal` checks `X-Service-Token` for the internal worker.
+`service_principal` checks `X-Service-Token` for the internal worker; `service_or_roles(*roles)` accepts either.
 """
 
 from collections.abc import Callable
@@ -33,3 +33,17 @@ def require_roles(*roles: str) -> Callable[..., Principal]:
 
 def service_principal(token: str | None = Depends(_service_token)) -> ServicePrincipal:
     return authenticate_service(token, get_settings())
+
+
+def service_or_roles(*roles: str) -> Callable[..., Principal | ServicePrincipal]:
+    """The worker's service token when one is sent, else a bearer token with one of `roles`."""
+
+    def dependency(token: str | None = Depends(_service_token),
+                   credentials: HTTPAuthorizationCredentials | None = Depends(_bearer)) -> Principal | ServicePrincipal:
+        if token:
+            return authenticate_service(token, get_settings())
+        principal = current_principal(credentials)
+        require_role(principal, *roles)
+        return principal
+
+    return dependency

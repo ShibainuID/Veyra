@@ -27,6 +27,8 @@ export interface Column<T> {
   headerAddon?: ReactNode;
   /** Read with the header by assistive technology, such as what the addon means for every cell. */
   headerDescription?: string;
+  /** The header cell's tooltip, for a sighted reader who hovers it (say what `headerDescription` reads aloud). */
+  headerTitle?: string;
 }
 
 export interface DataTableProps<T> {
@@ -189,6 +191,7 @@ export function DataTable<T>({
                   key={column.id}
                   scope="col"
                   data-align={column.align}
+                  title={column.headerTitle}
                   aria-sort={column.sortValue ? (active ? sort.direction : "none") : undefined}
                 >
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1">
