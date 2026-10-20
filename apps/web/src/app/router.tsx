@@ -3,15 +3,15 @@ import { createBrowserRouter, isRouteErrorResponse, useRouteError, type RouteObj
 import { ErrorNotice, LoadingRegion, Skeleton } from "../components/feedback";
 import { PageHeader } from "../components/layout";
 import { Page } from "../pages/Page";
+import { AuditPage } from "../features/audit/AuditPage";
+import { HerdPage } from "../features/herd/HerdPage";
+import { PassportPage } from "../features/passport/PassportPage";
 import {
   AlertPage,
   AskPage,
-  AuditPage,
   EnrollPage,
-  HerdPage,
   MonitorPage,
   NotFoundPage,
-  PassportPage,
 } from "../pages/placeholders";
 import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
 import { ClaimPage } from "../features/claims/ClaimPage";

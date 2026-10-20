@@ -61,6 +61,18 @@ export function humanize(value: string): string {
   return text ? text[0]!.toUpperCase() + text.slice(1) : value;
 }
 
+const PRODUCT_NAMES: Record<string, string> = {
+  "basic-mortality": "Basic Mortality & Accident",
+  "mortality-theft": "Mortality + Theft",
+  "dairy-health-plus": "Dairy Health Plus",
+};
+
+/** Sandbox product names (from the demo catalog); unknown IDs read in plain words. */
+export function productName(productId: string | null | undefined): string | null {
+  if (!productId) return null;
+  return PRODUCT_NAMES[productId] ?? humanize(productId.replace(/-/g, " "));
+}
+
 /** Alert kinds in plain words. */
 export function alertKindLabel(kind: string): string {
   if (kind === "reduced_movement") return "Reduced movement";
