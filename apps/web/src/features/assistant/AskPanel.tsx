@@ -43,7 +43,10 @@ export async function ask(question: string): Promise<void> {
   update([{ id, question, status: "pending" }, ...history]);
   const settle = (patch: Partial<Exchange>) => update(history.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   try {
-    const { data } = await api.POST("/api/v1/assistant/query", { body: { text: question } });
+    const { data } = await api.POST("/api/v1/assistant/query", {
+      // Minutes east of UTC, so the answer states times in the asker's local time.
+      body: { text: question, utc_offset_minutes: -new Date().getTimezoneOffset() },
+    });
     if (!data) throw new ApiError(500, "HTTP_ERROR", "Empty answer.");
     settle({ status: "done", answer: data });
   } catch (error) {

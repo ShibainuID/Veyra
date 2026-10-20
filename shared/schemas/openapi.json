@@ -4902,6 +4902,19 @@
             "maxLength": 500,
             "minLength": 1,
             "title": "Text"
+          },
+          "utc_offset_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 840.0,
+                "minimum": -840.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Utc Offset Minutes"
           }
         },
         "type": "object",

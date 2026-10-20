@@ -33,13 +33,15 @@ export interface SectionProps {
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** An anchor for `#links` to this section. */
+  anchor?: string;
 }
 
 /** An h2 section: more space above the heading than below it. */
-export function Section({ title, description, actions, children, className }: SectionProps) {
+export function Section({ title, description, actions, children, className, anchor }: SectionProps) {
   const id = useId();
   return (
-    <section aria-labelledby={id} className={cn("mt-12 first:mt-0", className)}>
+    <section id={anchor} aria-labelledby={id} className={cn("mt-12 first:mt-0", className)}>
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-1">
           <h2 id={id} className="text-lg font-bold">

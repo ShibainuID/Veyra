@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Pause, Play, PlayCircle } from "lucide-react";
-import { useEffect, useId, useMemo } from "react";
+import { useEffect, useId, useMemo, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { Button } from "../../components/Button";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
@@ -8,6 +8,8 @@ import { Mono, Timestamp } from "../../components/figures";
 import { PageHeader, Section } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
+import { useToast } from "../../components/Toast";
+import { queryKeys } from "../../lib/query-keys";
 import { cn } from "../../lib/cn";
 import { ApiError } from "../../lib/errors";
 import { formatCountdown } from "../../lib/format";
@@ -15,7 +17,7 @@ import { useRole } from "../../lib/role-store";
 import { Page } from "../../pages/Page";
 import { AlertDrawer } from "../alerts/AlertDrawer";
 import { AlertFeed, AlertsTable } from "../alerts/AlertLists";
-import type { AlertView } from "../alerts/alert-copy";
+import { alertSubject, KIND_LABEL, type AlertView } from "../alerts/alert-copy";
 import {
   monitorKeys,
   setMonitorState,
@@ -133,11 +135,36 @@ export function MonitorScreen() {
     if (replayQuery.error instanceof ApiError && replayQuery.error.status === 404) setMonitorState({ replayId: null });
   }, [replayQuery.error]);
 
-  // Alerts raised by this replay land in the farm-wide list too.
+  // Alerts raised by this replay land in the farm-wide list, the herd, and the passports too; so
+  // do the last sightings once the replay settles.
   const replayAlertCount = replay?.alerts.length ?? 0;
+  const replayStatus = replay?.status;
   useEffect(() => {
-    if (replayAlertCount > 0) void queryClient.invalidateQueries({ queryKey: monitorKeys.alerts });
-  }, [replayAlertCount, queryClient]);
+    if (replayAlertCount === 0 && (replayStatus === undefined || replayStatus === "running")) return;
+    for (const queryKey of [monitorKeys.alerts, queryKeys.animals, queryKeys.passports, ["observations"], queryKeys.auditEvents])
+      void queryClient.invalidateQueries({ queryKey });
+  }, [replayAlertCount, replayStatus, queryClient]);
+
+  // A new alert from the running replay is announced, since the feed may sit below the fold.
+  const toast = useToast();
+  const announced = useRef<Set<string> | null>(null);
+  useEffect(() => {
+    const alerts = replay?.alerts ?? [];
+    if (announced.current === null || !live) {
+      announced.current = new Set(alerts.map((a) => a.id));
+      return;
+    }
+    for (const alert of alerts) {
+      if (announced.current.has(alert.id)) continue;
+      announced.current.add(alert.id);
+      toast.show({
+        tone: "neutral",
+        title: `New alert · ${alertSubject(alert)} · ${KIND_LABEL[alert.kind]}`,
+        body: "It is in the alert feed. An alert asks for an inspection; it is not a diagnosis.",
+        duration: 8000,
+      });
+    }
+  }, [replay?.alerts, live, toast]);
 
   const start = useMutation({
     mutationFn: (scenarioId: string) => startReplay(scenarioId),
@@ -334,6 +361,9 @@ export function MonitorScreen() {
         </div>
 
         <div className="flex min-w-0 flex-col">
+          <Section title="Alert feed">
+            <AlertFeed alerts={feed} loading={alertsQuery.isPending} />
+          </Section>
           <Section title="Tracks">
             <TracksPanel
               replay={scenarioReplay}
@@ -344,9 +374,6 @@ export function MonitorScreen() {
               canReview={canStart}
               onSelect={selectAnimal}
             />
-          </Section>
-          <Section title="Alert feed">
-            <AlertFeed alerts={feed} loading={alertsQuery.isPending} />
           </Section>
         </div>
       </div>

@@ -87,3 +87,8 @@ def test_illustrative_payout():
     assert premiums.illustrative_payout(60000, 249600, 24960) == 35040
     assert premiums.illustrative_payout(300000, 249600, 24960) == 224640
     assert premiums.illustrative_payout(10000, 249600, 24960) == 0
+
+
+def test_boolean_facts_read_as_words_not_python_reprs():
+    reason = check_rule(_rule("valuation_confirmed", "eq", True), {"valuation_confirmed": True})
+    assert reason["status"] == "pass" and reason["detail"] == "valuation_confirmed is true"

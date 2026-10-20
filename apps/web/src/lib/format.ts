@@ -116,6 +116,7 @@ interface DateParts {
   day: number;
   hour: string;
   minute: string;
+  second: string;
 }
 
 function toDate(value: string | number | Date): Date {
@@ -132,6 +133,7 @@ function dateParts(value: string | number | Date, timeZone?: string): DateParts 
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
   }).formatToParts(toDate(value));
   const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value ?? "0";
@@ -141,6 +143,7 @@ function dateParts(value: string | number | Date, timeZone?: string): DateParts 
     day: Number(get("day")),
     hour: get("hour").padStart(2, "0"),
     minute: get("minute").padStart(2, "0"),
+    second: get("second").padStart(2, "0"),
   };
 }
 
@@ -159,6 +162,12 @@ export function formatDayMonth(value: string | number | Date, timeZone?: string)
 export function formatClock(value: string | number | Date, timeZone?: string): string {
   const p = dateParts(value, timeZone);
   return `${p.hour}:${p.minute}`;
+}
+
+/** "08:31:30", for observation windows shorter than a minute. */
+export function formatClockSeconds(value: string | number | Date, timeZone?: string): string {
+  const p = dateParts(value, timeZone);
+  return `${p.hour}:${p.minute}:${p.second}`;
 }
 
 /** Stamp date: "20 OCT 08:31". */

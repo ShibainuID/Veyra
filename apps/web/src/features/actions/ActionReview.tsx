@@ -10,7 +10,7 @@ import { Stamp } from "../../components/Stamp";
 import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { request } from "../../lib/api";
-import { tagStateFor } from "../../lib/animal";
+import { providerName, tagStateFor } from "../../lib/animal";
 import { cn } from "../../lib/cn";
 import { toApiError } from "../../lib/errors";
 import { formatCountdown, lineNumber } from "../../lib/format";
@@ -482,7 +482,7 @@ function DecisionArea(props: DecisionAreaProps) {
     return (
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Stamp kind="posted" at={action.execution?.completed_at ?? action.updated_at} by={action.execution?.provider_id} press />
+          <Stamp kind="posted" at={action.execution?.completed_at ?? action.updated_at} by={providerName(action.execution?.provider_id)} press />
         </div>
         <p className="text-muted">
           {recipient} {ref ? <>confirmed with receipt <Mono className="text-ink">{ref}</Mono>.</> : "confirmed it."}

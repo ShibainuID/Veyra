@@ -101,6 +101,7 @@ export function ValuationSection({ passport }: { passport: Passport }) {
 
   return (
     <Section
+      anchor="valuation"
       title="Indicative valuation"
       description="An indicative range, not a market appraisal: the weight range times a reference price per kilogram."
     >

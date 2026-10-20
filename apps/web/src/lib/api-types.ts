@@ -1137,6 +1137,8 @@ export interface components {
         AssistantQuery: {
             /** Text */
             text: string;
+            /** Utc Offset Minutes */
+            utc_offset_minutes?: number | null;
         };
         /** AssistantRecords */
         AssistantRecords: {
