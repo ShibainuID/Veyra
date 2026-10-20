@@ -2,7 +2,6 @@
 
 import hashlib
 
-from workers.runner import run_once
 
 
 def test_health_needs_no_token(client):
@@ -69,7 +68,7 @@ def test_other_farm_cannot_read_media(client, make_user):
     assert r.status_code == 404
 
 
-def test_job_runs_through_worker_and_is_audited(client, make_user, db, settings):
+def test_job_runs_through_worker_and_is_audited(client, make_user, db, worker):
     from domain import jobs
 
     user, headers = make_user("operator")
@@ -79,7 +78,7 @@ def test_job_runs_through_worker_and_is_audited(client, make_user, db, settings)
         job_id = job.id
 
     assert client.get(f"/api/v1/jobs/{job_id}", headers=headers).json()["status"] == "queued"
-    assert run_once(db, settings.job_max_attempts) is True
+    assert worker() == 1
     body = client.get(f"/api/v1/jobs/{job_id}", headers=headers).json()
     assert body["status"] == "succeeded"
     assert body["result"] == {"echo": {"hello": "cow"}}
@@ -88,21 +87,19 @@ def test_job_runs_through_worker_and_is_audited(client, make_user, db, settings)
     assert actions == {"job.queued", "job.succeeded"}
 
 
-def test_unknown_job_type_is_retried_then_failed(client, make_user, db, settings):
+def test_unknown_job_type_is_retried_then_failed(client, make_user, db, settings, worker):
     from domain import jobs
 
     user, headers = make_user("operator")
     with db.sessions() as s:
         job_id = jobs.enqueue(s, user.farm_id, "does-not-exist", {}, user.id).id
         s.commit()
-    run_once(db, settings.job_max_attempts)
-    assert client.get(f"/api/v1/jobs/{job_id}", headers=headers).json()["status"] == "queued"
-    run_once(db, settings.job_max_attempts)
+    assert worker() == settings.job_max_attempts
     body = client.get(f"/api/v1/jobs/{job_id}", headers=headers).json()
     assert body["status"] == "failed"
     assert body["attempts"] == settings.job_max_attempts
     assert "no handler" in body["error"]
-    assert run_once(db, settings.job_max_attempts) is False
+    assert worker() == 0
 
 
 def test_audit_events_are_farm_scoped(client, make_user, db):
