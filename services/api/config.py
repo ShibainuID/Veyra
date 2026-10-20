@@ -14,6 +14,9 @@ class Settings:
     max_upload_bytes: int
     job_poll_seconds: float
     job_max_attempts: int
+    yolo_weights: str = "yolov8x-seg.pt"
+    # Illustrative demo price, not a market quote (USD 4.00/kg).
+    demo_price_minor_per_kg: int = 400
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -24,4 +27,6 @@ class Settings:
             max_upload_bytes=int(os.getenv("VEYRA_MAX_UPLOAD_MB", "500")) * 1024 * 1024,
             job_poll_seconds=float(os.getenv("VEYRA_JOB_POLL_SECONDS", "1.0")),
             job_max_attempts=int(os.getenv("VEYRA_JOB_MAX_ATTEMPTS", "2")),
+            yolo_weights=os.getenv("VEYRA_YOLO_WEIGHTS", str(var / "models" / "yolov8x-seg.pt")),
+            demo_price_minor_per_kg=int(os.getenv("VEYRA_DEMO_PRICE_MINOR_PER_KG", "400")),
         )
