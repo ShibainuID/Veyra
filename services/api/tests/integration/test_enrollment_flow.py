@@ -383,7 +383,7 @@ def test_pool_mode_processes_in_the_background(client, video_bytes, monkeypatch)
     assert _upload(client, created["id"], video_bytes).status_code == 200
 
     job = _process(client, created["id"])
-    jobs.drain(timeout_s=30)
+    assert jobs.wait_idle(timeout_s=30)
 
     assert client.get(f"{API}/jobs/{job['job_id']}", headers=OPERATOR).json()["status"] == "succeeded"
     detail = client.get(f"{API}/enrollments/{created['id']}", headers=OPERATOR).json()
