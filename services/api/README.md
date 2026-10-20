@@ -20,10 +20,45 @@ Perception adapters and workers behind the enrollment flow (PRD Sections 4.1–4
 - The body view needs the printed ArUco marker (`DICT_4X4_50`, 15 cm by default) in the plane of the flank.
 - Teeth-view detection uses a CLIP prompt that has not been tested on real teeth footage yet.
 
+## Backend (Phase 1)
+
+FastAPI + SQLAlchemy on PostgreSQL. `persistence/models.py` holds every core record from PRD Section 4.4 (passport anchor, enrollment, media, estimates, valuation, observations, alerts, policies, incidents, claims, agent actions, executions, wallet ledger, jobs, audit events).
+
+| Piece | Where | Notes |
+| --- | --- | --- |
+| Auth and roles | `routes/deps.py` | Bearer tokens (only SHA-256 stored); roles `manager`, `operator`, `veterinarian`, `assessor`; other farms' rows return 404 |
+| Errors | `domain/errors.py` | `{"error": {"code", "message", "details"}}` with the PRD codes |
+| Media | `persistence/storage.py` | Local files under `var/media`, SHA-256 and size recorded, upload limit |
+| Jobs | `domain/jobs.py`, `workers/runner.py` | `SELECT ... FOR UPDATE SKIP LOCKED`, retries, handler registry |
+| Audit | `domain/audit.py` | Append-only events written in the same transaction as the change |
+| Wallet safety | `persistence/models.py` | Unique idempotency key per farm; at most one live execution per action (partial unique index) |
+
+Endpoints so far: `GET /api/v1/health`, `GET /api/v1/me`, `POST /api/v1/media`, `GET /api/v1/media/{id}`, `GET /api/v1/jobs/{id}`, `GET /api/v1/audit-events`.
+
 ## Setup
 
 ```bash
 cd services/api
 uv venv --python 3.12
-uv pip install -r pyproject.toml
+uv pip install -e ".[dev]"            # add ",perception" for the enrollment worker and adapters
+```
+
+PostgreSQL, either with Docker from the repo root (`docker compose up -d postgres`) or with Homebrew binaries and no Docker:
+
+```bash
+scripts/local_postgres.sh init        # first time; later: start / stop / status
+```
+
+Run:
+
+```bash
+python seed.py                        # tables + demo farm + one user per role; tokens in var/dev_tokens.json
+uvicorn main:app --reload             # API on :8000
+python -m workers.runner              # job worker
+```
+
+Tests (from the repo root, against the `veyra_test` database):
+
+```bash
+services/api/.venv/bin/python -m pytest
 ```
