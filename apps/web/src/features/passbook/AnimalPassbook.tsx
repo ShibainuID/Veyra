@@ -1,9 +1,10 @@
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Bot } from "lucide-react";
 import { Fragment, useEffect, useRef, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
 import { PassbookPanel } from "../../components/PassbookPanel";
 import { Provenance } from "../../components/Provenance";
+import { agentHref } from "../../lib/agent-link";
 import { asSource, rangeText, sexWord, tagStateFor } from "../../lib/animal";
 import { cn } from "../../lib/cn";
 import { ActionReview } from "../actions/ActionReview";
@@ -146,10 +147,19 @@ export function AnimalPassbook({ animalId, headingLevel = 2, passportLink = fals
         description: animalDescription(
           passport,
           passportLink ? (
-            <Link to={`/animals/${animal.id}`} className="inline-flex min-h-11 items-center gap-1.5 self-start font-bold text-ink">
-              Open passport
-              <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2.5} />
-            </Link>
+            <span className="flex flex-wrap items-center gap-x-5">
+              <Link to={`/animals/${animal.id}`} className="inline-flex min-h-11 items-center gap-1.5 font-bold text-ink">
+                Open passport
+                <ArrowRight aria-hidden="true" className="size-4" strokeWidth={2.5} />
+              </Link>
+              {animal.coverage.status === "none" && (
+                <Link to={agentHref(animal.id, "find_insurance")} className="inline-flex min-h-11 items-center gap-1.5 font-bold text-ink">
+                  <Bot aria-hidden="true" className="size-4" strokeWidth={2.5} />
+                  Find insurance
+                  <span className="sr-only"> for {animal.name} with the VEYRA agent</span>
+                </Link>
+              )}
+            </span>
           ) : null,
         ),
       }}

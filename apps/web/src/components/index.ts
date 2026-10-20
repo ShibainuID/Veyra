@@ -12,6 +12,7 @@ export { Money, Mono, Range, TimeWindow, Timestamp } from "./figures";
 export { FilterChips } from "./FilterChips";
 export type { FilterOption } from "./FilterChips";
 export { PageHeader, Section } from "./layout";
+export { NOT_GUARANTEED, NotGuaranteed } from "./NotGuaranteed";
 export { PassbookLine } from "./PassbookLine";
 export type { PassbookLineData, PassbookStatus, PassbookAmount } from "./PassbookLine";
 export { PassbookPanel } from "./PassbookPanel";

@@ -4,6 +4,7 @@ import { Button } from "../../components/Button";
 import { cn } from "../../lib/cn";
 import { formatCountdown } from "../../lib/format";
 import { CAPTURE_PROMPTS, muzzleGuideBox, promptIndexAt } from "./guide-box";
+import { QualityMeter, useLiveScanQuality } from "./QualityMeter";
 
 type RecorderState =
   | { kind: "idle" }
@@ -169,6 +170,8 @@ export function Recorder({ onUse, onChooseUpload, disabled }: RecorderProps) {
   const box = muzzleGuideBox(dims.w, dims.h);
   const live = state.kind === "ready" || state.kind === "recording";
   const aspect = dims.w / dims.h;
+  const scoring = live && prompt.view === "muzzle";
+  const quality = useLiveScanQuality(videoRef, scoring);
 
   return (
     <div className="flex flex-col gap-4">
@@ -237,6 +240,12 @@ export function Recorder({ onUse, onChooseUpload, disabled }: RecorderProps) {
                 {formatCountdown(elapsed * 1000)}
               </p>
             )}
+          </div>
+        )}
+
+        {scoring && (
+          <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4">
+            <QualityMeter quality={quality} className="mx-auto max-w-[30rem]" />
           </div>
         )}
 
