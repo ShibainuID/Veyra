@@ -118,9 +118,9 @@ From the landing page through every feature, in order. The files to upload are i
 
 ### Execution evidence
 
-VEYRA is not on-chain, so its evidence is sandbox operation logs. **The report is [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md).** It lists every key operation of a full run in order, with its actor, result, and sandbox receipt. It also points to the log lines that prove each control: an operator cannot approve, a repeated execution does not charge twice, payment alone does not activate cover, and a wrong-cow muzzle blocks a claim.
+VEYRA is not on-chain, so its evidence is sandbox operation logs. **The report is [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md).** It lists every operation of a full run in order, with its actor, result, and sandbox receipt, and the controls the run shows: the agent prepares and a person approves, approval binds the exact payload, payment alone does not activate cover, and a wrong-cow muzzle blocks a claim.
 
-The raw logs sit next to it in `docs/evidence/`: the HTTP operation log, audit events, wallet ledger, agent actions, policies, claims, and the server log. To produce them again, follow `demo/evidence/README.md`.
+The raw logs sit next to it in `docs/evidence/`: the audit events, the wallet ledger, the policies, and the claims. Running the demo walkthrough above produces the same records.
 
 ### Demo accounts
 
@@ -318,9 +318,9 @@ pnpm -C apps/web dev                     # http://localhost:5173，/api 代理�
 
 ### 执行证据
 
-VEYRA 不涉及链上操作，因此执行证据是沙盒操作日志。**报告见 [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md)。** 它按顺序列出一次完整运行中的每个关键操作，包括执行者、结果和沙盒回执，并指向证明各项控制的日志：操作员不能批准，重复执行不会重复扣款，仅付款不会使保障生效，鼻纹不符时理赔会被拦截。
+VEYRA 不涉及链上操作，因此执行证据是沙盒操作日志。**报告见 [`docs/evidence/SUMMARY.md`](docs/evidence/SUMMARY.md)。** 它按顺序列出一次完整运行中的每个操作，包括执行者、结果和沙盒回执，以及运行中体现的控制：智能体准备、由人批准，批准绑定确切的提交内容，仅付款不会使保障生效，鼻纹不符时理赔会被拦截。
 
-原始日志在同一目录 `docs/evidence/` 中：HTTP 操作日志、审计事件、钱包账本、智能体操作、保单、理赔和服务器日志。如需重新生成，请按 `demo/evidence/README.md` 操作。
+原始日志在同一目录 `docs/evidence/` 中：审计事件、钱包账本、保单和理赔。按上面的演示流程操作即可生成相同的记录。
 
 ### 演示账号
 
