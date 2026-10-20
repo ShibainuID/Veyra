@@ -28,6 +28,8 @@ export interface EvidenceFrameProps {
   capturedAt?: string | null;
   quality?: EvidenceQuality | null;
   source?: Source;
+  /** The view is on record (a prepared sample's timing, say) but has no footage to show. */
+  recorded?: boolean;
   className?: string;
 }
 
@@ -35,7 +37,7 @@ export interface EvidenceFrameProps {
  * A registered 4:3 frame: every muzzle, teeth, and body view sits in the same frame with the
  * same corner marks, so evidence from different visits compares at a glance.
  */
-export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, className }: EvidenceFrameProps) {
+export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, recorded = false, className }: EvidenceFrameProps) {
   const label = VIEW_LABEL[view];
   return (
     <figure className={cn("flex min-w-0 flex-col gap-3", className)}>
@@ -46,7 +48,11 @@ export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, cla
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center">
             <CameraOff aria-hidden="true" className="size-8 text-muted" strokeWidth={2} />
             <p className="font-bold">No footage attached</p>
-            <p className="text-sm text-muted">Capture the {label.toLowerCase()} view during enrollment to add it.</p>
+            <p className="text-sm text-muted">
+              {recorded
+                ? `The ${label.toLowerCase()} view is on record, but no footage is attached to show.`
+                : `Capture the ${label.toLowerCase()} view during enrollment to add it.`}
+            </p>
           </div>
         )}
         {CORNERS.map((corner) => (
@@ -61,7 +67,7 @@ export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, cla
           {capturedAt ? (
             <Timestamp value={capturedAt} mode="absolute" className="text-sm text-muted" />
           ) : (
-            <span className="text-sm text-muted">Not captured</span>
+            <span className="text-sm text-muted">{recorded ? "No footage" : "Not captured"}</span>
           )}
         </div>
         {(quality || source) && (

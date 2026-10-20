@@ -67,7 +67,7 @@ export function Drawer({ open, onClose, title, description, children, footer, bo
           </div>
           <IconButton label="Close" icon={X} variant="secondary" onClick={onClose} className="-mr-2" />
         </header>
-        <div className={cn("min-h-0 flex-1 overflow-y-auto", bodyClassName ?? "px-6 py-5")}>{children}</div>
+        <div className={cn("relative min-h-0 flex-1 overflow-y-auto", bodyClassName ?? "px-6 py-5")}>{children}</div>
         {footer && <footer className="border-t-2 border-ink px-6 pt-4 pb-[calc(16px+env(safe-area-inset-bottom))]">{footer}</footer>}
       </div>
     </dialog>

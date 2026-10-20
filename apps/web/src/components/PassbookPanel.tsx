@@ -158,7 +158,7 @@ export function PassbookPanel({
             Nothing has posted yet. Enrollment writes the first line.
           </p>
         ) : (
-          <ol className="pb-list min-h-0 flex-1 overflow-y-auto border-t border-line px-1">
+          <ol className="pb-list relative min-h-0 flex-1 overflow-y-auto border-t border-line px-1">
             {lines.map((line) => (
               <PassbookLine key={line.id} {...line} timeZone={timeZone} />
             ))}

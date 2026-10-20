@@ -19,6 +19,7 @@ import { actionTitle } from "../actions/types";
 import { AnimalPassbook } from "../passbook/AnimalPassbook";
 import { useObservations, usePassport, type Passport } from "./api";
 import { ValuationSection } from "./ValuationSection";
+import { reasonCopy } from "../enrollment/review-copy";
 
 const VIEWS: readonly EvidenceView[] = ["muzzle", "teeth", "body"];
 const STALE_AFTER_MS = 60 * 60_000;
@@ -51,7 +52,12 @@ function IdentitySection({ passport }: { passport: Passport }) {
           const note = typeof ref?.quality?.note === "string" ? ref.quality.note : null;
           return (
             <div key={view} className="flex flex-col gap-1">
-              <EvidenceFrame view={view} src={ref?.crop_url ?? ref?.media_url ?? null} alt={`${animal.name}, ${view} view`} />
+              <EvidenceFrame
+                view={view}
+                src={ref?.crop_url ?? ref?.media_url ?? null}
+                alt={`${animal.name}, ${view} view`}
+                recorded={Boolean(ref)}
+              />
               {ref?.frame_time_s != null && (
                 <span className="text-sm text-muted">
                   Frame at <Mono>{ref.frame_time_s.toFixed(1)} s</Mono> of the enrollment video
@@ -111,6 +117,16 @@ function IdentitySection({ passport }: { passport: Passport }) {
   );
 }
 
+/** "teeth_view_missing" on an age estimate reads "No teeth frame", the same words as enrollment review. */
+function estimateReviewLabel(kind: string, reason: string | null | undefined): string {
+  if (!reason) return "Needs review";
+  const title = reasonCopy(`${kind}_${reason}`).title;
+  const prefix = `${humanize(kind)}: `;
+  if (!title.startsWith(prefix)) return humanize(reason);
+  const rest = title.slice(prefix.length);
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 function EstimatesSection({ passport }: { passport: Passport }) {
   const estimates = [...passport.estimates].sort((a, b) => a.kind.localeCompare(b.kind));
   return (
@@ -142,7 +158,7 @@ function EstimatesSection({ passport }: { passport: Passport }) {
               </span>
               <span className="flex flex-wrap items-center gap-2">
                 <Provenance source={asSource(estimate.source)} />
-                {estimate.review_required && <StatusPill tone="uncertain" label={estimate.review_reason ? humanize(estimate.review_reason) : "Needs review"} />}
+                {estimate.review_required && <StatusPill tone="uncertain" label={estimateReviewLabel(estimate.kind, estimate.review_reason)} />}
               </span>
             </li>
           ))}
