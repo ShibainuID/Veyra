@@ -43,7 +43,7 @@ This is a hackathon prototype. Every insurer, payment, and claim is a sandbox. S
 | `demo/` | `fixtures/` (herd, policies, enrollment samples), `scenarios/` (camera replays), `media/veo/` (the phone enrollment video and the Pen A barn footage), and `uploads/` (the files to upload during the demo; see its README). |
 | `ml/` | Training and evaluation for the muzzle matcher, weight, and tracking. The API calls it only through `services/api/adapters/perception.py`. |
 | `shared/schemas/openapi.json` | The API contract. The web app generates its types from it. |
-| `docs/` | `demo-flow.md` (full test walkthrough with what to upload), `demo-script.md` (five-minute pitch), `assumptions.md`, `integration-notes.md`, `technical-document/` (the technical paper, PDF and LaTeX). |
+| `docs/technical-document/` | The technical paper (PDF and LaTeX source). |
 
 ### Run with Docker
 
@@ -88,7 +88,7 @@ The database is created and seeded on first start under `services/api/.data/`.
 
 ### Demo walkthrough
 
-Follow [`docs/demo-flow.md`](docs/demo-flow.md). It goes from the landing page through every feature, saying what to click and which file from `demo/uploads/` to upload:
+From the landing page through every feature, in order. The files to upload are in `demo/uploads/`:
 
 1. Enroll Sari from `video_hp.mp4`.
 2. Confirm a valuation and upload the ownership PDF.
@@ -173,8 +173,6 @@ pnpm -C apps/web gen:api                     # rewrites apps/web/src/lib/api-typ
 - **No diagnoses or payout promises.** Alerts are observations for inspection, not diagnoses. An indicative value is not an insurer-agreed value or a payout.
 - **Prototype models.** The muzzle matcher, weight estimate, and tracker make no production accuracy claim. Weight needs the scale marker in view, and age comes from a fixture.
 
-Details: [`docs/assumptions.md`](docs/assumptions.md).
-
 ---
 
 ## 中文
@@ -216,7 +214,7 @@ VEYRA 通过一本**数字牲畜护照**，把牛只身份识别、参考估值�
 | `demo/` | `fixtures/`（牛群、保单、登记样例）、`scenarios/`（摄像头回放）、`media/veo/`（手机登记视频和 A 圈牛舍画面）、`uploads/`（演示时要上传的文件，见其 README）。 |
 | `ml/` | 鼻纹匹配、体重和跟踪的训练与评估。API 只通过 `services/api/adapters/perception.py` 调用。 |
 | `shared/schemas/openapi.json` | API 契约，网页应用据此生成类型。 |
-| `docs/` | `demo-flow.md`（完整测试流程及每步要上传的文件）、`demo-script.md`（五分钟路演）、`assumptions.md`、`integration-notes.md`、`technical-document/`（技术文档，PDF 与 LaTeX）。 |
+| `docs/technical-document/` | 技术文档（PDF 与 LaTeX 源文件）。 |
 
 ### 使用 Docker 运行
 
@@ -261,7 +259,7 @@ pnpm -C apps/web dev                     # http://localhost:5173，/api 代理�
 
 ### 演示流程
 
-按 [`docs/demo-flow.md`](docs/demo-flow.md) 操作。它从宣传页开始覆盖每个功能，并说明每一步点哪里、上传 `demo/uploads/` 中的哪个文件：
+从宣传页开始，按顺序体验每个功能。要上传的文件在 `demo/uploads/` 中：
 
 1. 用 `video_hp.mp4` 登记 Sari。
 2. 确认估值并上传所有权 PDF。
@@ -345,5 +343,3 @@ pnpm -C apps/web gen:api                     # 重写 apps/web/src/lib/api-types
 - **演示视频。** `demo/media/veo/` 中的视频是为本原型用 Google Veo 制作的，提示词见 `VEO_PROMPTS.md`。跟踪器和鼻纹匹配器在这些视频上真实运行。
 - **不作诊断，不承诺赔付。** 告警只是供人工检查的观察结果，并非诊断。参考价值不是保险公司认可的价值，也不是赔付金额。
 - **原型模型。** 鼻纹匹配、体重估算和跟踪器均不宣称达到生产级准确率。体重估算需要画面中有比例标记，年龄来自固定数据。
-
-详情见 [`docs/assumptions.md`](docs/assumptions.md)。
