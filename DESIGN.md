@@ -28,6 +28,22 @@ colors:
   uncertain-ink: "oklch(0.48 0.13 50)"
   uncertain-soft: "oklch(0.95 0.04 65)"
 typography:
+  display:
+    fontFamily: "Atkinson Hyperlegible Next Variable, Atkinson Hyperlegible Next, system-ui, sans-serif"
+    fontSize: "clamp(2.5rem, 1rem + 4.4vw, 4.75rem)"
+    fontWeight: 800
+    lineHeight: 0.98
+    letterSpacing: "-0.03em"
+  pitch-heading:
+    fontFamily: "Atkinson Hyperlegible Next Variable, Atkinson Hyperlegible Next, system-ui, sans-serif"
+    fontSize: "2.203rem"
+    fontWeight: 800
+    lineHeight: 1.1
+  lead:
+    fontFamily: "Atkinson Hyperlegible Next Variable, Atkinson Hyperlegible Next, system-ui, sans-serif"
+    fontSize: "1.375rem"
+    fontWeight: 400
+    lineHeight: 1.45
   headline:
     fontFamily: "Atkinson Hyperlegible Next Variable, Atkinson Hyperlegible Next, system-ui, sans-serif"
     fontSize: "1.836rem"
@@ -78,6 +94,7 @@ rounded:
   control: "10px"
   panel: "14px"
   pill: "999px"
+  hero-tag: "11% 11% 18% 18% / 10% 10% 16% 16%"
 spacing:
   "1": "4px"
   "2": "8px"
@@ -170,6 +187,36 @@ components:
   data-table-row:
     height: "64px"
     padding: "8px 12px"
+  button-pitch:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.tag}"
+    rounded: "{rounded.control}"
+    padding: "0 24px"
+    height: "60px"
+  nav-cta-shell:
+    backgroundColor: "{colors.tag}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.control}"
+    padding: "0 20px"
+    height: "44px"
+  nav-cta-shell-hover:
+    backgroundColor: "{colors.tag-pressed}"
+  hero-tag:
+    backgroundColor: "{colors.tag}"
+    textColor: "{colors.ink}"
+    typography: "{typography.display}"
+    rounded: "{rounded.hero-tag}"
+    padding: "150px 56px 56px"
+  companion-tag:
+    backgroundColor: "{colors.tag}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.hero-tag}"
+    padding: "80px 20px 32px"
+    width: "384px"
+  evidence-mount:
+    backgroundColor: "{colors.surface-2}"
+    rounded: "{rounded.control}"
+    padding: "20px"
 ---
 
 # Design System: VEYRA
@@ -184,6 +231,8 @@ The ground is white paper with near-black ink, framed by a black shell bar above
 
 Light only. High contrast is a field requirement, not a style: every pairing in the token file is computed to WCAG and the smallest ratio for text is 4.9:1.
 
+The same world has one Persuade surface: the pitch page at `/`, outside the app shell. It changes scale, not materials. One ear tag grows to half the first viewport and carries the h1, then travels beside the story as a sticky companion that collects a stamp per journey step; app screenshots sit on registered evidence mounts; lists stay ledgers with ink rules, never card grids. Tag yellow there is brand and identity at page scale (the hero tag, the companion, the closing "Run it" field), still carrying only ink. The display, lead, and heavy-weight extensions below belong to that surface alone; every Operate screen keeps the fixed ramp.
+
 **Key Characteristics:**
 - Ear tag as identity: solid yellow is confirmed, dashed ink outline is pending review, grey "no tag" is an unassigned track.
 - Passbook as history: numbered, dated lines with a running amount column; the awaiting line is a yellow-soft slot with a dashed stamp outline.
@@ -191,6 +240,7 @@ Light only. High contrast is a field requirement, not a style: every pairing in 
 - Atkinson Hyperlegible Next for words, Atkinson Hyperlegible Mono for every figure, ID, and timestamp.
 - Heavy 2-3px ink rules as structure; shadows only for floating layers.
 - Large touch targets: 44px minimum, 48px primary, 52px for the passbook decision.
+- On the pitch surface only: one page-scale traveling ear tag, a fluid display headline, and evidence mounts for real screenshots.
 
 ## Colors
 
@@ -244,7 +294,15 @@ A white-and-ink ledger with one loud identity color and three plain state colors
 
 The scale is fixed rem at a 1.2 ratio from a 17px base. Headings balance-wrap and tighten to -0.01em; paragraphs pretty-wrap.
 
+### Pitch extension (Persuade surface only)
+- **Display** (800, clamp 40-76px, 0.98, -0.03em): the pitch h1, set on the hero ear tag. One per page. The only fluid size in the system.
+- **Pitch Heading** (800, 35.2px, 1.1): pitch section h2s, from the ramp's 2xl step at heavy weight.
+- **Lead** (400, 22px, 1.45): the pitch lead sentence beside the hero tag and in "Run it", capped at 30-36ch; below 640px it drops to the 20.4px title-small size.
+- **Heavy** (800) is reserved for the display headline, pitch headings, pitch buttons, the nav CTA, and the wordmark. Operate screens top out at 700.
+
 ### Named Rules
+**The Fixed Ramp Rule.** Operate screens use the fixed rem ramp only. Display, lead, and the 800 weight are pitch tokens; bringing them into the app is a system change, not an extension.
+
 **The Figures Are Mono Rule.** Every figure, ID, and timestamp uses the mono with tabular, slashed-zero numerals. Money keeps its number unbroken and may break only before the currency code.
 
 **The Uppercase Belongs To The Stamp Rule.** Uppercase tracked text exists only on stamps and stamp slots, where it is the register's own voice. Headings and labels stay sentence case.
@@ -258,6 +316,8 @@ The shell is 72px tall from 1024px up, carrying the logo, the full nav, Ask, the
 Spacing is a 4px-based scale (4, 8, 12, 16, 24, 32, 48, 64). Sections sit 48px apart; heading groups are 16px above their content; page headers leave 24px below. Breakpoints: 640, 720 (tables stack), 900 (passbook decision bar sticky), 1024 (full top bar), 1280.
 
 Touch targets are tokens, not suggestions: 44px minimum for every control, 48px for primary buttons and nav, 52px for Approve and Decline.
+
+The pitch page has its own black nav bar (64px, 72px from 1024px, no bottom tabs) and caps at 1440px. From 1024px the hero splits 10fr:9fr (tag left; lead, CTAs, and measured stamps right) and the body becomes a 384px companion column beside the sections, which sit 96px apart (64px below 1024px). Below 1024px the companion column is hidden, each journey step carries its own stamp inline, and the hero CTAs move above the case; below 640px they go full width.
 
 ## Elevation & Depth
 
@@ -277,7 +337,9 @@ Flat by default. Structure comes from ink rules, not shadows: a 3px ink rule und
 
 Two corner radii carry nearly everything: gently rounded controls (10px) for buttons, chips, inputs, nav items, the awaiting line, and evidence frames; softer panels (14px) for cards, empty states, toasts, the recorder, and the sheet's top corners. Pills (999px) are reserved for status pills, provenance chips, and count badges. Stamps and stamp slots use a tight 4px, a printed-ink corner.
 
-Borders are thick and deliberate: 2px on every control, chip, card, and notice; 4px double rule on stamps; dashed for anything not yet real (pending tags at 6/4, stamp slots, empty states, simulated provenance, missing evidence). The ear tag silhouette (a 112:80 molded tag with a punched hole and rounded bottom corners) is the one custom shape and is drawn as SVG, never approximated with a rounded rectangle.
+Borders are thick and deliberate: 2px on every control, chip, card, and notice; 4px double rule on stamps; dashed for anything not yet real (pending tags at 6/4, stamp slots, empty states, simulated provenance, missing evidence). The ear tag silhouette (a 112:80 molded tag with a punched hole and rounded bottom corners) is the one custom shape and is drawn as SVG at component sizes (40, 56, 96px), never approximated with a rounded rectangle.
+
+The one exception is the pitch page's page-scale tag, which must hold flowing text: a tag-yellow box with a 3px tag-edge rim and elliptical radii proportional to its own size, rounded shoulders and a heavier rounded bottom (hero-tag), with the punched hole drawn as a white disc in an 8-10px tag-edge ring at top center and the mono number top right. It is used only for the hero tag and its companion.
 
 ### Named Rules
 **The Dashed Means Not Yet Rule.** A dashed outline marks something pending, waiting, simulated, or missing. Solid means real and confirmed. Do not use dashes decoratively.
@@ -329,6 +391,21 @@ Tag column first, 64px rows, 3px ink rule under 44px muted bold headers, 1px rul
 ### Evidence Frame
 A 4:3 frame with 10px corners and four drawn registration corner brackets, so every view sits in the same frame. Missing footage shows the tint fill, a 2px dashed strong-rule outline, and a plain label.
 
+### Evidence Mount (pitch)
+The Evidence Frame turned into a mount for real app screenshots. The capture keeps its own proportions (no fixed 4:3), sits 20px inside a tint-2 mount with a 2px inset ink outline, and the four registration marks print in ink on the mount, 3px from its corners, never over the screenshot. The image takes a 1px ruled outline. Phone widths get a purpose-cut crop through `<picture>` below 640px, not a scaled-down desktop capture. The caption row names the view in bold and, on the right, "App screenshot, demo data" with a simulated provenance chip.
+
+### Traveling Tag (pitch signature)
+One ear tag that carries the pitch from the first viewport to the end of the journey.
+- **Hero tag:** the page-scale tag (see Shapes), about half the first viewport from 1024px (the smaller of 700px and the viewport less 200px), carrying the display h1, a 20.4px sub-line capped at 30ch, and a bold 14px audience line pinned to its bottom. Flat at rest; selection inside it inverts to ink with a yellow glyph.
+- **Companion tag:** the same object at 384px, sticky 24px from the top in the left column from 1024px. It stays hidden while the hero tag is on screen, then hands off: it fades and grows in from 0.92 scale over 220ms quart-out. It names the animal ("Tag 001", then "Sari · 001" with its mono ID) and lists the journey steps as links: reached steps show their dated stamp, unreached ones a dashed 13px mono uppercase slot. The last slot, "Awaiting your stamp", is the demo link.
+- **Stamping:** a step counts as reached once its top passes 60% of the viewport; reached steps stay stamped, and skipping ahead stamps every step before. Each new stamp uses the Stamp's press, staggered 140ms when several arrive at once. Under reduced motion, or without IntersectionObserver, every stamp shows statically from the start.
+- **Measured stamps:** beside the hero, three large stamps (14px, 6px 12px padding) each lead a line of a real figure in mono with its dataset, followed by a dashed "Next stamp: covered · awaiting you" slot.
+
+### Pitch Controls
+- **Pitch button:** the world's primary and secondary buttons a size up: 60px tall, 24px side padding, 20.4px heavy label.
+- **Nav CTA on the shell:** on the pitch's black bar the primary inverts to tag yellow with ink text (pressed tag on hover), 44px, because ink on the shell would vanish.
+- **Ledger list:** a 3px ink rule on top, 1px rules between rows, a 2px ink rule over the total row; columns from 720px.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -340,6 +417,8 @@ A 4:3 frame with 10px corners and four drawn registration corner brackets, so ev
 - **Do** use dashed outlines only for pending, awaiting, simulated, empty, or missing things.
 - **Do** separate with 1-3px ink rules and keep surfaces flat at rest.
 - **Do** keep every control at least 44px tall.
+- **Do** keep display, lead, and the 800 weight on the pitch surface; Operate screens stay on the fixed ramp.
+- **Do** mount real screenshots on the evidence mount with their provenance chip, and show every pitch stamp statically under reduced motion.
 
 ### Don't:
 - **Don't** put white text on tag yellow, or use yellow for anything other than brand, the current place, identity, or awaiting.

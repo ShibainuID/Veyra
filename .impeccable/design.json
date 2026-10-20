@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-20T08:07:31.264Z",
+  "generatedAt": "2026-10-20T12:00:00.000Z",
   "title": "Design System: VEYRA",
   "extensions": {
     "colorMeta": {
@@ -381,6 +381,18 @@
       }
     },
     "typographyMeta": {
+      "display": {
+        "displayName": "Display (pitch)",
+        "purpose": "Pitch h1 on the hero ear tag only; the one fluid size. Operate screens never use it."
+      },
+      "pitch-heading": {
+        "displayName": "Pitch Heading",
+        "purpose": "Pitch section h2s: the 2xl ramp step at 800."
+      },
+      "lead": {
+        "displayName": "Lead (pitch)",
+        "purpose": "Pitch lead sentence, 30-36ch; 20.4px below 640px."
+      },
       "headline": {
         "displayName": "Headline",
         "purpose": "Page h1 and the passbook animal name. No kicker above it."
@@ -466,6 +478,11 @@
         "name": "dur-stamp",
         "value": "180ms",
         "purpose": "The stamp press. All durations drop to 0 under reduced motion."
+      },
+      {
+        "name": "companion-handoff",
+        "value": "opacity, scale 0.92 to 1, var(--dur-slow) var(--ease-out-quart)",
+        "purpose": "Pitch companion tag appearing as the hero tag leaves; stamps arriving together stagger 140ms. Static under reduced motion."
       }
     ],
     "breakpoints": [
@@ -488,6 +505,10 @@
       {
         "name": "xl",
         "value": "1280px"
+      },
+      {
+        "name": "2xl",
+        "value": "1440px"
       }
     ]
   },
@@ -571,18 +592,35 @@
       "description": "Numbered, dated line; the awaiting one is a tag-wash slot.",
       "html": "<ol class=\"ds-pb\"><li class=\"ds-pb-line\"><span class=\"ds-pb-gut\"><b>003</b>19 Oct</span><span>Enrolled</span><span class=\"ds-pb-amt\">0.00 USD</span></li><li class=\"ds-pb-line\" data-status=\"awaiting\"><span class=\"ds-pb-gut\"><b>004</b>20 Oct</span><span><b>Policy application</b><br><span class=\"ds-muted\">Waiting for manager approval</span></span><span class=\"ds-pb-amt\">87.36 USD</span></li></ol>",
       "css": ".ds-pb{list-style:none;margin:0;padding:0;font-family:var(--font-sans);color:var(--ink);max-width:440px;}.ds-pb-line{display:grid;grid-template-columns:3.75rem minmax(0,1fr) auto;column-gap:12px;padding:16px;border-bottom:1px solid var(--line);}.ds-pb-line[data-status=\"awaiting\"]{margin-block:8px;border:2px solid var(--tag-edge);border-radius:var(--radius-control);background:var(--tag-soft);}.ds-pb-gut{display:flex;flex-direction:column;gap:2px;font-family:var(--font-mono);font-size:var(--text-sm);color:var(--muted);}.ds-pb-gut b{font-size:var(--text-base);color:var(--ink);}.ds-pb-amt{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums slashed-zero;white-space:nowrap;}.ds-muted{color:var(--muted);font-size:var(--text-sm);}"
+    },
+    {
+      "name": "Traveling Tag (companion)",
+      "kind": "custom",
+      "refersTo": "companion-tag",
+      "description": "Pitch only: the page-scale ear tag beside the story, collecting a stamp per journey step; dashed slots for steps not yet reached.",
+      "html": "<div class=\"ds-ptag\"><span class=\"ds-ptag-hole\"></span><span class=\"ds-ptag-num\">001</span><p class=\"ds-ptag-name\">Sari · 001</p><p class=\"ds-ptag-id\">animal-demo-001</p><ol class=\"ds-ptag-list\"><li><span class=\"ds-pstamp\" data-kind=\"posted\">Enrolled · 20 Oct 08:12</span></li><li><span class=\"ds-pstamp\">Valued · 20 Oct 08:14</span></li><li><span class=\"ds-pslot\">Covered</span></li><li><a class=\"ds-pslot\" href=\"#\">Awaiting your stamp</a></li></ol></div>",
+      "css": ".ds-ptag{position:relative;width:384px;max-width:100%;padding:80px 20px 32px;border:3px solid var(--tag-edge);border-radius:11% 11% 18% 18% / 10% 10% 16% 16%;background:var(--tag);color:var(--ink);font-family:var(--font-sans);}.ds-ptag-hole{position:absolute;top:24px;left:50%;width:44px;height:44px;border:7px solid var(--tag-edge);border-radius:999px;background:var(--bg);translate:-50% 0;}.ds-ptag-num{position:absolute;top:24px;right:24px;font-family:var(--font-mono);font-variant-numeric:tabular-nums slashed-zero;font-size:var(--text-lg);font-weight:700;line-height:1;}.ds-ptag-name{margin:0;font-size:var(--text-lg);font-weight:800;}.ds-ptag-id{margin:0;font-family:var(--font-mono);font-size:var(--text-sm);}.ds-ptag-list{display:flex;flex-direction:column;gap:4px;margin:16px 0 0;padding:0;list-style:none;}.ds-ptag-list li{display:flex;align-items:center;min-height:44px;}.ds-pstamp{--c:var(--ink);display:inline-flex;padding:3px 9px;border:4px double var(--c);border-radius:4px;background:var(--bg);color:var(--c);font-family:var(--font-mono);font-size:var(--text-xs);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;animation:ds-ppress var(--dur-stamp) var(--ease-out-quart) backwards;}.ds-pstamp[data-kind=\"posted\"]{--c:var(--ok);}@keyframes ds-ppress{from{opacity:.35;transform:scale(1.06);box-shadow:0 6px 14px oklch(0.18 0.005 260 / 0.22);}}.ds-pslot{display:inline-flex;align-items:center;padding:5px 10px;border:2px dashed var(--ink);border-radius:4px;color:var(--ink);font-family:var(--font-mono);font-size:var(--text-xs);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;text-decoration:none;}a.ds-pslot{min-height:44px;transition:background-color var(--dur-fast) var(--ease-out-quart);}a.ds-pslot:hover{background:var(--bg);}a.ds-pslot:focus-visible{outline:3px solid var(--focus);outline-offset:2px;}"
+    },
+    {
+      "name": "Evidence Mount",
+      "kind": "card",
+      "refersTo": "evidence-mount",
+      "description": "Pitch only: a real screenshot on a tint-2 mount, registration marks in ink on the mount, provenance in the caption.",
+      "html": "<figure class=\"ds-mount\"><div class=\"ds-mount-frame\"><div class=\"ds-mount-shot\">App screenshot</div><svg class=\"ds-reg\" data-c=\"tl\" viewBox=\"0 0 18 18\"><path d=\"M1.5 18V1.5H18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg><svg class=\"ds-reg\" data-c=\"tr\" viewBox=\"0 0 18 18\"><path d=\"M1.5 18V1.5H18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg><svg class=\"ds-reg\" data-c=\"br\" viewBox=\"0 0 18 18\"><path d=\"M1.5 18V1.5H18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg><svg class=\"ds-reg\" data-c=\"bl\" viewBox=\"0 0 18 18\"><path d=\"M1.5 18V1.5H18\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\"/></svg></div><figcaption class=\"ds-mount-cap\"><b>Enroll: a person confirms the identity</b><span>App screenshot, demo data</span></figcaption></figure>",
+      "css": ".ds-mount{display:flex;flex-direction:column;gap:12px;margin:0;max-width:560px;font-family:var(--font-sans);color:var(--ink);}.ds-mount-frame{position:relative;padding:20px;border-radius:var(--radius-control);background:var(--surface-2);outline:2px solid var(--ink);outline-offset:-2px;}.ds-mount-shot{display:grid;place-items:center;aspect-ratio:16/10;background:var(--bg);outline:1px solid var(--line);color:var(--muted);}.ds-reg{position:absolute;width:18px;height:18px;color:var(--ink);}.ds-reg[data-c=\"tl\"]{top:3px;left:3px;}.ds-reg[data-c=\"tr\"]{top:3px;right:3px;rotate:90deg;}.ds-reg[data-c=\"br\"]{bottom:3px;right:3px;rotate:180deg;}.ds-reg[data-c=\"bl\"]{bottom:3px;left:3px;rotate:270deg;}.ds-mount-cap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 12px;}.ds-mount-cap span{font-size:var(--text-sm);color:var(--muted);}"
     }
   ],
   "narrative": {
     "northStar": "The Ear Tag and Its Passbook",
-    "overview": "VEYRA is a field instrument for a farm manager on a tablet in a bright barn aisle. Identity reads first: every animal is a tag-yellow ear tag printed with laser-black numerals, and everything that happens to that animal posts as a numbered, dated passbook line. Nothing financial posts without the manager's stamp, and the stamp is the one moment of motion the world dramatizes: it lands on its exact line.\n\nThe ground is white paper with near-black ink, framed by a black shell bar above (and black bottom tabs on smaller screens). Tag yellow is scarce and meaningful: brand, the current place, identity, and the line that waits on the manager. The rest of the color is state, always paired with an icon and a word. Density is ledger-like rather than dashboard-like: 64px table rows, figures in a monospace with tabular, slashed-zero numerals, and heavy ink rules that read like a register's printed lines. The system refuses KPI tiles over a grey table with one blue accent.\n\nLight only. High contrast is a field requirement, not a style: every pairing in the token file is computed to WCAG and the smallest ratio for text is 4.9:1.",
+    "overview": "VEYRA is a field instrument for a farm manager on a tablet in a bright barn aisle. Identity reads first: every animal is a tag-yellow ear tag printed with laser-black numerals, and everything that happens to that animal posts as a numbered, dated passbook line. Nothing financial posts without the manager's stamp, and the stamp is the one moment of motion the world dramatizes: it lands on its exact line.\n\nThe ground is white paper with near-black ink, framed by a black shell bar above (and black bottom tabs on smaller screens). Tag yellow is scarce and meaningful: brand, the current place, identity, and the line that waits on the manager. The rest of the color is state, always paired with an icon and a word. Density is ledger-like rather than dashboard-like: 64px table rows, figures in a monospace with tabular, slashed-zero numerals, and heavy ink rules that read like a register's printed lines. The system refuses KPI tiles over a grey table with one blue accent.\n\nLight only. High contrast is a field requirement, not a style: every pairing in the token file is computed to WCAG and the smallest ratio for text is 4.9:1.\n\nThe same world has one Persuade surface: the pitch page at `/`, outside the app shell. It changes scale, not materials. One ear tag grows to half the first viewport and carries the h1, then travels beside the story as a sticky companion that collects a stamp per journey step; app screenshots sit on registered evidence mounts; lists stay ledgers with ink rules, never card grids. Tag yellow there is brand and identity at page scale (the hero tag, the companion, the closing \"Run it\" field), still carrying only ink. The display, lead, and heavy-weight extensions below belong to that surface alone; every Operate screen keeps the fixed ramp.",
     "keyCharacteristics": [
       "Ear tag as identity: solid yellow is confirmed, dashed ink outline is pending review, grey \"no tag\" is an unassigned track.",
       "Passbook as history: numbered, dated lines with a running amount column; the awaiting line is a yellow-soft slot with a dashed stamp outline.",
       "Black primary buttons with tag-yellow labels; Decline stands apart in red outline.",
       "Atkinson Hyperlegible Next for words, Atkinson Hyperlegible Mono for every figure, ID, and timestamp.",
       "Heavy 2-3px ink rules as structure; shadows only for floating layers.",
-      "Large touch targets: 44px minimum, 48px primary, 52px for the passbook decision."
+      "Large touch targets: 44px minimum, 48px primary, 52px for the passbook decision.",
+      "On the pitch surface only: one page-scale traveling ear tag, a fluid display headline, and evidence mounts for real screenshots."
     ],
     "rules": [
       {
@@ -599,6 +637,11 @@
         "name": "The Provenance Rule",
         "body": "Every adapter figure carries a visible source chip beside it: live (solid green), prototype (ink outline), simulated (dashed grey outline), documented (grey fill). Never hover-only.",
         "section": "colors"
+      },
+      {
+        "name": "The Fixed Ramp Rule",
+        "body": "Operate screens use the fixed rem ramp only. Display, lead, and the 800 weight are pitch tokens; bringing them into the app is a system change, not an extension.",
+        "section": "typography"
       },
       {
         "name": "The Figures Are Mono Rule",
@@ -629,7 +672,9 @@
       "Do pair every state color with an icon and a word, and every adapter figure with a provenance chip.",
       "Do use dashed outlines only for pending, awaiting, simulated, empty, or missing things.",
       "Do separate with 1-3px ink rules and keep surfaces flat at rest.",
-      "Do keep every control at least 44px tall."
+      "Do keep every control at least 44px tall.",
+      "Do keep display, lead, and the 800 weight on the pitch surface; Operate screens stay on the fixed ramp.",
+      "Do mount real screenshots on the evidence mount with their provenance chip, and show every pitch stamp statically under reduced motion."
     ],
     "donts": [
       "Don't put white text on tag yellow, or use yellow for anything other than brand, the current place, identity, or awaiting.",
