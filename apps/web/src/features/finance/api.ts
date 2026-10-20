@@ -15,7 +15,6 @@ export type ProposeBody = Schemas["ProposeRequest"];
 export type WalletEntry = Schemas["WalletEntryOut"];
 export type Policy = Schemas["PolicyDetail"];
 export type Passport = Schemas["Passport"];
-export type Recommendations = Schemas["RecommendationsOut"];
 export type Recommendation = Schemas["Recommendation"];
 export type RuleReason = Schemas["RuleReason"];
 export type Explanation = Schemas["Explanation"];

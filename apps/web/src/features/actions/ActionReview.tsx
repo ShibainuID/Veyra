@@ -237,7 +237,7 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
             <h3 id={headingId} className="text-md font-bold">
               {title}
               {lineNo !== undefined && (
-                <span className="font-normal text-muted">
+                <span className="font-regular text-muted">
                   {" "}
                   · line <Mono>{lineNumber(lineNo)}</Mono>
                 </span>
