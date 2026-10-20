@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from domain import clock, health
 from domain.audit import actor_ref, user_names
 from domain.errors import DomainError
 from domain.passbook import (
@@ -112,6 +113,7 @@ def _card(animal: Animal, herd: _Herd) -> dict:
     estimates = herd.estimates[animal.id]
     valuation = (herd.valuations[animal.id] or [None])[0]
     open_alerts = [alert for alert in herd.alerts[animal.id] if alert.status == "open"]
+    last = herd.last_observation.get(animal.id)
     return {
         "id": animal.id, "name": animal.name, "breed": animal.breed, "breed_category": animal.breed_category,
         "sex": animal.sex, "identity_status": animal.identity_status,
@@ -123,6 +125,7 @@ def _card(animal: Animal, herd: _Herd) -> dict:
         "coverage": _coverage(herd.policies[animal.id], herd.actions[animal.id]),
         "alerts": {"open_count": len(open_alerts), "kinds": sorted({alert.kind for alert in open_alerts})},
         "last_observation": _last_seen(herd.last_observation.get(animal.id), herd.camera_names),
+        "health": health.classify(herd.alerts[animal.id], last.observed_at if last else None, clock.now()),
         "awaiting_approval_count": sum(action.status == "pending_approval" for action in herd.actions[animal.id]),
     }
 
