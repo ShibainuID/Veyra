@@ -37,6 +37,8 @@ export interface DataTableProps<T> {
   rows: readonly T[];
   rowKey: (row: T) => string;
   rowHref?: (row: T) => string;
+  /** Tooltip for the row link (which covers the whole row), such as facts a narrow layout moves out of its cells. */
+  rowTitle?: (row: T) => string;
   selectedKey?: string | null;
   /** Controlled sort; omit for the table to sort itself starting from `defaultSort`. */
   sort?: SortState | null;
@@ -72,6 +74,7 @@ export function DataTable<T>({
   rows,
   rowKey,
   rowHref,
+  rowTitle,
   selectedKey,
   sort: controlledSort,
   onSortChange,
@@ -150,7 +153,7 @@ export function DataTable<T>({
                 data-lead={column.lead ? "" : undefined}
               >
                 {column.primary && href ? (
-                  <Link to={href} className="dt-row-link" aria-current={selected ? "true" : undefined}>
+                  <Link to={href} className="dt-row-link" title={rowTitle?.(row)} aria-current={selected ? "true" : undefined}>
                     {content}
                   </Link>
                 ) : (
