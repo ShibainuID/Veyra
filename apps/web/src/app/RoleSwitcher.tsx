@@ -17,7 +17,7 @@ export function RoleSwitcher() {
       <span className="sr-only">Demo role</span>
       <UserRound
         aria-hidden="true"
-        className="pointer-events-none absolute left-3 hidden size-5 text-on-shell-muted sm:block"
+        className="pointer-events-none absolute left-3 hidden size-5 text-on-shell-muted sm:block lg:max-xl:hidden"
         strokeWidth={2.25}
       />
       <select
@@ -28,7 +28,7 @@ export function RoleSwitcher() {
           void queryClient.resetQueries();
           toast.show({ title: `Now acting as ${roleForToken(token).label}`, tone: "neutral", duration: 3500 });
         }}
-        className="min-h-11 cursor-pointer appearance-none rounded-control border-2 border-shell-line bg-shell py-1 pr-9 pl-3 font-bold sm:pr-10 sm:pl-10 text-on-shell transition-colors hover:bg-shell-2 [&>option]:bg-bg [&>option]:text-ink"
+        className="min-h-11 cursor-pointer appearance-none rounded-control border-2 border-shell-line bg-shell py-1 pr-9 pl-3 font-bold sm:pr-10 sm:pl-10 lg:max-xl:pl-3 text-on-shell transition-colors hover:bg-shell-2 [&>option]:bg-bg [&>option]:text-ink"
       >
         {ROLE_OPTIONS.map((option) => (
           <option key={option.token} value={option.token}>
