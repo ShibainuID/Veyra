@@ -1,5 +1,5 @@
-export { ActionReview } from "./ActionReview";
-export type { ActionReviewAnimal, ActionReviewProps } from "./ActionReview";
+export { ActionDetails, ActionLineSummary, ActionReview } from "./ActionReview";
+export type { ActionDetailsProps, ActionReviewAnimal, ActionReviewProps } from "./ActionReview";
 export {
   fetchAction,
   invalidateAfterAction,
