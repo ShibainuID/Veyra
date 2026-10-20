@@ -68,7 +68,11 @@ describe("the pitch page at /", () => {
       "Step 5: Claimed",
     ]);
     const images = within(journey).getAllByRole("img").filter((img) => img.tagName === "IMG");
-    expect(images).toHaveLength(5);
+    // Five steps, plus the claim's guard (the refusal before the evidence was complete).
+    expect(images).toHaveLength(6);
+    const phoneCrops = journey.querySelectorAll('source[media="(max-width: 39.9375rem)"]');
+    expect(phoneCrops).toHaveLength(5);
+    phoneCrops.forEach((source) => expect(source.getAttribute("srcset")).toMatch(/^\/pitch\/.+-m\.webp$/));
     images.forEach((img) => {
       expect(img).toHaveAttribute("loading", "lazy");
       expect(img.getAttribute("src")).toMatch(/^\/pitch\/.+\.webp$/);
@@ -79,7 +83,7 @@ describe("the pitch page at /", () => {
 
   it("shows every stamp when the stamps cannot be sequenced (no IntersectionObserver)", () => {
     renderAt("/");
-    const tag = screen.getByRole("complementary", { name: "Sari" });
+    const tag = screen.getByRole("complementary", { name: "Sari · 001" });
     expect(within(tag).getByText("5 of 5 journey steps stamped.")).toBeInTheDocument();
   });
 });

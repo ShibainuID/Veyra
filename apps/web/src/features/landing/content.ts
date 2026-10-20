@@ -6,52 +6,76 @@ import type { StampKind } from "../../components/Stamp";
  * and ml/results/ verbatim.
  */
 
+export interface Raster {
+  src: string;
+  width: number;
+  height: number;
+}
+
+export interface Evidence extends Raster {
+  alt: string;
+  caption: string;
+  /** A focused crop of the same state, served below 640px so its labels stay readable. */
+  mobile?: Raster;
+}
+
 export interface JourneyStep {
   id: "enrolled" | "valued" | "covered" | "watched" | "claimed";
   title: string;
-  /** The stamp the traveling tag receives when this step enters. */
+  /** The stamp the traveling tag receives when this step enters, dated like the app's stamps. */
   stamp: string;
   kind: StampKind;
   body: string;
-  image: { src: string; alt: string; caption: string };
+  image: Evidence;
+  /** A smaller second capture: the guard that held before the step could go through. */
+  guard?: Evidence;
 }
 
 export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "enrolled",
     title: "Enrolled",
-    stamp: "Enrolled · new identity",
+    stamp: "Enrolled · muzzle new · 20 Oct",
     kind: "posted",
     body:
-      "One guided video gives the muzzle, the teeth, and the body. The muzzle matcher returns a candidate, a new identity, or uncertain, and a person confirms it before the animal exists. Sari matched no one on the farm: the closest animal had 3 verified points, below the 5 a match needs, so she was registered as new.",
+      "One guided video gives the muzzle, the teeth, and the body. The muzzle matcher returns a candidate, a new identity, or uncertain, and a person confirms it before the animal exists. In the prepared sample (simulated), Sari matched no one on the farm: the closest animal had 3 verified points, below the 5 a match needs, so she was registered as new.",
     image: {
       src: "/pitch/enrolled.webp",
-      alt: "The enrollment review step: the muzzle, teeth, and body views placed at 1.5, 3.2, and 6.0 seconds of the video (simulated, no footage attached), and an Identity panel reading “No match on the farm” with the closest animal at 3 verified points, below the 5 a match needs.",
-      caption: "Enroll · review before anything is registered",
+      width: 1440,
+      height: 742,
+      mobile: { src: "/pitch/enrolled-m.webp", width: 860, height: 640 },
+      alt: "The enrollment review: an Identity panel from muzzle_hybrid_v1 reading “No match on the farm”, the closest animal Rama at 3 verified points, below the 5 a match needs, a Register as a new animal button, and the checks and estimates beside it, all labeled simulated.",
+      caption: "Enroll · a person confirms the identity",
     },
   },
   {
     id: "valued",
     title: "Valued",
-    stamp: "Valued · 2,496–2,912 USD",
+    stamp: "Valued · 2,496–2,912 USD · 20 Oct",
     kind: "approved",
     body:
       "Her value is a range: the weight estimate, 480–560 kg, times a dated reference price of 5.20 USD/kg, labeled simulated and confirmed by the manager. An indicative value is not an insured value and not a payout.",
     image: {
       src: "/pitch/valued.webp",
-      alt: "Sari's passport: the indicative valuation 480–560 kg × 5.20 USD/kg = 2,496.00–2,912.00 USD with its price date, beside her ear tag 001 and her passbook.",
+      width: 1440,
+      height: 1080,
+      mobile: { src: "/pitch/valued-m.webp", width: 860, height: 562 },
+      alt: "Sari's passport at Indicative valuation: 480–560 kg × 5.20 USD/kg = 2,496.00–2,912.00 USD, version 1, demo reference price dated 2026-10-01, confirmed by W. Santoso, beside her ear tag 001 and her passbook.",
       caption: "Passport · indicative valuation",
     },
   },
   {
     id: "covered",
     title: "Covered",
-    stamp: "Covered · basic mortality",
+    stamp: "Covered · cover active · 20 Oct",
     kind: "posted",
     body:
       "Three fictional sample policies are checked by deterministic rules against her passport: eligible, needs a document, or ineligible, each with its terms reference. Claude explains the rules; it never decides them. The application and the premium are approved separately, and cover is active only once the insurer confirms it.",
     image: {
       src: "/pitch/covered.webp",
+      width: 1440,
+      height: 1080,
+      mobile: { src: "/pitch/covered-m.webp", width: 860, height: 1364 },
       alt: "Coverage for Sari: three sample products compared. Basic Mortality & Accident is eligible, Mortality + Theft is unknown pending an ownership document, Dairy Health Plus is ineligible, with premiums and deductibles in USD.",
       caption: "Coverage · three sample products, one rule set",
     },
@@ -59,12 +83,15 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "watched",
     title: "Watched",
-    stamp: "Watched · pen A feed line",
+    stamp: "Watched · pen A alert · 20 Oct",
     kind: "approved",
     body:
-      "Recorded camera replays are tracked, and a track carries Sari's identity only while the association is strict; otherwise it stays uncertain, never guessed. When her movement fell 79% below her earlier window, VEYRA raised an inspection prompt, not a diagnosis.",
+      "Recorded camera replays are tracked, and a track carries Sari's identity only while the association is strict; otherwise it stays uncertain, never guessed. In the recorded replay (simulated), her movement fell 79% below her earlier window, and VEYRA raised an inspection prompt, not a diagnosis.",
     image: {
       src: "/pitch/watched.webp",
+      width: 1440,
+      height: 1080,
+      mobile: { src: "/pitch/watched-m.webp", width: 860, height: 1590 },
       alt: "The Monitor replay with Sari's reduced-movement alert open: movement 79% below her earlier window, the observation and baseline windows, and the line “Inspection recommended; this is not a diagnosis.”",
       caption: "Monitor · an alert asks for an inspection",
     },
@@ -72,14 +99,24 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "claimed",
     title: "Claimed",
-    stamp: "Claimed · sandbox receipt",
+    stamp: "Claimed · submitted · 20 Oct",
     kind: "approved",
     body:
-      "A claim starts from the incident and its evidence checklist. Until every item is on file, here the farmer's declaration and a vet's assessment, the agent refuses to prepare the submission. Once complete and stamped, the sandbox insurer returns a receipt and the claim reads Assessment pending: submitted, not accepted or paid.",
+      "A claim starts from the incident and its evidence checklist. Until every item is on file, here the farmer's declaration and a vet's assessment, the agent refuses to prepare the submission. Once both were added and the manager stamped it, the sandbox insurer returned a receipt and the claim reads Assessment pending: submitted, not accepted or paid.",
     image: {
       src: "/pitch/claimed.webp",
-      alt: "Sari's claim: the evidence checklist with the farmer declaration and veterinary assessment marked missing, and a notice that the agent refused to prepare the submission until both are on file.",
-      caption: "Claim · incomplete evidence blocks submission",
+      width: 1440,
+      height: 1442,
+      mobile: { src: "/pitch/claimed-m.webp", width: 860, height: 628 },
+      alt: "Sari's claim after submission: every evidence checklist item present, an illustrative payout of 950.40 USD, and the Submission section with a green POSTED · SANDBOX MUTUAL stamp, Assessment pending, and the sandbox receipt number.",
+      caption: "Claim · submitted with a sandbox receipt",
+    },
+    guard: {
+      src: "/pitch/claimed-guard.webp",
+      width: 690,
+      height: 355,
+      alt: "The same claim earlier: the agent refused to prepare the submission, still missing the farmer declaration and the veterinary assessment, code EVIDENCE_INCOMPLETE.",
+      caption: "Before that, the guard held",
     },
   },
 ];
@@ -132,10 +169,10 @@ export const PROOF: readonly ProofRow[] = [
   },
   {
     claim: "Weight",
-    model: "wh_loglin_r11_v1 (image) and tape formulas",
+    model: "wh_loglin_r11_v1 (photo) and tape formulas",
     results: [
-      { figure: "8.7%", label: "MAPE, image path" },
-      { figure: "5.4%", label: "MAPE, tape path" },
+      { figure: "8.7%", label: "MAPE on the photo path, withers height from a tape" },
+      { figure: "5.4%", label: "MAPE with tape heart girth" },
     ],
     dataset: "R11: 71 cattle side photos, one breed group, 6-fold cross-validation.",
     limit:

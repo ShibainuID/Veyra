@@ -1,7 +1,7 @@
 import "./landing.css";
 
 import { ArrowRight } from "lucide-react";
-import { useEffect, useRef, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { Link } from "react-router";
 import { TagLogo } from "../../app/TagLogo";
 import { buttonClasses } from "../../components/Button";
@@ -9,7 +9,7 @@ import { EarTag } from "../../components/EarTag";
 import { Provenance } from "../../components/Provenance";
 import { Stamp } from "../../components/Stamp";
 import { useMediaQuery } from "../../lib/use-media-query";
-import { AUDIENCES, JOURNEY, LIMITS, PROOF, ROLES, RULES, STEP_IDS, type JourneyStep } from "./content";
+import { AUDIENCES, JOURNEY, LIMITS, PROOF, ROLES, RULES, STEP_IDS, type Evidence } from "./content";
 import { useStampCount } from "./stamps";
 
 const TITLE = "VEYRA · Know every animal. Protect every asset.";
@@ -68,10 +68,10 @@ function PitchNav() {
   );
 }
 
-function Hero() {
+function Hero({ tagRef }: { tagRef: RefObject<HTMLDivElement | null> }) {
   return (
     <section className="pitch-hero" aria-labelledby="pitch-title">
-      <div className="pitch-tag pitch-tag-hero">
+      <div ref={tagRef} className="pitch-tag pitch-tag-hero">
         <Hole />
         <span className="pitch-tag-number figures" aria-hidden="true">
           001
@@ -80,7 +80,7 @@ function Hero() {
           Know every animal. Protect every asset.
         </h1>
         <p className="pitch-sub">
-          One passport per cow links its muzzle-verified identity, its value, what the cameras saw, and its insurance.
+          One passport per cow links its muzzle-based identity, its value, what the cameras saw, and its insurance.
         </p>
         <p className="pitch-who">For farm managers, livestock insurers, and the vets between them.</p>
       </div>
@@ -106,19 +106,20 @@ function Hero() {
             <Stamp kind="posted" text="Identity · muzzle match" className="pitch-stamp-lg" />
             <span className="pitch-fact">
               <b className="figures">92.5%</b> correct at threshold, <b className="figures">1.4%</b> unknown-animal false
-              match · held-out test animals
+              match · held-out test animals, US feedlot photos
             </span>
           </li>
           <li>
             <Stamp kind="approved" text="Tracked · barn CCTV" className="pitch-stamp-lg" />
             <span className="pitch-fact">
-              Recall <b className="figures">0.997</b>, MOTA <b className="figures">0.976</b> · 8-Calves test video, 10 min
+              Recall <b className="figures">0.997</b>, MOTA <b className="figures">0.976</b> · 8-Calves test video, 10 min, one pen
             </span>
           </li>
           <li>
-            <Stamp kind="approved" text="Weighed · side photo" className="pitch-stamp-lg" />
+            <Stamp kind="approved" text="Weighed · photo path" className="pitch-stamp-lg" />
             <span className="pitch-fact">
-              <b className="figures">8.7%</b> MAPE from the image, <b className="figures">5.4%</b> with a tape · 71 cattle
+              <b className="figures">8.7%</b> MAPE on the photo path with withers height from a tape,{" "}
+              <b className="figures">5.4%</b> with tape heart girth · 71 cattle
             </span>
           </li>
           <li>
@@ -130,41 +131,67 @@ function Hero() {
   );
 }
 
-/** The traveling tag: Sari's tag, sticky beside the story, collecting one stamp per journey step. */
-function Companion({ count, reduced }: { count: number; reduced: boolean }) {
-  // Stamps that land together (a jump to a later step) press one after another.
-  const shown = useRef(count);
-  const firstNew = shown.current;
-  useEffect(() => {
-    shown.current = count;
-  }, [count]);
+/**
+ * Stamps that land in one batch (a jump to a later step) press one after another. Each keeps its
+ * press until its own animation ends, so a fast scroll never strips a press halfway through.
+ */
+function usePressing(count: number, reduced: boolean) {
+  const [seen, setSeen] = useState(count);
+  const [pressing, setPressing] = useState<ReadonlyMap<number, number>>(() => new Map());
+  if (count !== seen) {
+    setSeen(count);
+    if (count > seen && !reduced) {
+      const next = new Map(pressing);
+      for (let index = seen; index < count; index++) next.set(index, (index - seen) * 140);
+      setPressing(next);
+    }
+  }
+  const done = (index: number) =>
+    setPressing((prev) => {
+      if (!prev.has(index)) return prev;
+      const next = new Map(prev);
+      next.delete(index);
+      return next;
+    });
+  return { pressing, done };
+}
 
+/**
+ * The traveling tag, sticky beside the story. It appears only once the hero tag has left the
+ * viewport (a hand-off, not a second tag), reads "Tag 001" until Sari is enrolled, then collects
+ * one dated stamp per journey step.
+ */
+function Companion({ count, reduced, shown }: { count: number; reduced: boolean; shown: boolean }) {
+  const { pressing, done } = usePressing(count, reduced);
+  const enrolled = count > 0;
   return (
     <aside className="pitch-companion-col" aria-labelledby="companion-name">
-      <div className="pitch-tag pitch-tag-companion">
+      <div className="pitch-tag pitch-tag-companion" data-shown={shown ? "" : undefined}>
         <Hole />
         <span className="pitch-tag-number pitch-tag-number-sm figures" aria-hidden="true">
           001
         </span>
         <p id="companion-name" className="text-lg font-heavy">
-          Sari
+          {enrolled ? "Sari · 001" : "Tag 001"}
         </p>
-        <p className="figures text-sm">animal-demo-001</p>
+        <p className={enrolled ? "figures text-sm" : "text-sm"}>{enrolled ? "animal-demo-001" : "Not enrolled yet"}</p>
         <p className="sr-only">
           {count} of {JOURNEY.length} journey steps stamped.
         </p>
         <ol className="pitch-companion-stamps">
           {JOURNEY.map((step, index) => {
             const stamped = index < count;
+            const delay = pressing.get(index);
             return (
               <li key={step.id}>
                 <a href={`#step-${step.id}`} className="pitch-companion-link">
                   {stamped ? (
                     <span
                       className="pitch-press"
-                      style={{ "--press-delay": `${Math.max(0, index - firstNew) * 140}ms` } as CSSProperties}
+                      style={{ "--press-delay": `${delay ?? 0}ms` } as CSSProperties}
+                      onAnimationEnd={() => done(index)}
                     >
-                      <Stamp kind={step.kind} text={step.stamp} press={!reduced && index >= firstNew} />
+                      <Stamp kind={step.kind} text={step.stamp} press={delay !== undefined} />
                     </span>
                   ) : (
                     <span className="pitch-slot">{step.title}</span>
@@ -187,11 +214,34 @@ function Companion({ count, reduced }: { count: number; reduced: boolean }) {
   );
 }
 
-function Shot({ src, alt, caption }: JourneyStep["image"]) {
+/** Whether the element is on screen: false once it has scrolled out (true without IntersectionObserver). */
+function useOnScreen(ref: RefObject<Element | null>): boolean {
+  const [onScreen, setOnScreen] = useState(true);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver((entries) => setOnScreen(entries.at(-1)?.isIntersecting ?? true));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ref]);
+  return onScreen;
+}
+
+function Shot({ image, guard = false }: { image: Evidence; guard?: boolean }) {
   return (
-    <figure className="pitch-shot">
+    <figure className="pitch-shot" data-guard={guard ? "" : undefined}>
       <div className="evidence-frame">
-        <img src={src} alt={alt} width={1440} height={1080} loading="lazy" decoding="async" />
+        <picture>
+          {image.mobile && (
+            <source
+              media="(max-width: 39.9375rem)"
+              srcSet={image.mobile.src}
+              width={image.mobile.width}
+              height={image.mobile.height}
+            />
+          )}
+          <img src={image.src} alt={image.alt} width={image.width} height={image.height} loading="lazy" decoding="async" />
+        </picture>
         {CORNERS.map((corner) => (
           <svg key={corner} className="reg-mark" data-corner={corner} viewBox="0 0 18 18" aria-hidden="true" focusable="false">
             <path d="M1.5 18V1.5H18" fill="none" stroke="currentColor" strokeWidth="3" />
@@ -199,7 +249,7 @@ function Shot({ src, alt, caption }: JourneyStep["image"]) {
         ))}
       </div>
       <figcaption className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <span className="font-bold">{caption}</span>
+        <span className="font-bold">{image.caption}</span>
         <span className="flex items-center gap-2 text-sm text-muted">
           App screenshot, demo data
           <Provenance source="simulated" />
@@ -277,7 +327,8 @@ function Journey() {
               {/* Below 1024px the traveling tag steps aside, and each step carries its own stamp. */}
               <Stamp kind={step.kind} text={step.stamp} className="pitch-step-stamp" />
             </div>
-            <Shot {...step.image} />
+            <Shot image={step.image} />
+            {step.guard && <Shot image={step.guard} guard />}
           </li>
         ))}
       </ol>
@@ -352,9 +403,13 @@ function Control() {
           ))}
         </ul>
         <Shot
-          src="/pitch/approvals.webp"
-          alt="The Approvals screen after the manager stamped the premium payment: the history shows the policy application and the 87.36 USD premium, each with a green POSTED stamp, and the detail panel shows the payload hash, version 1, the evidence manifest, and the sandbox balance after."
-          caption="Approvals · posted with the manager's stamp"
+          image={{
+            src: "/pitch/approvals.webp",
+            width: 1440,
+            height: 1080,
+            alt: "The Approvals screen after the manager stamped the premium payment: the history shows the policy application and the 87.36 USD premium, each with a green POSTED stamp, and the detail panel shows the payload hash, version 1, the evidence manifest, and the sandbox balance after.",
+            caption: "Approvals · posted with the manager's stamp",
+          }}
         />
       </div>
     </section>
@@ -462,6 +517,8 @@ export function LandingPage() {
   usePageMeta();
   const reduced = useMediaQuery("(prefers-reduced-motion: reduce)");
   const count = useStampCount(STEP_IDS, reduced);
+  const heroTag = useRef<HTMLDivElement>(null);
+  const heroOnScreen = useOnScreen(heroTag);
   return (
     <div className="pitch">
       <a
@@ -472,9 +529,9 @@ export function LandingPage() {
       </a>
       <PitchNav />
       <main id="main" tabIndex={-1} className="outline-none">
-        <Hero />
+        <Hero tagRef={heroTag} />
         <div className="pitch-body">
-          <Companion count={count} reduced={reduced} />
+          <Companion count={count} reduced={reduced} shown={!heroOnScreen} />
           <div className="pitch-sections">
             <Problem />
             <Journey />

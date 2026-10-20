@@ -232,7 +232,22 @@ html:has(.pitch) {
 .pitch-tag-companion {
   position: sticky;
   top: var(--space-6);
-  padding: 5rem var(--space-6) var(--space-8);
+  padding: 5rem 1.25rem var(--space-8);
+  /* Held back while the hero tag is on screen, then handed off: it grows in from slightly small. */
+  visibility: hidden;
+  opacity: 0;
+  scale: 0.92;
+  transform-origin: 50% 0;
+  transition:
+    opacity var(--dur-slow) var(--ease-out-quart),
+    scale var(--dur-slow) var(--ease-out-quart),
+    visibility 0s linear var(--dur-slow);
+}
+.pitch-tag-companion[data-shown] {
+  visibility: visible;
+  opacity: 1;
+  scale: 1;
+  transition-delay: 0s;
 }
 .pitch-tag-companion .pitch-tag-hole {
   width: 2.75rem;
@@ -388,8 +403,47 @@ html:has(.pitch) {
   min-width: 0;
 }
 .pitch-shot .evidence-frame {
+  /* Each capture keeps its own proportions: focused crops, not a fixed 4:3 window. */
+  aspect-ratio: auto;
   outline: 2px solid var(--ink);
   outline-offset: -2px;
+}
+/* A mount around the capture, so the registration marks sit on the frame, not on the screen inside it. */
+.pitch-shot .evidence-frame {
+  padding: 1.25rem;
+  background: var(--surface-2);
+}
+.pitch-shot .evidence-frame .reg-mark {
+  color: var(--ink);
+  filter: none;
+}
+.pitch-shot .reg-mark[data-corner="tl"] {
+  top: 3px;
+  left: 3px;
+}
+.pitch-shot .reg-mark[data-corner="tr"] {
+  top: 3px;
+  right: 3px;
+}
+.pitch-shot .reg-mark[data-corner="br"] {
+  right: 3px;
+  bottom: 3px;
+}
+.pitch-shot .reg-mark[data-corner="bl"] {
+  bottom: 3px;
+  left: 3px;
+}
+.pitch-shot picture img {
+  outline: 1px solid var(--line);
+}
+.pitch-shot picture,
+.pitch-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.pitch-shot[data-guard] {
+  max-width: 30rem;
 }
 
 /* Proof: the shared data table, top-aligned, stacking to one labeled column when narrow. */
@@ -542,7 +596,7 @@ html:has(.pitch) {
 
   .pitch-body {
     display: grid;
-    grid-template-columns: 20rem minmax(0, 1fr);
+    grid-template-columns: 24rem minmax(0, 1fr);
     column-gap: clamp(2.5rem, 4vw, var(--space-16));
     padding: 0 var(--space-12) 0 var(--space-16);
   }
