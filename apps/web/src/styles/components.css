@@ -327,6 +327,33 @@
   color: var(--ink);
 }
 
+/* A table that drops columns to fit sits beside a panel on a tablet: between its stacking point and
+   1024px of container its cells pad 8px a side, so the columns fit without a horizontal scroll. */
+@container (min-width: 34rem) and (max-width: 63.9375rem) {
+  .dt-wrap[data-stack="narrow"] :is(.dt td, .dt th[scope="col"]) {
+    padding-inline: var(--space-2);
+  }
+  .dt-wrap[data-stack="narrow"] .dt td .rounded-pill {
+    gap: var(--space-1);
+    padding-inline: 0.625rem;
+  }
+}
+/* Beside the 440px passbook a two-word status ("Observation gap", "Not covered") may take two lines
+   inside its pill rather than be cut: every word stays visible and the row still keeps to 64px. */
+@container (min-width: 34rem) and (max-width: 39.9375rem) {
+  .dt-wrap[data-stack="narrow"] .dt td .rounded-pill {
+    height: auto;
+    min-height: 2rem;
+    padding-block: 0.125rem;
+    line-height: 1.2;
+    white-space: normal;
+  }
+  .dt-wrap[data-stack="narrow"] .dt td .rounded-pill > .truncate {
+    overflow: visible;
+    white-space: normal;
+  }
+}
+
 /* Stacked rows: below 720px of container, or below 544px for a table that drops columns to fit. */
 .dt-stacked-only {
   display: none;

@@ -67,6 +67,29 @@ function shortAlertLabel(kind: string): string {
   return "Alert";
 }
 
+function awaitingLabel(count: number): string {
+  return count === 1 ? "Awaiting" : `${count} awaiting`;
+}
+
+/**
+ * Beside the passbook on a tablet (lg up to xl) a cell keeps to its first line so the table fits
+ * at 64px rows: the rest is visually hidden but still read, and it rides in the row's tooltip.
+ */
+const TABLET_HIDDEN = "lg:max-xl:sr-only";
+
+/** The row's tooltip: what the tablet layout moves out of the cells, so a hover still finds it. */
+export function rowTitle(row: HerdItem): string {
+  const parts = [`${row.name}, ${row.breed} (${row.id})`];
+  const product = row.coverage.product_id ? productName(row.coverage.product_id) : null;
+  if (product) parts.push(`Cover: ${product}`);
+  parts.push(`Health: ${row.health.reason}`);
+  if (row.alerts.open_count > 0) {
+    parts.push(`${row.alerts.kinds.length > 0 ? row.alerts.kinds.map(shortAlertLabel).join(", ") : "Alert"} alert open`);
+  }
+  if (row.awaiting_approval_count > 0) parts.push(`${awaitingLabel(row.awaiting_approval_count)} approval`);
+  return parts.join(" · ");
+}
+
 /** Sorts the most urgent health state last, so a descending sort puts it on top. */
 const HEALTH_ORDER: readonly HerdItem["health"]["status"][] = [
   "not_monitored",
@@ -97,7 +120,8 @@ const COLUMNS: readonly Column<HerdItem>[] = [
         <span className="flex flex-col text-sm font-regular text-muted">
           {/* Below xl the tag's printed number carries the ID, so the row keeps to 64px. */}
           <Mono className="hidden whitespace-nowrap xl:inline">{row.id}</Mono>
-          <span>{row.breed}</span>
+          {/* Beside the passbook the breed steps out of sight (row tooltip, passbook, passport) but is still read. */}
+          <span className={TABLET_HIDDEN}>{row.breed}</span>
         </span>
       </span>
     ),
@@ -125,7 +149,7 @@ const COLUMNS: readonly Column<HerdItem>[] = [
       <span className="flex flex-col items-start gap-1">
         <StatusPill {...coveragePill(row.coverage.status)} />
         {row.coverage.product_id && (
-          <span className="max-w-28 truncate text-sm text-muted max-md:max-w-none max-md:whitespace-normal xl:max-w-none xl:whitespace-normal" title={productName(row.coverage.product_id) ?? undefined}>
+          <span className={`text-sm text-muted ${TABLET_HIDDEN}`}>
             {productName(row.coverage.product_id)}
           </span>
         )}
@@ -150,18 +174,22 @@ const COLUMNS: readonly Column<HerdItem>[] = [
   {
     id: "health",
     header: "Health",
-    width: "172px",
+    width: "152px",
     sortValue: (row) => HEALTH_ORDER.indexOf(row.health.status) * 100 + row.awaiting_approval_count,
     cell: (row) => (
-      <span className="flex flex-col items-start gap-1" title={row.health.reason}>
+      <span className="flex flex-col items-start gap-1">
         <StatusPill {...healthPill(row.health.status)} />
+        {/* Beside the passbook the cell keeps to its pill; the alert and the waiting line stay read and
+            show in the row tooltip, and the passbook beside the table prints the waiting line itself. */}
         {row.alerts.open_count > 0 && (
-          <span className="text-sm text-muted">
+          <span className={`text-sm text-muted ${TABLET_HIDDEN}`}>
             {row.alerts.kinds.length > 0 ? row.alerts.kinds.map(shortAlertLabel).join(", ") : "Alert"} alert open
           </span>
         )}
         {row.awaiting_approval_count > 0 && (
-          <StatusPill tone="awaiting" label={row.awaiting_approval_count === 1 ? "Awaiting" : `${row.awaiting_approval_count} awaiting`} />
+          <span className={TABLET_HIDDEN}>
+            <StatusPill tone="awaiting" label={awaitingLabel(row.awaiting_approval_count)} />
+          </span>
         )}
       </span>
     ),
@@ -191,7 +219,7 @@ function ExposureCell({ row, columnSource }: { row: HerdItem; columnSource: Sour
         low={row.valuation.value_low_minor}
         high={row.valuation.value_high_minor}
         currency={row.valuation.currency}
-        className="font-bold whitespace-nowrap"
+        className="font-bold leading-tight"
       />
       {/* A row whose source differs from the column's carries its own chip; stacked rows (no header) always do. */}
       {source && <Provenance source={source} className={differs ? undefined : "dt-stacked-only"} />}
@@ -358,6 +386,7 @@ export function HerdPage() {
           rows={rows}
           rowKey={(row) => row.id}
           rowHref={(row) => hrefFor(row.id)}
+          rowTitle={rowTitle}
           selectedKey={wide ? panelAnimal : selectedParam}
           loading={herd.isPending}
           loadingRows={6}
