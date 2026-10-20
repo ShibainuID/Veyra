@@ -33,7 +33,15 @@ FastAPI + SQLAlchemy on PostgreSQL. `persistence/models.py` holds every core rec
 | Audit | `domain/audit.py` | Append-only events written in the same transaction as the change |
 | Wallet safety | `persistence/models.py` | Unique idempotency key per farm; at most one live execution per action (partial unique index) |
 
-Endpoints so far: `GET /api/v1/health`, `GET /api/v1/me`, `POST /api/v1/media`, `GET /api/v1/media/{id}`, `GET /api/v1/jobs/{id}`, `GET /api/v1/audit-events`.
+Endpoints (all under `/api/v1`):
+
+| Area | Endpoints |
+| --- | --- |
+| Foundation | `GET /health`, `GET /me`, `POST /media`, `GET /media/{id}`, `GET /jobs/{id}`, `GET /audit-events` |
+| Enrollment (Phase 2) | `POST /enrollments`, `GET /enrollments`, `GET /enrollments/{id}`, `POST /enrollments/{id}/video`, `POST /enrollments/{id}/process` (202 + job), `POST /enrollments/{id}/confirm`, `POST /enrollments/{id}/reject` |
+| Passport (Phase 2) | `GET /animals`, `GET /animals/{id}/passport`, `POST /animals/{id}/estimates/{estimate_id}/confirm`, `POST /animals/{id}/valuations` |
+
+Enrollment flow: `created -> uploaded -> processing -> ready | needs_review -> confirmed | rejected` (`failed` when processing exhausts its retries). The worker runs the video, muzzle, weight, and age adapters and computes the muzzle reference features, so the API process never loads models. Confirmation is a human decision: uncertain identity, a possible duplicate, or any review reason needs `acknowledge_review: true`; a missing muzzle view blocks confirmation. Only managers confirm estimates and create valuations, and valuations need a confirmed identity and a confirmed weight. Domain code depends on `domain/perception.py`; tests use a deterministic fake (`tests/fakes.py`).
 
 ## Setup
 
@@ -53,6 +61,7 @@ Run:
 
 ```bash
 python seed.py                        # tables + demo farm + one user per role; tokens in var/dev_tokens.json
+python seed.py --reset                # development only: drop and recreate all tables
 uvicorn main:app --reload             # API on :8000
 python -m workers.runner              # job worker
 ```
