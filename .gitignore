@@ -8,3 +8,8 @@ ml/kaggle/kernel_muzzle/*.ipynb
 services/api/.venv/
 services/api/var/
 .pytest_cache/
+ml/kaggle/dataset_8calves_det/*.zip
+ml/kaggle/kernel_detector/*.ipynb
+/runs/
+ml/notebooks/_smoke_*.ipynb
+ml/notebooks/*.pt
