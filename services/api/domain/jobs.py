@@ -45,7 +45,7 @@ def succeed(session: Session, job: Job, result: dict) -> None:
 
 
 def fail(session: Session, job: Job, error: str, max_attempts: int) -> None:
-    job.error = error[:4000]
+    job.error = error[-4000:]
     if job.attempts < max_attempts:
         job.status = "queued"
         job.started_at = None
