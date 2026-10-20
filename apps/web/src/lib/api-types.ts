@@ -72,6 +72,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/animals/{animal_id}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Documents */
+        get: operations["list_documents_api_v1_animals__animal_id__documents_get"];
+        put?: never;
+        /**
+         * Add Document
+         * @description Keep a document on the passport. An `ownership` document also becomes the animal's ownership reference,
+         *     which the Mortality + Theft eligibility rule reads.
+         */
+        post: operations["add_document_api_v1_animals__animal_id__documents_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit-events": {
         parameters: {
             query?: never;
@@ -1098,6 +1120,45 @@ export interface components {
              */
             updated_at: string;
         };
+        /** AnimalDocumentList */
+        AnimalDocumentList: {
+            /** Items */
+            items: components["schemas"]["AnimalDocumentOut"][];
+        };
+        /**
+         * AnimalDocumentOut
+         * @description A file on the passport. `url` is a signed, expiring download link; documents download as attachments.
+         */
+        AnimalDocumentOut: {
+            /** Id */
+            id: string;
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ownership" | "purchase_receipt" | "vet_record" | "other";
+            /** Title */
+            title: string;
+            /** Filename */
+            filename: string;
+            /** Content Type */
+            content_type: string;
+            /** Bytes */
+            bytes: number;
+            /** Sha256 */
+            sha256: string;
+            /** Url */
+            url: string;
+            /** Uploaded By */
+            uploaded_by: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** AnimalIn */
         AnimalIn: {
             /** Name */
@@ -1297,6 +1358,21 @@ export interface components {
             data: {
                 [key: string]: unknown;
             };
+        };
+        /** Body_add_document_api_v1_animals__animal_id__documents_post */
+        Body_add_document_api_v1_animals__animal_id__documents_post: {
+            /**
+             * File
+             * @description A PDF, JPEG, or PNG, up to 10 MB.
+             */
+            file: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "ownership" | "purchase_receipt" | "vet_record" | "other";
+            /** Title */
+            title?: string | null;
         };
         /** Body_upload_video_api_v1_enrollments__enrollment_id__video_put */
         Body_upload_video_api_v1_enrollments__enrollment_id__video_put: {
@@ -3391,6 +3467,117 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_documents_api_v1_animals__animal_id__documents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalDocumentList"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_document_api_v1_animals__animal_id__documents_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                animal_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_document_api_v1_animals__animal_id__documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnimalDocumentOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };
