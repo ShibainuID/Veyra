@@ -1,0 +1,146 @@
+{
+ "photos": 71,
+ "heart_girth_from_photo_mape": 0.0548,
+ "weight": {
+  "baseline_predict_mean": {
+   "mape": 0.158,
+   "bias": 0.0336,
+   "within_10pct": 0.437,
+   "band_80pct": 0.2262
+  },
+  "image_heart_girth_only": {
+   "mape": 0.1098,
+   "bias": 0.009,
+   "within_10pct": 0.535,
+   "band_80pct": 0.1754
+  },
+  "image_heart_girth_plus_withers_height": {
+   "mape": 0.088,
+   "bias": 0.0026,
+   "within_10pct": 0.577,
+   "band_80pct": 0.1264
+  },
+  "withers_height_only (image path)": {
+   "mape": 0.0871,
+   "bias": 0.0022,
+   "within_10pct": 0.592,
+   "band_80pct": 0.1213
+  },
+  "tape_heart_girth_formulas (tape path)": {
+   "mape": 0.0537,
+   "bias": 0.0085,
+   "within_10pct": 0.859,
+   "band_80pct": 0.0969
+  }
+ },
+ "adapter_smoke": [
+  {
+   "num": 1,
+   "true_kg": 545,
+   "range": [
+    451.6,
+    575.9
+   ],
+   "review": null
+  },
+  {
+   "num": 2,
+   "true_kg": 507,
+   "range": [
+    419.1,
+    534.4
+   ],
+   "review": null
+  },
+  {
+   "num": 3,
+   "true_kg": 450,
+   "range": [
+    450.6,
+    574.6
+   ],
+   "review": null
+  },
+  {
+   "num": 4,
+   "true_kg": 604,
+   "range": [
+    491.2,
+    626.4
+   ],
+   "review": null
+  },
+  {
+   "num": 5,
+   "true_kg": 448,
+   "range": [
+    374.1,
+    477.1
+   ],
+   "review": null
+  },
+  {
+   "num": 6,
+   "true_kg": 450,
+   "range": [
+    419.5,
+    535.0
+   ],
+   "review": null
+  },
+  {
+   "num": 7,
+   "true_kg": 495,
+   "range": [
+    450.0,
+    573.9
+   ],
+   "review": null
+  },
+  {
+   "num": 8,
+   "true_kg": 434,
+   "range": [
+    412.2,
+    525.7
+   ],
+   "review": null
+  },
+  {
+   "num": 9,
+   "true_kg": 400,
+   "range": [
+    381.4,
+    486.4
+   ],
+   "review": null
+  },
+  {
+   "num": 10,
+   "true_kg": 467,
+   "range": [
+    403.4,
+    514.4
+   ],
+   "review": null
+  },
+  {
+   "num": 11,
+   "true_kg": 466,
+   "range": [
+    403.8,
+    514.9
+   ],
+   "review": null
+  },
+  {
+   "num": 12,
+   "true_kg": 362,
+   "range": [
+    360.2,
+    459.3
+   ],
+   "review": null
+  }
+ ]
+}

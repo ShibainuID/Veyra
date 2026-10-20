@@ -1,0 +1,8 @@
+{
+  "sample-enrollment-001": {
+    "months_low": 24,
+    "months_high": 30,
+    "dentition_stage": "two pairs of permanent incisors",
+    "note": "Simulated for the demo sample. The range follows a common dentition rule of thumb and was not produced by a model."
+  }
+}
