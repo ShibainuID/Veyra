@@ -245,12 +245,73 @@ class IllustrativePayout(BaseModel):
     note: str
 
 
+IdentityOutcome = Literal["match", "mismatch", "uncertain"]
+IdentitySource = Literal["prototype", "simulated"]
+
+
+class IdentityCheckRequest(BaseModel):
+    """The demo path without a camera: a fixture outcome, labeled simulated."""
+
+    sample: Literal["match", "mismatch"]
+
+
+class IdentityCandidate(BaseModel):
+    animal_id: str | None
+    animal_name: str | None = None
+    inliers: int | None = None
+    cosine: float | None = None
+
+
+class IdentityScan(BaseModel):
+    media_url: str | None
+    content_type: str | None
+    crop_url: str | None
+
+
+class IdentityReference(BaseModel):
+    reference_id: str
+    crop_url: str | None
+    frame_url: str | None
+    note: str | None = None
+
+
+class IdentityCheckOut(BaseModel):
+    id: str
+    claim_id: str
+    animal_id: str
+    outcome: IdentityOutcome
+    reason: str | None
+    matched_animal_id: str | None
+    matched_animal_name: str | None
+    candidates: list[IdentityCandidate]
+    inliers: int | None
+    accept_inliers: int
+    source: IdentitySource
+    method_version: str
+    input: Literal["photo", "video", "sample"] | None
+    fallback: dict[str, Any] | None = None
+    checked_by: str
+    checked_by_name: str | None
+    created_at: UTCDateTime
+    scan: IdentityScan
+    reference: IdentityReference | None
+
+
 class ClaimDetail(ClaimOut):
     animal_id: str
     checklist: list[ChecklistItem]
     missing: list[str]
     product_id: str | None
     illustrative_payout: IllustrativePayout | None
+    incident_kind: str | None = None
+    # A death claim needs a matching muzzle re-scan (`identity_verified`) before it can be submitted.
+    identity_check_required: bool = False
+    identity_checks: list[IdentityCheckOut] = Field(default_factory=list)
+
+
+class IdentityCheckResult(BaseModel):
+    check: IdentityCheckOut
+    claim: ClaimDetail
 
 
 class ClaimList(BaseModel):

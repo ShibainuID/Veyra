@@ -5,6 +5,10 @@ facts), and professional findings (vet notes) stay in distinct fields. An alert 
 A claim draft needs an active policy whose covered perils include the incident kind, and builds its checklist
 from the product's `claim_requirements`. Proposing `CLAIM_SUBMISSION` with anything missing is refused with
 `EVIDENCE_INCOMPLETE`, and the missing keys are kept on the claim (`blocked_reason`).
+
+A `death` incident also requires `identity_verified`: the latest claim-time muzzle re-scan
+(`domain.identity_check`) matched the enrolled animal. The requirement is added here for every death incident,
+whatever the product lists, so no death-covering product can skip it; a theft has no animal to scan.
 """
 
 from datetime import UTC, datetime
@@ -21,7 +25,8 @@ from domain.ids import new_id
 from domain.passbook import PassbookContext, register_formatter
 from domain.valuation import farm_animal
 from persistence.models import (
-    ActionExecution, AgentAction, Alert, Animal, AnimalReference, AuditEvent, Claim, Incident, Policy, User,
+    ActionExecution, AgentAction, Alert, Animal, AnimalReference, AuditEvent, Claim, IdentityCheck, Incident, Policy,
+    User,
 )
 
 FINDING_TYPES = ("vet_assessment", "vet_health_record")
@@ -37,7 +42,10 @@ CHECKLIST_LABELS = {
     "vet_assessment": "Veterinary assessment",
     "ownership_document": "Ownership document",
     "vet_health_record": "Veterinary health record",
+    "identity_verified": "Muzzle re-scan matches the enrolled animal",
 }
+# Incident kinds whose claim needs a muzzle re-scan of the animal (`identity_verified`).
+IDENTITY_CHECK_KINDS = ("death",)
 
 
 def _actor(principal: Principal) -> tuple[str, str]:
@@ -103,7 +111,7 @@ def add_finding(session: Session, principal: Principal, incident_id: str, *, sum
     # An open claim on this incident reads its checklist again, so the new finding counts at once.
     for claim in session.scalars(select(Claim).where(Claim.farm_id == principal.farm_id, Claim.incident_id == incident.id,
                                                      Claim.status.in_(OPEN_CLAIM_STATUSES))):
-        _refresh(session, claim)
+        refresh(session, claim)
     actor_type, actor_id = _actor(principal)
     audit.record(session, farm_id=principal.farm_id, actor_type=actor_type, actor_id=actor_id,
                  event_type="incident.finding_added", subject_type="incident", subject_id=incident.id,
@@ -162,6 +170,30 @@ def _linked_alert(session: Session, incident: Incident) -> Alert | None:
     return None
 
 
+def latest_identity_check(session: Session, claim_id: str) -> IdentityCheck | None:
+    return session.scalar(select(IdentityCheck).where(IdentityCheck.claim_id == claim_id)
+                          .order_by(IdentityCheck.created_at.desc(), IdentityCheck.id.desc()).limit(1))
+
+
+def requirements(product: dict, incident: Incident) -> list[str]:
+    keys = list(product["claim_requirements"])
+    if incident.kind in IDENTITY_CHECK_KINDS and "identity_verified" not in keys:
+        keys.append("identity_verified")
+    return keys
+
+
+def _identity_detail(check: IdentityCheck | None) -> str | None:
+    if check is None:
+        return "Not scanned yet"
+    simulated = " (simulated)" if check.source == "simulated" else ""
+    if check.outcome == "match":
+        support = f" · {check.inliers} inliers" if check.inliers is not None else ""
+        return f"Match{support}{simulated}"
+    if check.outcome == "mismatch":
+        return f"{check.reason or 'Muzzle scan did not match'}{simulated}"
+    return f"Uncertain: {check.reason or 'retake the scan'}{simulated}"
+
+
 def compute_checklist(session: Session, claim: Claim) -> list[dict]:
     incident = session.get(Incident, claim.incident_id)
     policy = session.get(Policy, claim.policy_id)
@@ -172,6 +204,8 @@ def compute_checklist(session: Session, claim: Claim) -> list[dict]:
     alert = _linked_alert(session, incident)
     assessment = _finding(incident, "vet_assessment")
     health = _finding(incident, "vet_health_record")
+    keys = requirements(product, incident)
+    check = latest_identity_check(session, claim.id) if "identity_verified" in keys else None
     sources = {
         "identity_reference": muzzle,
         "active_policy": policy.id if policy.status == "active" and in_cover(policy, incident.occurred_at) else None,
@@ -181,20 +215,22 @@ def compute_checklist(session: Session, claim: Claim) -> list[dict]:
         "vet_assessment": assessment["id"] if assessment else None,
         "ownership_document": (animal.ownership_doc_refs or [None])[0],
         "vet_health_record": health["id"] if health else None,
+        "identity_verified": check.id if check is not None and check.outcome == "match" else None,
     }
     declarer = session.get(User, claim.declaration_by) if claim.declaration_confirmed and claim.declaration_by else None
-    details = {"farmer_declaration": f"Confirmed by {declarer.name}" if declarer else None}
+    details = {"farmer_declaration": f"Confirmed by {declarer.name}" if declarer else None,
+               "identity_verified": _identity_detail(check) if "identity_verified" in keys else None}
     return [{"key": key, "label": CHECKLIST_LABELS.get(key, key.replace("_", " ").capitalize()),
              "status": "present" if sources.get(key) else "missing", "ref": sources.get(key),
              "detail": details.get(key)}
-            for key in product["claim_requirements"]]
+            for key in keys]
 
 
 def missing_keys(checklist: list[dict]) -> list[str]:
     return [item["key"] for item in checklist if item["status"] == "missing"]
 
 
-def _refresh(session: Session, claim: Claim) -> list[dict]:
+def refresh(session: Session, claim: Claim) -> list[dict]:
     checklist = compute_checklist(session, claim)
     claim.checklist = checklist
     if claim.status in OPEN_CLAIM_STATUSES:
@@ -220,7 +256,7 @@ def draft_claim(session: Session, principal: Principal, incident_id: str) -> Cla
                               .order_by(Claim.created_at.desc()).limit(1))
     if existing is not None:
         if existing.status in OPEN_CLAIM_STATUSES:
-            _refresh(session, existing)
+            refresh(session, existing)
         return existing
     covering = _covering_policy(session, incident)
     if covering is None:
@@ -234,7 +270,7 @@ def draft_claim(session: Session, principal: Principal, incident_id: str) -> Cla
                   currency=incident.currency, evidence_manifest_id=None, receipt=None, assessment_status=None)
     session.add(claim)
     session.flush()
-    checklist = _refresh(session, claim)
+    checklist = refresh(session, claim)
     actor_type, actor_id = _actor(principal)
     audit.record(session, farm_id=principal.farm_id, actor_type=actor_type, actor_id=actor_id,
                  event_type="claim.drafted", subject_type="claim", subject_id=claim.id, animal_id=claim.animal_id,
@@ -251,7 +287,7 @@ def confirm_declaration(session: Session, principal: Principal, claim_id: str) -
                           {"status": claim.status})
     claim.declaration_confirmed = True
     claim.declaration_by = principal.user_id
-    checklist = _refresh(session, claim)
+    checklist = refresh(session, claim)
     actor_type, actor_id = _actor(principal)
     audit.record(session, farm_id=principal.farm_id, actor_type=actor_type, actor_id=actor_id,
                  event_type="claim.declaration_confirmed", subject_type="claim", subject_id=claim.id,
@@ -277,8 +313,15 @@ def claim_view(session: Session, claim: Claim) -> dict:
                   "currency": claim.currency, "expression": formula["expression"], "terms_ref": formula["terms_ref"],
                   "illustrative": True, "note": formula.get("note") or "Illustrative only; the insurer assesses."}
     checklist = [{"ref": None, **item} for item in claim.checklist or []]
+    from domain import identity_check  # imports this module
+
+    incident = session.get(Incident, claim.incident_id)
     return {**_columns(claim), "checklist": checklist, "missing": missing_keys(checklist),
-            "product_id": policy.product_id if policy else None, "illustrative_payout": payout}
+            "product_id": policy.product_id if policy else None, "illustrative_payout": payout,
+            "incident_kind": incident.kind if incident else None,
+            "identity_check_required": bool(incident and incident.kind in IDENTITY_CHECK_KINDS),
+            "identity_checks": [identity_check.check_view(session, c)
+                                for c in identity_check.checks_for(session, claim.id)]}
 
 
 # CLAIM_SUBMISSION ----------------------------------------------------------------------------------------------
@@ -290,6 +333,10 @@ def claim_items(session: Session, claim: Claim, incident: Incident, policy: Poli
         if alert is not None and alert.farm_id == claim.farm_id:
             items += evidence.alert_items(session, alert)
     items += evidence.ownership_items(animal)
+    check = latest_identity_check(session, claim.id)
+    if check is not None:
+        items.append(evidence.item("identity_check", check.id, f"Muzzle re-scan at claim · {check.outcome}",
+                                   evidence.media_sha(session, check.crop_media_id)))
     if claim.declaration_confirmed:
         declarer = session.get(User, claim.declaration_by) if claim.declaration_by else None
         items.append(evidence.item("farmer_declaration", claim.id,
@@ -325,7 +372,7 @@ def block_claim(session: Session, principal: Principal, refs: dict, error: Domai
     if error.code != "EVIDENCE_INCOMPLETE":
         return False
     claim = farm_claim(session, principal.farm_id, refs["claim_id"])
-    _refresh(session, claim)
+    refresh(session, claim)
     claim.status = "draft"
     claim.blocked_reason = {"code": error.code, "message": error.message, "missing": list(error.details["missing"]),
                             "at": clock.isoformat(clock.now())}
