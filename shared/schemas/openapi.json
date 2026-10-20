@@ -5278,6 +5278,17 @@
               }
             ],
             "title": "Ref"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
           }
         },
         "type": "object",
@@ -7090,6 +7101,17 @@
           "animal_id": {
             "type": "string",
             "title": "Animal Id"
+          },
+          "reported_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reported By Name"
           }
         },
         "type": "object",

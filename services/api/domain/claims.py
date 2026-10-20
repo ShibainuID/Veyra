@@ -21,11 +21,12 @@ from domain.ids import new_id
 from domain.passbook import PassbookContext, register_formatter
 from domain.valuation import farm_animal
 from persistence.models import (
-    ActionExecution, AgentAction, Alert, Animal, AnimalReference, AuditEvent, Claim, Incident, Policy,
+    ActionExecution, AgentAction, Alert, Animal, AnimalReference, AuditEvent, Claim, Incident, Policy, User,
 )
 
 FINDING_TYPES = ("vet_assessment", "vet_health_record")
-FINDING_AUTHORS = ("vet", "manager")
+# Only a vet authors a professional finding, so it stays distinct from the farm's own report (PRD 3, 8).
+FINDING_AUTHORS = ("vet",)
 OPEN_CLAIM_STATUSES = ("draft", "ready")
 CHECKLIST_LABELS = {
     "identity_reference": "Passport muzzle reference",
@@ -98,7 +99,11 @@ def add_finding(session: Session, principal: Principal, incident_id: str, *, sum
     finding = {"id": new_id("fnd"), "finding_type": finding_type, "summary": summary,
                "author_id": principal.user_id, "author_name": principal.name, "author_role": principal.role,
                "at": clock.isoformat(clock.now())}
-    incident.professional_findings.append(finding)
+    incident.professional_findings = [*(incident.professional_findings or []), finding]
+    # An open claim on this incident reads its checklist again, so the new finding counts at once.
+    for claim in session.scalars(select(Claim).where(Claim.farm_id == principal.farm_id, Claim.incident_id == incident.id,
+                                                     Claim.status.in_(OPEN_CLAIM_STATUSES))):
+        _refresh(session, claim)
     actor_type, actor_id = _actor(principal)
     audit.record(session, farm_id=principal.farm_id, actor_type=actor_type, actor_id=actor_id,
                  event_type="incident.finding_added", subject_type="incident", subject_id=incident.id,
@@ -113,8 +118,9 @@ def list_incidents(session: Session, farm_id: str, animal_id: str | None = None)
     return list(session.scalars(query.order_by(Incident.occurred_at.desc(), Incident.id)))
 
 
-def incident_view(incident: Incident) -> dict:
-    return _columns(incident)
+def incident_view(session: Session, incident: Incident) -> dict:
+    reporter = session.get(User, incident.reported_by) if incident.reported_by else None
+    return {**_columns(incident), "reported_by_name": reporter.name if reporter else None}
 
 
 # Checklist -----------------------------------------------------------------------------------------------------
@@ -176,8 +182,11 @@ def compute_checklist(session: Session, claim: Claim) -> list[dict]:
         "ownership_document": (animal.ownership_doc_refs or [None])[0],
         "vet_health_record": health["id"] if health else None,
     }
+    declarer = session.get(User, claim.declaration_by) if claim.declaration_confirmed and claim.declaration_by else None
+    details = {"farmer_declaration": f"Confirmed by {declarer.name}" if declarer else None}
     return [{"key": key, "label": CHECKLIST_LABELS.get(key, key.replace("_", " ").capitalize()),
-             "status": "present" if sources.get(key) else "missing", "ref": sources.get(key)}
+             "status": "present" if sources.get(key) else "missing", "ref": sources.get(key),
+             "detail": details.get(key)}
             for key in product["claim_requirements"]]
 
 
@@ -282,7 +291,9 @@ def claim_items(session: Session, claim: Claim, incident: Incident, policy: Poli
             items += evidence.alert_items(session, alert)
     items += evidence.ownership_items(animal)
     if claim.declaration_confirmed:
-        items.append(evidence.item("farmer_declaration", claim.id, f"Declaration by {claim.declaration_by}"))
+        declarer = session.get(User, claim.declaration_by) if claim.declaration_by else None
+        items.append(evidence.item("farmer_declaration", claim.id,
+                                   f"Declaration by {declarer.name if declarer else claim.declaration_by}"))
     return items
 
 
@@ -304,7 +315,7 @@ def build_claim_submission(session: Session, farm_id: str, refs: dict) -> action
     payload = {
         "claim_id": claim.id, "policy_id": policy.id, "incident_id": incident.id, "animal_id": animal.id,
         "provider_id": policy.provider_id, "claimed_amount_minor": claim.claimed_amount_minor,
-        "currency": claim.currency, "declaration_confirmed": True,
+        "currency": claim.currency, "declaration_confirmed": True, "terms_version": policy.terms_version,
         "evidence_manifest_version": evidence.resolve_version(session, farm_id, subject, items),
     }
     return actions.Built(payload, animal.id, *subject, items)

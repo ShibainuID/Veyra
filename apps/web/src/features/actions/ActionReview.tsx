@@ -21,6 +21,13 @@ import { fetchAction, invalidateAfterAction, useAction, useActionDecision, useEx
 import { outcomeToast, receiptRef } from "./outcome";
 import { actionTitle, type AgentAction } from "./types";
 
+/** What the amount on the review is: only a premium payment moves the sandbox wallet. */
+const AMOUNT_LABEL: Partial<Record<string, string>> = {
+  POLICY_APPLICATION: "Premium a year",
+  PREMIUM_PAYMENT: "Payment",
+  CLAIM_SUBMISSION: "Claimed",
+};
+
 export interface ActionReviewAnimal {
   id: string;
   name: string;
@@ -137,6 +144,7 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
   const title = actionTitle(action.action_type);
   const review = action.review;
   const currency = review.currency ?? "USD";
+
   const isManager = role.role === "manager";
   const expiresMs = new Date(action.expires_at).getTime() - now;
   const expiredLocally = action.status === "pending_approval" && expiresMs <= 0;
@@ -357,7 +365,7 @@ export function ActionDetails({ action, animal, evidenceOpen = false, className 
             </span>
           </Row>
         )}
-        <Row label="Amount">
+        <Row label={AMOUNT_LABEL[action.action_type] ?? "Amount"}>
           {review.amount_minor != null ? (
             <Money minor={review.amount_minor} currency={currency} className="font-bold text-ink" />
           ) : (

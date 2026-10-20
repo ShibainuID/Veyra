@@ -3,7 +3,7 @@ import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Button, ButtonLink } from "../../components/Button";
 import { ErrorNotice } from "../../components/feedback";
-import { Money, Mono, Timestamp } from "../../components/figures";
+import { Money, Mono, TimeWindow, Timestamp } from "../../components/figures";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
@@ -98,7 +98,7 @@ export function FarmerReport({ incident }: { incident: Incident }) {
         ))}
         <dt className="text-sm text-muted">Recorded</dt>
         <dd className="text-sm">
-          by <Mono>{incident.reported_by}</Mono> · <Mono>{incident.id}</Mono>
+          by {incident.reported_by_name ?? <Mono>{incident.reported_by}</Mono>} · <Mono>{incident.id}</Mono>
         </dd>
       </dl>
     </EvidenceBlock>
@@ -127,7 +127,7 @@ export function ProfessionalFindings({
   locked: boolean;
 }) {
   const findings = (incident.professional_findings ?? []) as Finding[];
-  const canAdd = (role === "vet" || role === "manager") && !locked;
+  const canAdd = role === "vet" && !locked;
   return (
     <EvidenceBlock id="assessment" icon={Stethoscope} label="Professional" source="What a veterinarian assessed" tone="vet">
       {findings.length === 0 ? (
@@ -156,7 +156,7 @@ export function ProfessionalFindings({
         <FindingForm incidentId={incident.id} needs={needs} />
       ) : (
         !locked && (
-          <p className="mt-4 text-sm text-muted">Only a vet or a manager adds professional findings. Switch role to Vet to add one.</p>
+          <p className="mt-4 text-sm text-muted">Only a vet adds a professional finding, so it stays separate from the farm's report. Switch the role to Vet to add one.</p>
         )
       )}
     </EvidenceBlock>
@@ -258,7 +258,7 @@ export function ObservedAlerts({
                   </div>
                   <p className="max-w-[65ch]">{alert.summary}</p>
                   <p className="text-sm text-muted">
-                    <Timestamp value={alert.window_start} mode="absolute" /> to <Timestamp value={alert.window_end} mode="absolute" /> ·{" "}
+                    <TimeWindow start={alert.window_start} end={alert.window_end} /> ·{" "}
                     <Link to={`/alerts/${alert.id}`} className="figures">
                       {alert.id}
                     </Link>

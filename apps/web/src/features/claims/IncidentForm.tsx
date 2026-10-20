@@ -1,4 +1,4 @@
-import { FilePlus2 } from "lucide-react";
+import { FilePlus2, FlaskConical } from "lucide-react";
 import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../components/Button";
@@ -15,6 +15,16 @@ import { useAlerts, usePolicies, type AnimalRow } from "../finance/api";
 import { perilLabel } from "../insurance/comparison";
 import { useCatalog, useRecordIncident } from "./api";
 import { INCIDENT_KINDS, type IncidentKind } from "./labels";
+
+/** The demo's sample incident for Sari (demo/fixtures/incidents.json, demo-incident-001). */
+const DEMO_INCIDENT = {
+  animalId: "animal-demo-001",
+  kind: "accidental_injury" as IncidentKind,
+  description: "Left hind lameness found at the morning check after a reduced-movement alert. Animal is standing and eating.",
+  loss: "600.00",
+  location: "Pen A",
+  foundBy: "A. Pratama",
+};
 
 export const FIELD =
   "min-h-11 w-full rounded-control border-2 border-line-strong bg-bg px-3 py-2 text-base placeholder:text-muted focus:border-ink disabled:bg-surface disabled:text-muted";
@@ -140,6 +150,25 @@ export function IncidentForm({ animals, initialAnimalId, initialAlertId, onDone 
 
   return (
     <form id="incident-form" noValidate onSubmit={onSubmit} className="flex flex-col gap-6">
+      {animalId === DEMO_INCIDENT.animalId && !description && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-control border-2 border-dashed border-line-strong px-4 py-3">
+          <p className="text-sm text-muted">Demo: fill the form with the prepared sample incident for Sari.</p>
+          <Button
+            type="button"
+            variant="secondary"
+            icon={FlaskConical}
+            onClick={() => {
+              setKind(DEMO_INCIDENT.kind);
+              setDescription(DEMO_INCIDENT.description);
+              setLoss(DEMO_INCIDENT.loss);
+              setLocation(DEMO_INCIDENT.location);
+              setFoundBy(DEMO_INCIDENT.foundBy);
+            }}
+          >
+            Use the sample incident
+          </Button>
+        </div>
+      )}
       <Field label="Animal" htmlFor={ids.animal} hint="Only animals with active cover can be claimed against." error={show("animal")}>
         <select id={ids.animal} className={FIELD} value={animalId} onChange={(e) => setAnimalId(e.target.value)}>
           {claimable.length === 0 && <option value="">No animal has active cover</option>}
@@ -192,7 +221,7 @@ export function IncidentForm({ animals, initialAnimalId, initialAlertId, onDone 
       </Field>
 
       <Field label="Description" htmlFor={ids.description} hint="What the farm saw, in plain words. This is the farmer's report." error={show("description")}>
-        <textarea id={ids.description} rows={3} className={FIELD} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Found lame in pen B with a cut on the left hind leg." />
+        <textarea id={ids.description} rows={3} className={FIELD} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Found lame at the morning check, with a cut on the left hind leg." />
       </Field>
 
       <Field
@@ -247,7 +276,7 @@ export function IncidentForm({ animals, initialAnimalId, initialAlertId, onDone 
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1.5 font-bold">Further facts (optional)</legend>
         <Field label="Where it happened" htmlFor={ids.location}>
-          <input id={ids.location} className={FIELD} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Pen B, by the water trough" />
+          <input id={ids.location} className={FIELD} value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Pen A, by the feed line" />
         </Field>
         <Field label="Found by" htmlFor={ids.foundBy}>
           <input id={ids.foundBy} className={FIELD} value={foundBy} onChange={(e) => setFoundBy(e.target.value)} placeholder="Name of the person who found it" />

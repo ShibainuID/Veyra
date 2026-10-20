@@ -12,9 +12,10 @@ from sqlalchemy.orm import Session
 from domain.canonical import sha256_hex
 from domain.eligibility import latest_estimate
 from domain.ids import new_id
+from domain.passbook import product_name
 from domain.valuation import latest_valuation, money
 from persistence.models import (
-    Alert, Animal, AnimalReference, EvidenceManifest, Incident, Media, Policy, PolicyApplication,
+    Alert, Animal, AnimalReference, Camera, EvidenceManifest, Incident, Media, Policy, PolicyApplication,
 )
 
 
@@ -96,15 +97,17 @@ def ownership_items(animal: Animal) -> list[dict]:
 
 def application_items(application: PolicyApplication, policy: Policy) -> list[dict]:
     return [item("policy_application", application.id, f"Accepted application {application.provider_ref or ''}".strip()),
-            item("policy", policy.id, f"Policy {policy.product_id} ({policy.status.replace('_', ' ')})")]
+            item("policy", policy.id, f"{policy_item(policy)['label']}, {policy.status.replace('_', ' ')}")]
 
 
 def policy_item(policy: Policy) -> dict:
-    return item("policy", policy.id, f"Policy {policy.product_id} ({policy.terms_version})")
+    return item("policy", policy.id, f"Policy {product_name(policy.product_id)} ({policy.terms_version})")
 
 
 def alert_items(session: Session, alert: Alert) -> list[dict]:
-    items = [item("alert", alert.id, f"{alert.kind} alert on {alert.camera_id}")]
+    camera = session.get(Camera, alert.camera_id) if alert.camera_id else None
+    kind = alert.kind.replace("_", " ").capitalize()
+    items = [item("alert", alert.id, f"{kind} alert on {camera.name if camera else alert.camera_id}")]
     clip = alert.clip or {}
     if clip.get("media_id"):
         items.append(item("clip", clip["media_id"], "Alert clip", _media_sha(session, clip["media_id"])))
@@ -114,13 +117,16 @@ def alert_items(session: Session, alert: Alert) -> list[dict]:
     return items
 
 
+_FINDING_WORDS = {"vet_assessment": "Vet assessment", "vet_health_record": "Vet health record"}
+
+
 def incident_items(incident: Incident) -> list[dict]:
-    items = [item("incident", incident.id, f"Incident: {incident.kind}")]
+    items = [item("incident", incident.id, f"Incident: {incident.kind.replace('_', ' ')}")]
     for document in incident.documents or []:
         ref = document.get("media_id") or document.get("ref") if isinstance(document, dict) else str(document)
         if ref:
             items.append(item("incident_document", ref, "Incident document",
                               document.get("sha256") if isinstance(document, dict) else None))
     for finding in incident.professional_findings or []:
-        items.append(item("professional_finding", finding["id"], f"{finding['finding_type']} by {finding['author_name']}"))
+        items.append(item("professional_finding", finding["id"], f"{_FINDING_WORDS.get(finding['finding_type'], finding['finding_type'])} by {finding['author_name']}"))
     return items

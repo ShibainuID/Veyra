@@ -106,7 +106,9 @@ function Submission({ claim, actions, role, animal }: { claim: Claim; actions: r
   const blocked = claim.blocked_reason as { missing?: string[]; at?: string } | null;
   const proposeError = toApiError(propose.error);
   const missingFromError = proposeError?.code === "EVIDENCE_INCOMPLETE" ? (proposeError.details.missing as string[] | undefined) : undefined;
-  const missing = missingFromError ?? blocked?.missing;
+  // A refusal names what was missing then; list only what the current checklist still lacks.
+  const stillMissing = new Set(claim.checklist.filter((item) => item.status === "missing").map((item) => item.key));
+  const missing = (missingFromError ?? blocked?.missing)?.filter((key) => stillMissing.has(key));
 
   const prepare = () =>
     propose.mutate(
