@@ -36,7 +36,8 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 
 ## 4. Monitor and ask (2:20–3:15)
 
-- **Monitor** → **Reduced-movement replay** → **Start replay**. Say: "A recorded camera scene. Each track is identified by muzzle only when the match is good enough."
+- **Monitor** → **Veo barn footage** → **Start replay**. The clip plays under VEYRA's overlay with the caption "AI-generated footage (Veo) — not a real farm". Point at the dashed **Scan zone · one animal at a time** sitting on the painted floor zone. Say: "This clip is AI-generated, and labeled so. The boxes are a real tracker run on it. When a cow is scanned she must be alone in this zone, so the camera can hand her identity to exactly one track." At 4 s `veo-11` is alone in the zone; the tracks list reads "Scanned in zone · no registered animal matched". Say: "She was enrolled on another system, not this farm, so nobody is identified. VEYRA never guesses."
+- **Reduced-movement replay** → **Start replay**. Say: "Same zone, simulated tracks. Sari is scanned alone in the zone at 3 seconds, so her track carries her identity. It would drop the moment she is out of view for over a second or pressed against another cow."
 - About 15 s later a toast says "New alert · Sari · Reduced movement" and the alert tops the **Alert feed**. Open it: observation window, the baseline window, the bars (79% below baseline), and the clip reference. Say: "This asks for an inspection. It is not a diagnosis."
 - Close the drawer, **Ask** in the top bar → **Where was animal-demo-001 last seen, and what coverage is active?** The answer names Pen A · feed line, the local time, and the active Basic Mortality cover, each a link to its record.
 
@@ -56,6 +57,9 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 
 ## Extra beats (if time allows)
 
+- **Two cows in the zone:** Monitor → **Crowded scan replay** → **Start replay**, then scrub to 0:06. Both tracks read "Identity uncertain" and "2 animals in zone — not identified". Say: "Scan one animal at a time. With two in the zone the camera can't tell which is Sari, so neither gets her identity and no alert can be pinned on her."
+- **The AI-generated phone video:** Enroll → **Use the AI-generated video** (under "Use the phone enrollment video", labeled `simulated`). It uploads `video_hp.mp4` through the normal upload and the real pipeline extracts its frames. The review names what it could not establish: views placed by position rather than detected (the "teeth" frame shows the face), no weight (no marker in view), no age. Reject it or register it; either is honest.
+
 - **Right cow at claim:** record a second incident with **Use the sample death** → on its claim, **Verify identity** → **Use sample: wrong cow** (Mismatch, submission blocked) → **Use sample: matching scan** (Match, the checklist item turns present); with the muzzle model installed, upload a muzzle photo instead for a `prototype` result.
 - **Cameras learn the herd:** on Sari's passport, **Location → Camera gallery** names which pen cameras hold the current gallery version; as Manager, **Push to cameras** publishes it and the cameras' acknowledgements arrive, labeled `simulated`.
 
@@ -63,6 +67,7 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 
 | If | Do |
 | --- | --- |
+| The Veo clip doesn't play, or Enroll says the phone video couldn't load | The clips are Git LFS files: run `git lfs pull` and restart the API. Demo mode must be on (`VEYRA_DEMO_MODE`, the default). The simulated replays need no footage. |
 | The camera or a video file isn't available | Use the prepared sample (step 2). It is the scripted path; it needs no camera. |
 | Claude is offline or no key is set | Nothing to do: explanations read "Template explanation (offline)" and the assistant answers from records with the offline parser. |
 | Enrollment goes wrong or time is short | Reset to **After enrollment** (Demo → After enrollment) and start at step 3: Sari is enrolled and valued. |
