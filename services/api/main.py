@@ -19,6 +19,7 @@ from persistence.seed import seed_if_empty
 from routes import (
     alerts, animals, assistant, audit, auth_routes, demo, enrollments, health, jobs, media, monitoring,
 )
+from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
 
 API_PREFIX = "/api/v1"
 
@@ -34,6 +35,12 @@ ROUTERS = [
     monitoring.router,
     alerts.router,
     assistant.router,
+    valuations.router,
+    insurance.router,
+    agent.router,
+    wallet.router,
+    incidents.router,
+    claims.router,
 ]
 
 logger = logging.getLogger("veyra.api")
