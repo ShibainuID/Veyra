@@ -18,6 +18,7 @@ import { Page } from "../../pages/Page";
 import { actionTitle } from "../actions/types";
 import { AnimalPassbook } from "../passbook/AnimalPassbook";
 import { useObservations, usePassport, type Passport } from "./api";
+import { CameraGallery } from "./CameraGallery";
 import { ValuationSection } from "./ValuationSection";
 import { reasonCopy } from "../enrollment/review-copy";
 
@@ -303,6 +304,9 @@ function LocationSection({ passport }: { passport: Passport }) {
           )}
         </div>
       )}
+      <div className="mt-8">
+        <CameraGallery passport={passport} />
+      </div>
     </Section>
   );
 }

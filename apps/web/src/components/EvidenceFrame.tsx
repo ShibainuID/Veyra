@@ -30,6 +30,10 @@ export interface EvidenceFrameProps {
   source?: Source;
   /** The view is on record (a prepared sample's timing, say) but has no footage to show. */
   recorded?: boolean;
+  /** Names the frame instead of the view ("Enrolled muzzle", "Claim scan"). */
+  caption?: string;
+  /** Why there is no footage, in place of the default enrollment hint. */
+  missingNote?: string;
   className?: string;
 }
 
@@ -37,7 +41,18 @@ export interface EvidenceFrameProps {
  * A registered 4:3 frame: every muzzle, teeth, and body view sits in the same frame with the
  * same corner marks, so evidence from different visits compares at a glance.
  */
-export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, recorded = false, className }: EvidenceFrameProps) {
+export function EvidenceFrame({
+  view,
+  src,
+  alt,
+  capturedAt,
+  quality,
+  source,
+  recorded = false,
+  caption,
+  missingNote,
+  className,
+}: EvidenceFrameProps) {
   const label = VIEW_LABEL[view];
   return (
     <figure className={cn("flex min-w-0 flex-col gap-3", className)}>
@@ -49,9 +64,10 @@ export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, rec
             <CameraOff aria-hidden="true" className="size-8 text-muted" strokeWidth={2} />
             <p className="font-bold">No footage attached</p>
             <p className="text-sm text-muted">
-              {recorded
-                ? `The ${label.toLowerCase()} view is on record, but no footage is attached to show.`
-                : `Capture the ${label.toLowerCase()} view during enrollment to add it.`}
+              {missingNote ??
+                (recorded
+                  ? `The ${label.toLowerCase()} view is on record, but no footage is attached to show.`
+                  : `Capture the ${label.toLowerCase()} view during enrollment to add it.`)}
             </p>
           </div>
         )}
@@ -63,7 +79,7 @@ export function EvidenceFrame({ view, src, alt, capturedAt, quality, source, rec
       </div>
       <figcaption className="flex flex-col gap-2">
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-          <span className="font-bold">{label}</span>
+          <span className="font-bold">{caption ?? label}</span>
           {capturedAt ? (
             <Timestamp value={capturedAt} mode="absolute" className="text-sm text-muted" />
           ) : (

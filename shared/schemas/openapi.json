@@ -1268,6 +1268,209 @@
         ]
       }
     },
+    "/api/v1/cameras/gallery/publish": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Publish Gallery",
+        "operationId": "publish_gallery_api_v1_cameras_gallery_publish_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryPublishOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_id}/gallery": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Camera Gallery",
+        "operationId": "camera_gallery_api_v1_cameras__camera_id__gallery_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraGallery"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras/{camera_id}/gallery/ack": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Acknowledge Gallery",
+        "operationId": "acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GalleryAck"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryAckOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
     "/api/v1/demo/replays": {
       "get": {
         "tags": [
@@ -3808,6 +4011,134 @@
           }
         }
       }
+    },
+    "/api/v1/claims/{claim_id}/identity-checks": {
+      "post": {
+        "tags": [
+          "claims"
+        ],
+        "summary": "Check Identity",
+        "description": "Compare a muzzle re-scan of the claimed animal with its enrolled references; a death claim needs a match.",
+        "operationId": "check_identity_api_v1_claims__claim_id__identity_checks_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "claim_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Claim Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IdentityCheckResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A muzzle photo (JPEG, PNG, WebP) or short video (MP4, WebM, MOV)."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "description": "The demo path without a camera: a fixture outcome, labeled simulated.",
+                "properties": {
+                  "sample": {
+                    "enum": [
+                      "match",
+                      "mismatch"
+                    ],
+                    "title": "Sample",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "sample"
+                ],
+                "title": "IdentityCheckRequest",
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5128,6 +5459,118 @@
         ],
         "title": "Body_upload_video_api_v1_enrollments__enrollment_id__video_put"
       },
+      "CameraGallery": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "farm_id": {
+            "type": "string",
+            "title": "Farm Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "animals": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryAnimal"
+            },
+            "type": "array",
+            "title": "Animals"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "farm_id",
+          "version",
+          "updated_at",
+          "animals",
+          "source"
+        ],
+        "title": "CameraGallery"
+      },
+      "CameraGalleryStatus": {
+        "properties": {
+          "current_version": {
+            "type": "integer",
+            "title": "Current Version"
+          },
+          "synced_version": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synced Version"
+          },
+          "synced_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Synced At"
+          },
+          "in_sync": {
+            "type": "boolean",
+            "title": "In Sync"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "prototype",
+                  "simulated"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_version",
+          "synced_version",
+          "synced_at",
+          "in_sync"
+        ],
+        "title": "CameraGalleryStatus",
+        "description": "Whether this camera holds the farm's current muzzle gallery (`domain.gallery`)."
+      },
       "CameraLastObservation": {
         "properties": {
           "id": {
@@ -5241,6 +5684,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/CameraLastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gallery": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CameraGalleryStatus"
               },
               {
                 "type": "null"
@@ -5527,6 +5980,29 @@
                 "type": "null"
               }
             ]
+          },
+          "incident_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Incident Kind"
+          },
+          "identity_check_required": {
+            "type": "boolean",
+            "title": "Identity Check Required",
+            "default": false
+          },
+          "identity_checks": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityCheckOut"
+            },
+            "type": "array",
+            "title": "Identity Checks"
           }
         },
         "type": "object",
@@ -6941,6 +7417,153 @@
         ],
         "title": "FindingRequest"
       },
+      "GalleryAck": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version"
+        ],
+        "title": "GalleryAck"
+      },
+      "GalleryAckOut": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "gallery": {
+            "$ref": "#/components/schemas/CameraGalleryStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "gallery"
+        ],
+        "title": "GalleryAckOut"
+      },
+      "GalleryAnimal": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "identity_status": {
+            "type": "string",
+            "enum": [
+              "confirmed",
+              "pending_review"
+            ],
+            "title": "Identity Status"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/GalleryReference"
+            },
+            "type": "array",
+            "title": "References"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id",
+          "name",
+          "identity_status",
+          "references"
+        ],
+        "title": "GalleryAnimal"
+      },
+      "GalleryPublishOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "published_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Published At"
+          },
+          "acknowledged": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Acknowledged"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          },
+          "cameras": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/CameraGalleryStatus"
+            },
+            "type": "object",
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "published_at",
+          "acknowledged",
+          "source",
+          "cameras"
+        ],
+        "title": "GalleryPublishOut"
+      },
+      "GalleryReference": {
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "title": "Reference Id"
+          },
+          "view": {
+            "type": "string",
+            "const": "muzzle",
+            "title": "View"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_id",
+          "view",
+          "media_url",
+          "created_at"
+        ],
+        "title": "GalleryReference"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -7121,6 +7744,342 @@
           "possible_duplicate"
         ],
         "title": "Identity"
+      },
+      "IdentityCandidate": {
+        "properties": {
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "cosine": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cosine"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id"
+        ],
+        "title": "IdentityCandidate"
+      },
+      "IdentityCheckOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "claim_id": {
+            "type": "string",
+            "title": "Claim Id"
+          },
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "match",
+              "mismatch",
+              "uncertain"
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "matched_animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Animal Id"
+          },
+          "matched_animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Animal Name"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/IdentityCandidate"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "accept_inliers": {
+            "type": "integer",
+            "title": "Accept Inliers"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "prototype",
+              "simulated"
+            ],
+            "title": "Source"
+          },
+          "method_version": {
+            "type": "string",
+            "title": "Method Version"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "photo",
+                  "video",
+                  "sample"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          },
+          "fallback": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback"
+          },
+          "checked_by": {
+            "type": "string",
+            "title": "Checked By"
+          },
+          "checked_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checked By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "scan": {
+            "$ref": "#/components/schemas/IdentityScan"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IdentityReference"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "claim_id",
+          "animal_id",
+          "outcome",
+          "reason",
+          "matched_animal_id",
+          "matched_animal_name",
+          "candidates",
+          "inliers",
+          "accept_inliers",
+          "source",
+          "method_version",
+          "input",
+          "checked_by",
+          "checked_by_name",
+          "created_at",
+          "scan",
+          "reference"
+        ],
+        "title": "IdentityCheckOut"
+      },
+      "IdentityCheckResult": {
+        "properties": {
+          "check": {
+            "$ref": "#/components/schemas/IdentityCheckOut"
+          },
+          "claim": {
+            "$ref": "#/components/schemas/ClaimDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check",
+          "claim"
+        ],
+        "title": "IdentityCheckResult"
+      },
+      "IdentityReference": {
+        "properties": {
+          "reference_id": {
+            "type": "string",
+            "title": "Reference Id"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          },
+          "frame_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Url"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_id",
+          "crop_url",
+          "frame_url"
+        ],
+        "title": "IdentityReference"
+      },
+      "IdentityScan": {
+        "properties": {
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "content_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Type"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "media_url",
+          "content_type",
+          "crop_url"
+        ],
+        "title": "IdentityScan"
       },
       "IllustrativePayout": {
         "properties": {
