@@ -6,3 +6,4 @@ demo/media/**/*.jpg filter=lfs diff=lfs merge=lfs -text
 Dockerfile text eol=lf
 docker-compose.yml text eol=lf
 .dockerignore text eol=lf
+demo/uploads/**/*.png filter=lfs diff=lfs merge=lfs -text
