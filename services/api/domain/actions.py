@@ -239,7 +239,7 @@ def build_notification(session: Session, farm_id: str, refs: dict) -> Built:
         raise DomainError("INVALID_STATE", "The animal has no active policy to notify the insurer under.",
                           {"animal_id": animal.id})
     items = evidence.identity_items(session, animal) + evidence.alert_items(session, alert) + [
-        evidence.policy_item(policy)]
+        evidence.alert_review_item(alert), evidence.policy_item(policy)]
     subject = ("alert", alert.id)
     payload = {
         "animal_id": animal.id, "alert_id": alert.id, "policy_id": policy.id, "provider_id": policy.provider_id,
@@ -664,6 +664,22 @@ def execute(principal: Principal, action_id: str, key: str | None) -> str:
     response, unknown_code = _call_provider(spec, farm_id, key, payload)
     if _finish(started.execution_id, response, principal.user_id, unknown_code or "PROVIDER_TIMEOUT"):
         _after_success(started.execution_id)
+    return action_id
+
+
+def reconcile(principal: Principal, action_id: str) -> str:
+    """Explicitly re-ask the provider about an `unknown` action under its stored execution key, then apply the
+    answer exactly as a same-key retry would. Returns the action id. Opens its own sessions."""
+    with read_session() as session:
+        action = farm_action(session, principal.farm_id, action_id)
+        if action.status != "unknown":
+            raise DomainError("INVALID_STATE", "Only an action whose outcome is unknown can be reconciled.",
+                              {"status": effective_status(action)})
+        execution_id = session.scalar(select(ActionExecution.id).where(ActionExecution.action_id == action.id))
+    if execution_id is None:
+        raise DomainError("INVALID_STATE", "The action has no execution to reconcile.")
+    if _finish(execution_id, _reconcile(execution_id), principal.user_id):
+        _after_success(execution_id)
     return action_id
 
 

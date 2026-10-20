@@ -6,10 +6,10 @@ otherwise any unknown rule makes it `unknown` (with what review is needed); othe
 The language model explains these outcomes; it never decides them.
 """
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from persistence.models import Animal, Estimate, Valuation
+from persistence.models import Alert, Animal, Estimate, Valuation
 
 OUTCOMES = ("eligible", "ineligible", "unknown")
 RANGE_FIELDS = {"age_months": ("age_months_low", "age_months_high")}
@@ -20,6 +20,7 @@ REVIEW_HINTS = {
     "ownership_document": "Add an ownership document reference",
     "breed_category": "Confirm the breed category",
     "vet_health_check_days": "Record a veterinary health check",
+    "open_health_alerts": "Review the open reduced-movement alert",
 }
 
 
@@ -40,6 +41,8 @@ def facts_for(session: Session, animal: Animal) -> dict:
         "ownership_document": "present" if animal.ownership_doc_refs else None,
         "breed_category": animal.breed_category,
         "vet_health_check_days": None,  # no veterinary health-check record exists yet
+        "open_health_alerts": session.scalar(select(func.count()).select_from(Alert).where(
+            Alert.animal_id == animal.id, Alert.kind == "reduced_movement", Alert.status == "open")),
     }
 
 

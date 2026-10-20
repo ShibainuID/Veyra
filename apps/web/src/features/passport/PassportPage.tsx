@@ -9,7 +9,7 @@ import { Money, Mono, Range, TimeWindow, Timestamp } from "../../components/figu
 import { PageHeader, Section } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill, type StatusTone } from "../../components/StatusPill";
-import { alertKindLabel, asSource, humanize, identityPill, productName, providerName, sexWord, tagStateFor } from "../../lib/animal";
+import { alertKindLabel, asSource, healthPill, humanize, identityPill, productName, providerName, sexWord, tagStateFor } from "../../lib/animal";
 import { toApiError } from "../../lib/errors";
 import { formatMoney, lineNumber } from "../../lib/format";
 import { useNow } from "../../lib/use-now";
@@ -450,8 +450,14 @@ export function PassportPage() {
           lead={<EarTag animalId={animal.id} state={tagStateFor(animal.identity_status)} size="md" />}
           title={animal.name}
           meta={
-            <span>
-              <Mono className="text-ink">{animal.id}</Mono> · {animal.breed} · {sexWord(animal.sex)}
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span>
+                <Mono className="text-ink">{animal.id}</Mono> · {animal.breed} · {sexWord(animal.sex)}
+              </span>
+              <span className="inline-flex items-center gap-2" title={animal.health.reason}>
+                <StatusPill {...healthPill(animal.health.status)} />
+                <span className="sr-only">{animal.health.reason}</span>
+              </span>
             </span>
           }
           actions={

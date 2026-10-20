@@ -2902,6 +2902,94 @@
         }
       }
     },
+    "/api/v1/agent/actions/{action_id}/reconcile": {
+      "post": {
+        "tags": [
+          "agent"
+        ],
+        "summary": "Reconcile",
+        "description": "Re-ask the sandbox provider about an `unknown` action under its stored Idempotency-Key and apply the answer.",
+        "operationId": "reconcile_api_v1_agent_actions__action_id__reconcile_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Action Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/agent/actions/{action_id}/revise": {
       "post": {
         "tags": [
@@ -4640,6 +4728,9 @@
               }
             ]
           },
+          "health": {
+            "$ref": "#/components/schemas/HealthStatus"
+          },
           "awaiting_approval_count": {
             "type": "integer",
             "title": "Awaiting Approval Count"
@@ -4659,6 +4750,7 @@
           "coverage",
           "alerts",
           "last_observation",
+          "health",
           "awaiting_approval_count"
         ],
         "title": "AnimalListItem"
@@ -6862,6 +6954,46 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HealthStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_inspection",
+              "under_review",
+              "observation_gap",
+              "veterinary_reviewed",
+              "normal",
+              "not_monitored"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "since": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Since"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "reason",
+          "since"
+        ],
+        "title": "HealthStatus",
+        "description": "A monitoring state from records (alerts, review notes, observations); never a diagnosis."
+      },
       "HerdSummary": {
         "properties": {
           "animal_count": {
@@ -8072,6 +8204,9 @@
               }
             ]
           },
+          "health": {
+            "$ref": "#/components/schemas/HealthStatus"
+          },
           "awaiting_approval_count": {
             "type": "integer",
             "title": "Awaiting Approval Count"
@@ -8144,6 +8279,7 @@
           "coverage",
           "alerts",
           "last_observation",
+          "health",
           "awaiting_approval_count",
           "birth_date",
           "ownership_doc_refs",

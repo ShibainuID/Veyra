@@ -87,6 +87,15 @@ class LastObservation(BaseModel):
     association_status: str
 
 
+class HealthStatus(BaseModel):
+    """A monitoring state from records (alerts, review notes, observations); never a diagnosis."""
+
+    status: Literal["needs_inspection", "under_review", "observation_gap", "veterinary_reviewed", "normal",
+                    "not_monitored"]
+    reason: str
+    since: UTCDateTime | None
+
+
 class AnimalListItem(BaseModel):
     id: str
     name: str
@@ -100,6 +109,7 @@ class AnimalListItem(BaseModel):
     coverage: Coverage
     alerts: AlertCounts
     last_observation: LastObservation | None
+    health: HealthStatus
     awaiting_approval_count: int
 
 

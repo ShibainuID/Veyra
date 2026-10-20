@@ -69,7 +69,8 @@
         {"field": "identity_status", "op": "eq", "value": "confirmed", "terms_ref": "sample-v1 §2.1", "text": "The animal has a confirmed identity reference."},
         {"field": "breed_category", "op": "eq", "value": "dairy", "terms_ref": "sample-v1 §2.5", "text": "Dairy breeds only."},
         {"field": "age_months", "op": "lte", "value": 96, "terms_ref": "sample-v1 §2.6", "text": "Age up to 96 months."},
-        {"field": "vet_health_check_days", "op": "lte", "value": 30, "terms_ref": "sample-v1 §2.7", "text": "A veterinary health check within the last 30 days."}
+        {"field": "vet_health_check_days", "op": "lte", "value": 30, "terms_ref": "sample-v1 §2.7", "text": "A veterinary health check within the last 30 days."},
+        {"field": "open_health_alerts", "op": "eq", "value": 0, "terms_ref": "sample-v1 §2.8", "text": "No open reduced-movement alert at application."}
       ],
       "premium": {"basis": "rate_of_insured_value", "rate_bps": 680, "period": "annual", "terms_ref": "sample-v1 §3.1"},
       "deductible": {"basis": "percent_of_insured_value", "bps": 500, "terms_ref": "sample-v1 §3.2"},
