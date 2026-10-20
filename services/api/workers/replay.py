@@ -10,6 +10,8 @@ exactly as for a live camera.
 - Speed 0 ingests the whole scenario synchronously, inside the request that started it.
 - Speed > 0 runs a daemon thread that ingests one simulated second per commit and waits `1 / speed` real seconds
   between batches (no transaction is held while waiting).
+- Camera events (`scenario["events"]`, today only `zone_scan`) go through `association.zone_scan`, the same handoff
+  the observation feed uses; at one instant, frames come first, then track events, then camera events.
 - The movement rule runs for every track as each window closes, on the observations attributed to the track's
   animal (an associated track) or on all of the track's frames (quality warnings on an unassigned track).
 - Only one replay runs per farm and camera: starting another stops the previous one (status `stopped`). Starts on
@@ -32,7 +34,7 @@ from sqlalchemy.orm import Session
 from config import Settings
 from domain import alerts as alert_rules
 from domain import audit, clock, movement
-from domain.association import ObservationInput, ingest
+from domain.association import ObservationInput, ZoneScanInput, ingest, zone_scan
 from domain.errors import DomainError
 from domain.ids import new_id
 from persistence.db import SessionLocal, read_session, writer_scope
@@ -128,12 +130,17 @@ def footage_anchor(started_at: datetime, speed: float, duration_s: float) -> dat
     return started_at
 
 
+CAMERA_EVENT = 2
+
+
 def _items(scenario: dict) -> list[tuple[float, int, str, dict]]:
-    """Frames and events in scenario order; at the same instant a track's frame comes before its events."""
+    """Frames and events in scenario order; at the same instant every frame comes before the track events, and
+    those before the camera's own events (a scan sees the frames of its instant)."""
     items = []
     for track in scenario["tracks"]:
         items += [(frame["t"], 0, track["track_key"], frame) for frame in track["frames"]]
         items += [(event["t"], 1, track["track_key"], event) for event in track["events"]]
+    items += [(event["t"], CAMERA_EVENT, "", event) for event in scenario.get("events", [])]
     return sorted(items, key=lambda item: (item[0], item[1], item[2]))
 
 
@@ -178,10 +185,18 @@ class _Replayer:
             if session.scalar(select(Replay.status).where(Replay.id == self.run.replay_id)) != "running":
                 self.run.stop.set()
                 return False
+            source = self.scenario.get("source", "simulated")
             for t, kind, track_key, entry in batch:
+                if kind == CAMERA_EVENT:
+                    if entry["type"] == "zone_scan":
+                        zone_scan(session, farm_id=self.run.farm_id, camera_id=self.run.camera_id,
+                                  scan=ZoneScanInput(observed_at=self.at(t), animal_id=entry.get("animal_id"),
+                                                     inliers=entry.get("inliers"), quality=entry.get("quality")),
+                                  replay_id=self.run.replay_id, actor=REPLAY_ACTOR, source=source)
+                    continue
                 ingest(session, farm_id=self.run.farm_id, camera_id=self.run.camera_id,
                        item=self._observation(t, kind, track_key, entry), replay_id=self.run.replay_id,
-                       actor=REPLAY_ACTOR)
+                       actor=REPLAY_ACTOR, source=source)
             session.commit()
         return True
 

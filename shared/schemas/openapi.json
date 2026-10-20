@@ -1066,6 +1066,55 @@
         }
       }
     },
+    "/api/v1/demo/footage/{name}": {
+      "get": {
+        "tags": [
+          "demo"
+        ],
+        "summary": "Footage",
+        "description": "Stream one of the demo's AI-generated clips (read-only, demo mode only, no sign-in: a `<video>` element\ncannot send a bearer token, and these clips hold no farm data). Unknown names are 404; so is a clip whose Git LFS\ncontent was never pulled.",
+        "operationId": "footage_api_v1_demo_footage__name__get",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The clip; supports HTTP Range.",
+            "content": {
+              "video/mp4": {}
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/demo/reset": {
       "post": {
         "tags": [
@@ -1511,6 +1560,7 @@
           "monitoring"
         ],
         "summary": "Ingest Observation",
+        "description": "A track observation, or a `zone_scan`: a muzzle scan in the camera's scan zone, handed to the one track inside\nthe zone (`handoff` says what happened; `observation` and `track` are null unless exactly one track was there).",
         "operationId": "ingest_observation_api_v1_cameras__camera_id__observations_post",
         "security": [
           {
@@ -5237,6 +5287,17 @@
             "type": "number",
             "title": "Map Y"
           },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The calibrated scan zone, if the camera has one."
+          },
           "last_observation": {
             "anyOf": [
               {
@@ -5255,6 +5316,7 @@
           "location",
           "map_x",
           "map_y",
+          "scan_zone",
           "last_observation"
         ],
         "title": "CameraOut"
@@ -7624,9 +7686,16 @@
       "ObservationIn": {
         "properties": {
           "track_key": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Track Key"
           },
           "observed_at": {
@@ -7635,18 +7704,32 @@
             "title": "Observed At"
           },
           "bbox": {
-            "items": {
-              "type": "number"
-            },
-            "type": "array",
-            "maxItems": 4,
-            "minItems": 4,
+            "anyOf": [
+              {
+                "items": {
+                  "type": "number"
+                },
+                "type": "array",
+                "maxItems": 4,
+                "minItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Bbox"
           },
           "visibility": {
-            "type": "number",
-            "maximum": 1.0,
-            "minimum": 0.0,
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Visibility"
           },
           "event": {
@@ -7654,7 +7737,8 @@
             "enum": [
               "frame",
               "muzzle_match",
-              "track_lost"
+              "track_lost",
+              "zone_scan"
             ],
             "title": "Event",
             "default": "frame"
@@ -7668,7 +7752,8 @@
                 "type": "null"
               }
             ],
-            "title": "Candidate Animal Id"
+            "title": "Candidate Animal Id",
+            "description": "The matched animal; for a zone_scan, the scanned one."
           },
           "inliers": {
             "anyOf": [
@@ -7733,20 +7818,44 @@
         },
         "type": "object",
         "required": [
-          "track_key",
-          "observed_at",
-          "bbox",
-          "visibility"
+          "observed_at"
         ],
-        "title": "ObservationIn"
+        "title": "ObservationIn",
+        "description": "One track observation, or (`event: \"zone_scan\"`) a muzzle scan in the camera's scan zone, which needs no\ntrack, box, or visibility: it is handed to the one track inside the zone at `observed_at`, or to none."
       },
       "ObservationIngested": {
         "properties": {
           "observation": {
-            "$ref": "#/components/schemas/ObservationOut"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ObservationOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null for a zone_scan without exactly one track in the zone."
           },
           "track": {
-            "$ref": "#/components/schemas/TrackOut"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TrackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "handoff": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ZoneHandoffOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What a zone_scan did."
           }
         },
         "type": "object",
@@ -9110,6 +9219,16 @@
             "type": "number",
             "title": "Progress S"
           },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tracks": {
             "items": {
               "$ref": "#/components/schemas/TrackOut"
@@ -9137,6 +9256,7 @@
           "anchor_at",
           "duration_s",
           "progress_s",
+          "scan_zone",
           "tracks",
           "alerts"
         ],
@@ -9260,6 +9380,42 @@
         ],
         "title": "RuleReason"
       },
+      "ScanZone": {
+        "properties": {
+          "polygon": {
+            "items": {
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "type": "array",
+            "title": "Polygon",
+            "description": "[[x, y], ...] normalized 0-1 to the camera frame."
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "calibrated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calibrated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "polygon",
+          "label",
+          "source",
+          "calibrated_at"
+        ],
+        "title": "ScanZone"
+      },
       "Scenario": {
         "properties": {
           "id": {
@@ -9316,6 +9472,34 @@
             ],
             "title": "Clip"
           },
+          "footage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScenarioFootage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioCameraEvent"
+            },
+            "type": "array",
+            "title": "Events",
+            "default": []
+          },
+          "scan_zone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ScanZone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tracks": {
             "items": {
               "$ref": "#/components/schemas/ScenarioTrack"
@@ -9339,6 +9523,60 @@
           "tracks"
         ],
         "title": "Scenario"
+      },
+      "ScenarioCameraEvent": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "type": {
+            "type": "string",
+            "const": "zone_scan",
+            "title": "Type"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id",
+            "description": "Who the muzzle matcher says was scanned."
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t",
+          "type"
+        ],
+        "title": "ScenarioCameraEvent",
+        "description": "A camera event: a muzzle scan made in the scan zone, handed to the one track inside it (or to none)."
       },
       "ScenarioEvent": {
         "properties": {
@@ -9405,6 +9643,46 @@
           "type"
         ],
         "title": "ScenarioEvent"
+      },
+      "ScenarioFootage": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label",
+            "description": "The caption shown with the clip, e.g. that it is AI-generated."
+          },
+          "generator": {
+            "type": "string",
+            "title": "Generator"
+          },
+          "kind": {
+            "type": "string",
+            "const": "ai_generated",
+            "title": "Kind"
+          },
+          "tracker": {
+            "type": "string",
+            "title": "Tracker"
+          },
+          "tracks": {
+            "type": "string",
+            "title": "Tracks"
+          },
+          "prompts": {
+            "type": "string",
+            "title": "Prompts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "generator",
+          "kind",
+          "tracker",
+          "tracks",
+          "prompts"
+        ],
+        "title": "ScenarioFootage"
       },
       "ScenarioFrame": {
         "properties": {
@@ -10120,6 +10398,66 @@
           "farm"
         ],
         "title": "WhoAmI"
+      },
+      "ZoneHandoffOut": {
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "associated",
+              "already_associated",
+              "rejected",
+              "no_track",
+              "crowded",
+              "track_uncertain",
+              "conflict"
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "track_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Track Ids"
+          },
+          "track_keys": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Track Keys"
+          },
+          "tracks_in_zone": {
+            "type": "integer",
+            "title": "Tracks In Zone"
+          }
+        },
+        "type": "object",
+        "required": [
+          "outcome",
+          "reason",
+          "message",
+          "track_ids",
+          "track_keys",
+          "tracks_in_zone"
+        ],
+        "title": "ZoneHandoffOut"
       }
     },
     "securitySchemes": {

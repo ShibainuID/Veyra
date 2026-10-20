@@ -314,6 +314,20 @@ class Camera(Base):
     map_y: Mapped[float]
 
 
+class CameraScanZone(Base):
+    """A camera's calibrated scan zone: the floor area where one animal at a time is muzzle-scanned, so its identity
+    can be handed to the one camera track inside it (domain/association.py). A separate table, so an existing
+    database gains it on startup without a migration."""
+
+    __tablename__ = "camera_scan_zones"
+
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"), primary_key=True)
+    polygon: Mapped[list]  # [[x, y], ...] normalized 0–1 to the camera frame, top-left origin
+    label: Mapped[str]
+    source: Mapped[str]
+    calibrated_at: Mapped[datetime] = _created_at()
+
+
 class Replay(Base):
     __tablename__ = "replays"
 
