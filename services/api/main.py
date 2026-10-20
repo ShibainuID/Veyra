@@ -1,9 +1,11 @@
-"""VEYRA API app factory: routers under `/api/v1` and one error envelope (plan Sections 0-1).
+"""VEYRA API app factory: routers under `/api/v1`, one error envelope, and DB setup on startup (plan Sections 0-1).
 
 Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 """
 
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
@@ -12,12 +14,16 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
-from routes import health
+from persistence.db import init_db
+from persistence.seed import seed_if_empty
+from routes import demo, health, media
 
 API_PREFIX = "/api/v1"
 
 ROUTERS = [
     health.router,
+    media.router,
+    demo.router,
 ]
 
 logger = logging.getLogger("veyra.api")
@@ -48,9 +54,16 @@ async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     return _envelope(500, "INTERNAL_ERROR", "Something went wrong on the server.", {})
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    init_db()
+    seed_if_empty()
+    yield
+
+
 def create_app() -> FastAPI:
-    """Build the app without side effects; database setup belongs in a lifespan handler."""
-    app = FastAPI(title="VEYRA API", version=health.VERSION)
+    """Build the app without side effects; the lifespan creates the schema and seeds an empty database."""
+    app = FastAPI(title="VEYRA API", version=health.VERSION, lifespan=_lifespan)
     app.add_exception_handler(DomainError, _domain_error)
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.add_exception_handler(StarletteHTTPException, _http_error)
