@@ -61,7 +61,8 @@ def test_herd_lists_every_animal_with_its_state(client):
     assert (bima["age"]["unit"], bima["age"]["source"]) == ("months", "documented")
     assert bima["valuation"] == {"value_low_minor": 270400, "value_high_minor": 312000, "currency": "USD",
                                  "price_date": "2026-10-01", "version": 1}
-    assert bima["pending_actions"] == 0
+    assert bima["awaiting_approval_count"] == 0
+    assert "pending_actions" not in bima
 
 
 @pytest.mark.parametrize("params, expected", [
@@ -162,7 +163,7 @@ def test_passport_shows_an_awaiting_action_last(client, pending_payment):
     [pending] = passport["pending_actions"]
     assert (pending["id"], pending["action_type"], pending["amount_minor"]) == (
         "act-000000000001", "PREMIUM_PAYMENT", 15142)
-    assert passport["animal"]["pending_actions"] == 1
+    assert passport["animal"]["awaiting_approval_count"] == 1
     assert passport["animal"]["coverage"] == {"status": "pending", "policy_id": None, "product_id": None,
                                               "policy_status": None}
     assert passport["passbook"]["summary"]["uninsured_low_minor"] == 291200
@@ -174,6 +175,22 @@ def test_pending_action_shows_in_the_herd(client, pending_payment):
     assert [item["id"] for item in herd["items"]] == ["animal-demo-005"]
     assert herd["summary"]["pending_approvals"] == 1
     assert herd["summary"]["uncovered_count"] == 2
+
+
+def test_executing_action_stays_awaiting(client, pending_payment):
+    with SessionLocal() as session:
+        session.get(AgentAction, pending_payment.id).status = "executing"
+        session.commit()
+
+    passport = _passport(client, "animal-demo-005")
+
+    last = passport["passbook"]["lines"][-1]
+    assert (last["kind"], last["status"], last["event_type"], last["action_id"]) == (
+        "awaiting", "awaiting", "action.executing", "act-000000000001")
+    assert [(a["id"], a["status"]) for a in passport["pending_actions"]] == [("act-000000000001", "executing")]
+    assert passport["animal"]["awaiting_approval_count"] == 0
+    assert passport["animal"]["coverage"]["status"] == "pending"
+    assert _herd(client)["summary"]["pending_approvals"] == 0
 
 
 def test_decided_actions_leave_the_passbook(client, pending_payment):

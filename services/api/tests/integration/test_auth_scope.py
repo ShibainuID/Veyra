@@ -82,6 +82,13 @@ def test_operator_cannot_reset(client):
     assert error["details"] == {"required": ["manager"], "role": "operator"}
 
 
+def test_other_farm_manager_cannot_reset_the_demo(client):
+    error = _assert_error(client.post("/api/v1/demo/reset", headers=OTHER_FARM), 403, "FORBIDDEN_ROLE")
+
+    assert error["details"] == {"required": ["manager"], "role": "manager", "farm_id": "farm-wahyu"}
+    assert client.get("/api/v1/animals", headers=MANAGER).json()["summary"]["animal_count"] == 5
+
+
 def test_manager_can_reset(client):
     response = client.post("/api/v1/demo/reset", headers=MANAGER)
 
