@@ -13,7 +13,7 @@ import { PageHeader } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { useShellSummary } from "../../app/use-shell-summary";
-import { asSource, coveragePill, identityPill, productName, tagStateFor } from "../../lib/animal";
+import { asSource, coveragePill, healthPill, identityPill, productName, tagStateFor } from "../../lib/animal";
 import { formatMoney, formatMoneyRange } from "../../lib/format";
 import type { HerdFilters } from "../../lib/query-keys";
 import { useMediaQuery } from "../../lib/use-media-query";
@@ -66,6 +66,16 @@ function shortAlertLabel(kind: string): string {
   if (kind === "observation_quality") return "Quality";
   return "Alert";
 }
+
+/** Sorts the most urgent health state last, so a descending sort puts it on top. */
+const HEALTH_ORDER: readonly HerdItem["health"]["status"][] = [
+  "not_monitored",
+  "normal",
+  "veterinary_reviewed",
+  "observation_gap",
+  "under_review",
+  "needs_inspection",
+];
 
 const COLUMNS: readonly Column<HerdItem>[] = [
   {
@@ -145,26 +155,23 @@ const COLUMNS: readonly Column<HerdItem>[] = [
       ),
   },
   {
-    id: "alerts",
-    header: "Alerts",
-    width: "132px",
-    sortValue: (row) => row.alerts.open_count + row.awaiting_approval_count,
-    cell: (row) => {
-      if (row.alerts.open_count === 0 && row.awaiting_approval_count === 0) return <span className="text-muted">None open</span>;
-      return (
-        <span className="flex flex-col items-start gap-1">
-          {row.alerts.open_count > 0 && (
-            <StatusPill
-              tone="uncertain"
-              label={row.alerts.kinds.length > 0 ? row.alerts.kinds.map(shortAlertLabel).join(", ") : `${row.alerts.open_count} open`}
-            />
-          )}
-          {row.awaiting_approval_count > 0 && (
-            <StatusPill tone="awaiting" label={row.awaiting_approval_count === 1 ? "Awaiting" : `${row.awaiting_approval_count} awaiting`} />
-          )}
-        </span>
-      );
-    },
+    id: "health",
+    header: "Health",
+    width: "172px",
+    sortValue: (row) => HEALTH_ORDER.indexOf(row.health.status) * 100 + row.awaiting_approval_count,
+    cell: (row) => (
+      <span className="flex flex-col items-start gap-1" title={row.health.reason}>
+        <StatusPill {...healthPill(row.health.status)} />
+        {row.alerts.open_count > 0 && (
+          <span className="text-sm text-muted">
+            {row.alerts.kinds.length > 0 ? row.alerts.kinds.map(shortAlertLabel).join(", ") : "Alert"} alert open
+          </span>
+        )}
+        {row.awaiting_approval_count > 0 && (
+          <StatusPill tone="awaiting" label={row.awaiting_approval_count === 1 ? "Awaiting" : `${row.awaiting_approval_count} awaiting`} />
+        )}
+      </span>
+    ),
   },
 ];
 
