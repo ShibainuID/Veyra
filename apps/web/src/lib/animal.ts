@@ -28,7 +28,7 @@ export function identityPill(identityStatus: string | null | undefined): { tone:
 export function coveragePill(status: string | null | undefined): { tone: StatusTone; label: string; shortLabel?: string } {
   if (status === "active") return { tone: "ok", label: "Active" };
   if (status === "pending") return { tone: "awaiting", label: "Pending" };
-  return { tone: "danger", label: "Not covered", shortLabel: "None" };
+  return { tone: "danger", label: "Not covered", shortLabel: "Uncovered" };
 }
 
 export type HealthStatus =
@@ -47,7 +47,7 @@ const HEALTH_PILL: Record<HealthStatus, HealthPill> = {
   observation_gap: { tone: "uncertain", label: "Observation gap", shortLabel: "Gap", icon: EyeOff },
   veterinary_reviewed: { tone: "ok", label: "Vet reviewed", shortLabel: "Vetted", icon: Stethoscope },
   normal: { tone: "ok", label: "Normal" },
-  not_monitored: { tone: "neutral", label: "Not monitored", shortLabel: "None" },
+  not_monitored: { tone: "neutral", label: "Not monitored", shortLabel: "Off camera" },
 };
 
 /** A monitoring state from records, never a diagnosis: icon plus plain words. */

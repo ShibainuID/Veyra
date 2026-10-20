@@ -233,19 +233,20 @@ function HerdMeta() {
   if (!summary) return <span>Every tagged animal, its exposure, and its cover.</span>;
   const { currency } = summary;
   return (
-    // Each segment keeps to one line and carries its own trailing separator, so a wrap never strands a "·".
-    <span className="flex flex-wrap gap-x-2 gap-y-1">
+    // Each fact keeps to one line and spacing separates them, so a wrap can never strand a separator
+    // or push a long run of figures under the header's action.
+    <span className="flex flex-wrap gap-x-4 gap-y-1">
       <span className="whitespace-nowrap">
         <Mono className="text-ink">{summary.animal_count}</Mono> {summary.animal_count === 1 ? "animal" : "animals"}
-        <span aria-hidden="true"> ·</span>
+        <span className="sr-only">,</span>
       </span>
       <span className="whitespace-nowrap">
         indicative exposure <Mono className="text-ink">{formatMoneyRange(summary.exposure_low_minor, summary.exposure_high_minor, currency)}</Mono>
-        <span aria-hidden="true"> ·</span>
+        <span className="sr-only">,</span>
       </span>
       <span className="whitespace-nowrap">
         insured <Mono className="text-ink">{formatMoney(summary.insured_minor, currency, { whole: true })}</Mono>
-        <span aria-hidden="true"> ·</span>
+        <span className="sr-only">,</span>
       </span>
       <span className={cn("whitespace-nowrap", summary.uncovered_count > 0 && "font-bold text-danger")}>
         <Mono>{summary.uncovered_count}</Mono> uncovered
