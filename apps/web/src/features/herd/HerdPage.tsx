@@ -326,7 +326,7 @@ export function HerdPage() {
   const hrefFor = (animalId: string) => {
     const next = new URLSearchParams(params);
     next.set("animal", animalId);
-    return `/?${next.toString()}`;
+    return `/herd?${next.toString()}`;
   };
 
   const setFilter = (value: HerdFilter) =>
@@ -351,7 +351,7 @@ export function HerdPage() {
     const next = new URLSearchParams(params);
     next.delete("animal");
     const search = next.toString();
-    navigate(search ? `/?${search}` : "/", { replace: true });
+    navigate(search ? `/herd?${search}` : "/herd", { replace: true });
   };
 
   const drawerItem = (herd.data?.items ?? []).find((row) => row.id === selectedParam);

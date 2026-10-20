@@ -5,6 +5,7 @@ import { PageHeader } from "../components/layout";
 import { Page } from "../pages/Page";
 import { AuditPage } from "../features/audit/AuditPage";
 import { HerdPage } from "../features/herd/HerdPage";
+import { LandingPage } from "../features/landing/LandingPage";
 import { PassportPage } from "../features/passport/PassportPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
@@ -52,11 +53,13 @@ const devRoutes: RouteObject[] = DesignPage
   : [];
 
 export const routes: RouteObject[] = [
+  // The pitch page stands outside the app shell, with its own nav; the app starts at /herd.
+  { path: "/", element: <LandingPage />, errorElement: <RouteError /> },
   {
     element: <AppShell />,
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <HerdPage /> },
+      { path: "herd", element: <HerdPage /> },
       { path: "enroll", element: <EnrollPage /> },
       { path: "animals/:animalId", element: <PassportPage /> },
       { path: "animals/:animalId/insurance", element: <InsurancePage /> },

@@ -68,7 +68,7 @@ function TopBar({ pathname, summary }: { pathname: string; summary: HerdSummary 
     <header data-surface="shell" className="sticky top-0 z-sticky bg-shell text-on-shell">
       <div className="flex h-16 items-center gap-2 px-4 lg:h-(--shell-height) xl:px-6">
         <Link
-          to="/"
+          to="/herd"
           aria-label="VEYRA, go to the herd"
           className="flex min-h-11 flex-none items-center gap-2.5 rounded-control px-1 no-underline lg:mr-2 xl:mr-6"
         >
