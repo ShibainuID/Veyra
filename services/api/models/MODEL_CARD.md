@@ -40,3 +40,27 @@ Validation threshold for the hybrid: 5 inliers (validation unknown false-match r
 - US feedlot cattle and cropped still photographs. Not tested on other breeds, on Chinese or Indonesian herds, or on phone video frames.
 - All images come from one collection period, so identification across months is untested.
 - Scores are similarities and inlier counts, not calibrated probabilities. A match is a candidate for human review, as the PRD requires.
+
+# calf_detector_v1
+
+Single-class cattle detector for the barn CCTV tracker (PRD M07). YOLOv8m (COCO pretrained) fine-tuned on Kaggle (2x T4), notebook `ml/notebooks/detector_8calves.ipynb`.
+
+## Use
+
+- Task: detect every animal in a barn camera frame; the tracker (BoT-SORT) links detections into tracks.
+- Input: video frames, `imgsz=800`, confidence 0.25. Class 0 = calf.
+- Format: Ultralytics `.pt` (Git LFS). Ultralytics is AGPL-3.0; review before any closed-source deployment.
+
+## Results
+
+Training data: 500 hand-labelled frames from 8-Calves (Fang et al., 2025, CC BY 4.0), split by recording day. Full tables in `ml/results/tracking_8calves.md`.
+
+| Evaluation | Precision | Recall | Other |
+| --- | --- | --- | --- |
+| Validation day, 100 frames | 0.936 | 0.978 | mAP50 0.987, mAP50-95 0.604 |
+| Test video, 12,000 frames, with BoT-SORT re-ID | 0.980 | 0.997 | MOTA 0.976, IDF1 0.709 |
+
+## Limitations
+
+- One barn, one camera angle, eight calves. Other farms, adult cattle, and night footage are untested.
+- The tracker's generic re-ID gave a wrong identity to 1.2% of boxes in the handoff test; identity handoff must stay gated.
