@@ -35,7 +35,7 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "enrolled",
     title: "Enrolled",
-    stamp: "Enrolled · muzzle new · 20 Oct",
+    stamp: "Enrolled · muzzle\u00a0new · 20\u00a0Oct",
     kind: "posted",
     body:
       "One guided video gives the muzzle, the teeth, and the body. The muzzle matcher returns a candidate, a new identity, or uncertain, and a person confirms it before the animal exists. In the prepared sample (simulated), Sari matched no one on the farm: the closest animal had 3 verified points, below the 5 a match needs, so she was registered as new.",
@@ -51,7 +51,7 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "valued",
     title: "Valued",
-    stamp: "Valued · 2,496–2,912 USD · 20 Oct",
+    stamp: "Valued · 2,496–2,912\u00a0USD · 20\u00a0Oct",
     kind: "approved",
     body:
       "Her value is a range: the weight estimate, 480–560 kg, times a dated reference price of 5.20 USD/kg, labeled simulated and confirmed by the manager. An indicative value is not an insured value and not a payout.",
@@ -67,7 +67,7 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "covered",
     title: "Covered",
-    stamp: "Covered · cover active · 20 Oct",
+    stamp: "Covered · cover\u00a0active · 20\u00a0Oct",
     kind: "posted",
     body:
       "Three fictional sample policies are checked by deterministic rules against her passport: eligible, needs a document, or ineligible, each with its terms reference. Claude explains the rules; it never decides them. The application and the premium are approved separately, and cover is active only once the insurer confirms it.",
@@ -83,7 +83,7 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "watched",
     title: "Watched",
-    stamp: "Watched · pen A alert · 20 Oct",
+    stamp: "Watched · pen\u00a0A\u00a0alert · 20\u00a0Oct",
     kind: "approved",
     body:
       "Recorded camera replays are tracked, and a track carries Sari's identity only while the association is strict; otherwise it stays uncertain, never guessed. In the recorded replay (simulated), her movement fell 79% below her earlier window, and VEYRA raised an inspection prompt, not a diagnosis.",
@@ -99,7 +99,7 @@ export const JOURNEY: readonly JourneyStep[] = [
   {
     id: "claimed",
     title: "Claimed",
-    stamp: "Claimed · submitted · 20 Oct",
+    stamp: "Claimed · submitted · 20\u00a0Oct",
     kind: "approved",
     body:
       "A claim starts from the incident and its evidence checklist. Until every item is on file, here the farmer's declaration and a vet's assessment, the agent refuses to prepare the submission. Once both were added and the manager stamped it, the sandbox insurer returned a receipt and the claim reads Assessment pending: submitted, not accepted or paid.",
