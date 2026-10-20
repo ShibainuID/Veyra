@@ -18,3 +18,5 @@ dist/
 services/api/.venv/
 services/api/var/
 .pytest_cache/
+
+apps/video/
