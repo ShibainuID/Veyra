@@ -6,17 +6,14 @@ import { Page } from "../pages/Page";
 import { AuditPage } from "../features/audit/AuditPage";
 import { HerdPage } from "../features/herd/HerdPage";
 import { PassportPage } from "../features/passport/PassportPage";
-import {
-  AlertPage,
-  AskPage,
-  EnrollPage,
-  MonitorPage,
-  NotFoundPage,
-} from "../pages/placeholders";
+import { NotFoundPage } from "../pages/placeholders";
 import { ApprovalsPage } from "../features/approvals/ApprovalsPage";
+import { AskPage } from "../features/assistant/Ask";
 import { ClaimPage } from "../features/claims/ClaimPage";
 import { ClaimsPage } from "../features/claims/ClaimsPage";
+import { EnrollPage } from "../features/enrollment/EnrollPage";
 import { InsurancePage } from "../features/insurance/InsurancePage";
+import { MonitorScreen } from "../features/monitor/MonitorScreen";
 import { AppShell } from "./AppShell";
 
 function RouteError() {
@@ -63,8 +60,14 @@ export const routes: RouteObject[] = [
       { path: "enroll", element: <EnrollPage /> },
       { path: "animals/:animalId", element: <PassportPage /> },
       { path: "animals/:animalId/insurance", element: <InsurancePage /> },
-      { path: "monitor", element: <MonitorPage /> },
-      { path: "alerts/:alertId", element: <AlertPage /> },
+      // One Monitor element for both paths, so opening an alert's drawer keeps the replay running beneath it.
+      {
+        element: <MonitorScreen />,
+        children: [
+          { path: "monitor", element: null },
+          { path: "alerts/:alertId", element: null },
+        ],
+      },
       { path: "approvals", element: <ApprovalsPage /> },
       { path: "claims", element: <ClaimsPage /> },
       { path: "claims/:claimId", element: <ClaimPage /> },

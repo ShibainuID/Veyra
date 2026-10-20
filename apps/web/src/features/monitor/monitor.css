@@ -1,0 +1,9 @@
+/* The replay scrubber takes the ink, like every other control in the world. */
+.replay-scrubber {
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+.replay-scrubber:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
