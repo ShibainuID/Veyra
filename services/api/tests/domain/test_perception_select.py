@@ -14,8 +14,8 @@ import numpy as np
 import pytest
 
 import adapters.muzzle
-import adapters.perception as perception
 import adapters.weight
+from adapters import perception
 from adapters.perception import GalleryRef, Perception, effective_capabilities, guide_box_crop, probe_capabilities
 from config import get_settings
 from tests.video_support import DOMINANT_CHANNEL, dominant_channel, textured_image, write_enrollment_video

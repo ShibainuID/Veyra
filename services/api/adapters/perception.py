@@ -299,6 +299,7 @@ class Perception:
 
     def _prototype_identity(self, crop_path: Path, gallery_refs: list[GalleryRef]) -> dict:
         import cv2
+
         from adapters.muzzle import Gallery
 
         identifier = _get_muzzle_identifier()
@@ -352,6 +353,7 @@ class Perception:
 
     def _prototype_weight(self, body_frame_path: Path) -> dict:
         import cv2
+
         from adapters.weight import estimate_weight
 
         image = cv2.imread(str(body_frame_path))
