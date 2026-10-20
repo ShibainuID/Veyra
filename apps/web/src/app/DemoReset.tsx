@@ -38,10 +38,12 @@ export function DemoReset({ compact = false }: { compact?: boolean }) {
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen(true)}
-        className={buttonClasses("shell", "md", compact ? "px-3" : "px-3 lg:max-xl:px-2.5")}
+        title={compact ? undefined : "Demo controls"}
+        className={buttonClasses("shell", "md", compact ? "px-3" : "px-2.5")}
       >
         <FlaskConical aria-hidden="true" className="size-5" strokeWidth={2.25} />
-        <span className={compact ? undefined : "lg:max-xl:sr-only"}>Demo</span>
+        {/* Icon-only in the top bar, where the wallet and role need the room. */}
+        <span className={compact ? undefined : "sr-only"}>Demo</span>
       </button>
       <ResetPanel open={open} onClose={() => setOpen(false)} />
     </>

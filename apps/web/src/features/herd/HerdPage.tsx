@@ -237,6 +237,10 @@ export function HerdPage() {
   useEffect(() => {
     if (!pinned && defaultSelection) setPinned(defaultSelection);
   }, [pinned, defaultSelection]);
+  // A pinned animal that left the herd (a demo reset) gives way to the default again.
+  useEffect(() => {
+    if (pinned && all.data && !all.data.items.some((item) => item.id === pinned)) setPinned(null);
+  }, [pinned, all.data]);
   const panelAnimal = selectedParam ?? pinned ?? defaultSelection;
 
   const hrefFor = (animalId: string) => {
