@@ -135,8 +135,13 @@ class Enrollment(Base):
     status: Mapped[str] = mapped_column(String(20), default="created")
     video_media_id: Mapped[uuid.UUID | None] = _fk("media", nullable=True)
     processing_mode: Mapped[str | None] = mapped_column(String(20))
+    # Operator-entered context: sex, breed, documented birth date, tape heart girth, marker size, demo sample key.
+    capture_inputs: Mapped[dict] = mapped_column(JSONB, default=dict)
     manifest: Mapped[dict | None] = mapped_column(JSONB)
     identity_result: Mapped[dict | None] = mapped_column(JSONB)
+    # Age and weight adapter outputs before an animal exists; persisted as Estimate rows on confirmation.
+    estimate_results: Mapped[dict | None] = mapped_column(JSONB)
+    process_job_id: Mapped[uuid.UUID | None] = _fk("jobs", nullable=True, index=False)
     review_reasons: Mapped[list] = mapped_column(JSONB, default=list)
     animal_id: Mapped[uuid.UUID | None] = _fk("animals", nullable=True)
     created_by: Mapped[uuid.UUID] = _fk("users", index=False)
