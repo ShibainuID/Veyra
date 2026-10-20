@@ -1,0 +1,108 @@
+{
+ "video": "pmfeed_4_3_16.mp4",
+ "frames": 12000,
+ "seconds": 600.0,
+ "model": "yolov8m.pt",
+ "resolution": [
+  800,
+  600
+ ],
+ "match_iou": 0.5,
+ "policy": {
+  "gap_frames": 10,
+  "overlap_iou": 0.3
+ },
+ "bytetrack": {
+  "detection": {
+   "precision": 0.8400709449959985,
+   "recall": 0.4046192792924189
+  },
+  "mot": {
+   "mota": 0.31903655627207284,
+   "idf1": 0.13590021234408178,
+   "num_switches": 751.0,
+   "num_fragmentations": 3843.0,
+   "mostly_tracked": 0.0
+  },
+  "handoff_naive": {
+   "correct": 0.004021629280795158,
+   "wrong": 0.001989977182984132,
+   "uncertain": 0.41400902261906003,
+   "not_detected": 0.5799793709171607,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 2.725,
+   "calves_ever_wrong": 2
+  },
+  "handoff_policy": {
+   "correct": 0.0006667986372302852,
+   "wrong": 0.0002813056750815266,
+   "uncertain": 0.4190725247705275,
+   "not_detected": 0.5799793709171607,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": 0.05,
+   "calves_ever_wrong": 1
+  }
+ },
+ "botsort": {
+  "detection": {
+   "precision": 0.8412342699534563,
+   "recall": 0.4067132692287658
+  },
+  "mot": {
+   "mota": 0.3225057037785579,
+   "idf1": 0.13432867265462053,
+   "num_switches": 719.0,
+   "num_fragmentations": 3853.0,
+   "mostly_tracked": 0.0
+  },
+  "handoff_naive": {
+   "correct": 0.004855127577333014,
+   "wrong": 0.002635938362800971,
+   "uncertain": 0.41455079651180965,
+   "not_detected": 0.5779581375480564,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 2.675,
+   "calves_ever_wrong": 2
+  },
+  "handoff_policy": {
+   "correct": 0.0006667986372302852,
+   "wrong": 0.0002813056750815266,
+   "uncertain": 0.4210937581396318,
+   "not_detected": 0.5779581375480564,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": 0.05,
+   "calves_ever_wrong": 1
+  }
+ },
+ "botsort_reid": {
+  "detection": {
+   "precision": 0.838296332559971,
+   "recall": 0.41029701319942913
+  },
+  "mot": {
+   "mota": 0.3233703861900843,
+   "idf1": 0.15985171714345667,
+   "num_switches": 735.0,
+   "num_fragmentations": 4012.0,
+   "mostly_tracked": 0.0
+  },
+  "handoff_naive": {
+   "correct": 0.026317708713182817,
+   "wrong": 0.001521134391181588,
+   "uncertain": 0.39782873693751886,
+   "not_detected": 0.5743324199581167,
+   "locked_at_start": 8,
+   "median_seconds_to_first_wrong": 58.05,
+   "calves_ever_wrong": 2
+  },
+  "handoff_policy": {
+   "correct": 0.0006667986372302852,
+   "wrong": 0.0002813056750815266,
+   "uncertain": 0.42471947572957147,
+   "not_detected": 0.5743324199581167,
+   "locked_at_start": null,
+   "median_seconds_to_first_wrong": 0.05,
+   "calves_ever_wrong": 1
+  }
+ }
+}

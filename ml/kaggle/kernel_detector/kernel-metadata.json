@@ -1,0 +1,15 @@
+{
+  "id": "athillazaidan/veyra-calf-detector",
+  "title": "Veyra Calf Detector",
+  "code_file": "detector_8calves.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["athillazaidan/eight-calves-detection"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
