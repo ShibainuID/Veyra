@@ -5,17 +5,23 @@ with a fresh data dir gets a fresh database. Callers own the transaction: `get_s
 
 SQLite transactions are real: pysqlite's own transaction handling is turned off and SQLAlchemy emits
 `BEGIN` itself (the documented pysqlite recipe), so a session reads one snapshot and `begin_nested()`
-savepoints roll back with their outer transaction. `BEGIN` is deferred: the write lock is taken at the first
-write. A read-modify-write path that must not interleave with another writer uses `immediate_session()`,
-which takes the write lock at `BEGIN IMMEDIATE`; a second writer waits up to the 15 s busy timeout.
+savepoints roll back with their outer transaction. Two kinds of session:
+- `SessionLocal()` / `get_session` (writing) start with `BEGIN IMMEDIATE`, taking the write lock before the
+  first read. Writers run one at a time; a second writer waits for the first to finish, up to the 15 s busy
+  timeout, and then fails with "database is locked". A deferred transaction that read and then tried to
+  write after another commit would instead fail at once, which is why writing sessions are immediate.
+- `read_session()` / `get_read_session` (read-only) start with a deferred `BEGIN`: they read a WAL snapshot,
+  never block writers, and raise if asked to flush changes.
 
 JSON columns track in-place changes to the top-level dict or list (`notes.append(...)` is saved), but not
 changes nested deeper; reassign the attribute for those. A JSON `None` is stored as SQL `NULL`.
 
-Session rules for workers (the API runs as a single uvicorn worker process):
-- One `SessionLocal()` per job or thread; never share a session across threads.
-- Never hold a transaction open across slow calls (perception, sandbox providers): commit first, call, then
-  open a new transaction to record the result.
+Session rules (the API runs as a single uvicorn worker process):
+- GET routes and other read-only work use the read session; anything that writes uses the writing session.
+- One session per request, job, or thread; never share a session across threads, and never open a writing
+  session while the same thread holds another one (it would wait on itself until the busy timeout).
+- Keep writing transactions short: never hold one across slow calls (perception, sandbox providers). Commit
+  first, call, then open a new session to record the result.
 - Make state transitions guarded updates, `UPDATE ... WHERE id = :id AND status = :expected`, and check the
   rowcount instead of reading the status and then writing it.
 - Do not use `begin_nested()` to recover from an `IntegrityError`; roll back the whole session and start over.
@@ -23,7 +29,6 @@ Session rules for workers (the API runs as a single uvicorn worker process):
 
 import threading
 from collections.abc import Iterator
-from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -77,7 +82,7 @@ def _sqlite_connect(dbapi_connection, connection_record) -> None:
 
 
 def _sqlite_begin(connection) -> None:
-    mode = connection.get_execution_options().get(_BEGIN_OPTION, "DEFERRED")
+    mode = connection.get_execution_options().get(_BEGIN_OPTION, "IMMEDIATE")
     connection.exec_driver_sql(f"BEGIN {mode}")
 
 
@@ -109,19 +114,24 @@ def reset_engine() -> None:
 
 
 def SessionLocal() -> Session:
+    """A writing session: each transaction starts with `BEGIN IMMEDIATE`. The caller commits."""
     return Session(bind=get_engine(), expire_on_commit=False)
 
 
-@contextmanager
-def immediate_session() -> Iterator[Session]:
-    """A session whose transactions start with `BEGIN IMMEDIATE`. The caller commits; leaving rolls back."""
-    with Session(bind=get_engine().execution_options(**{_BEGIN_OPTION: "IMMEDIATE"}),
-                 expire_on_commit=False) as session:
-        yield session
+class _ReadSession(Session):
+    def flush(self, objects=None) -> None:
+        if self.new or self.dirty or self.deleted:
+            raise RuntimeError("read_session() is read-only; use SessionLocal() to write")
+        super().flush(objects)
+
+
+def read_session() -> Session:
+    """A read-only session on a deferred transaction: a consistent snapshot that never blocks writers."""
+    return _ReadSession(bind=get_engine().execution_options(**{_BEGIN_OPTION: "DEFERRED"}), expire_on_commit=False)
 
 
 def get_session() -> Iterator[Session]:
-    """FastAPI dependency. The route commits; an exception rolls back."""
+    """FastAPI dependency for routes that write. The route commits; an exception rolls back."""
     session = SessionLocal()
     try:
         yield session
@@ -130,6 +140,12 @@ def get_session() -> Iterator[Session]:
         raise
     finally:
         session.close()
+
+
+def get_read_session() -> Iterator[Session]:
+    """FastAPI dependency for routes that only read."""
+    with read_session() as session:
+        yield session
 
 
 def init_db() -> None:

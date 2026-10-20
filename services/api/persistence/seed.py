@@ -19,7 +19,7 @@ from adapters.age import estimate_age
 from config import get_settings
 from domain import clock
 from domain.ids import new_id
-from persistence.db import Base, SessionLocal, immediate_session, init_db
+from persistence.db import Base, SessionLocal, init_db
 from persistence.lifecycle import run_reset_hooks
 from persistence.models import (
     Alert, Animal, AnimalReference, AuditEvent, Camera, DemoSettings, Enrollment, Estimate, Farm, Observation,
@@ -205,7 +205,7 @@ def reset_database(scenario: str = "fresh") -> int:
     _check_scenario(scenario)
     run_reset_hooks()
     init_db()
-    with immediate_session() as session:
+    with SessionLocal() as session:
         for table in reversed(Base.metadata.sorted_tables):
             session.execute(table.delete())
         seed(session, scenario)
