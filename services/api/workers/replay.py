@@ -30,7 +30,7 @@ from domain import audit, clock, movement
 from domain.association import ObservationInput, ingest
 from domain.errors import DomainError
 from domain.ids import new_id
-from persistence.db import SessionLocal, read_session
+from persistence.db import SessionLocal, read_session, writer_scope
 from persistence.lifecycle import register_reset_hook
 from persistence.models import Alert, Camera, Observation, Replay, Track
 
@@ -262,6 +262,12 @@ def _execute(run: _Run, scenario: dict, started_at: datetime, speed: float) -> N
             _runs.pop(run.replay_id, None)
 
 
+def _execute_in_own_scope(run: _Run, scenario: dict, started_at: datetime, speed: float) -> None:
+    """The replay thread gets its own writer slot, never the slot of the request that started it."""
+    with writer_scope():
+        _execute(run, scenario, started_at, speed)
+
+
 def start(settings: Settings, *, farm_id: str, actor: tuple[str, str], scenario_id: str) -> Replay:
     """Create the replay and run it (synchronously at speed 0, else on a daemon thread). Returns the row as it was
     created. The caller must not hold a writing session."""
@@ -299,7 +305,7 @@ def start(settings: Settings, *, farm_id: str, actor: tuple[str, str], scenario_
     if speed == 0:
         _execute(run, scenario, now, speed)
     else:
-        run.thread = threading.Thread(target=_execute, args=(run, scenario, now, speed), daemon=True,
+        run.thread = threading.Thread(target=_execute_in_own_scope, args=(run, scenario, now, speed), daemon=True,
                                       name=f"replay-{replay.id}")
         run.thread.start()
     return replay
