@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
-from persistence.db import init_db, reset_engine
+from persistence.db import init_db, reset_engine, writer_scope
 from persistence.seed import seed_if_empty
 from routes import animals, audit, auth_routes, demo, enrollments, health, jobs, media
 
@@ -59,6 +59,20 @@ async def _unhandled_error(request: Request, exc: Exception) -> JSONResponse:
     return _envelope(500, "INTERNAL_ERROR", "Something went wrong on the server.", {})
 
 
+class _WriterScopeMiddleware:
+    """Each HTTP request gets its own writer slot (see `persistence.db.writer_scope`)."""
+
+    def __init__(self, app) -> None:
+        self.app = app
+
+    async def __call__(self, scope, receive, send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        with writer_scope():
+            await self.app(scope, receive, send)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
@@ -74,6 +88,7 @@ def create_app() -> FastAPI:
     app.add_exception_handler(RequestValidationError, _validation_error)
     app.add_exception_handler(StarletteHTTPException, _http_error)
     app.add_exception_handler(Exception, _unhandled_error)
+    app.add_middleware(_WriterScopeMiddleware)
     for router in ROUTERS:
         app.include_router(router, prefix=API_PREFIX)
     return app
