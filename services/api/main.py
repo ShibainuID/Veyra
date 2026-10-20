@@ -17,7 +17,7 @@ from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine, writer_scope
 from persistence.seed import seed_if_empty
 from routes import animals, audit, auth_routes, demo, enrollments, health, jobs, media
-from routes import agent, insurance, valuations, wallet  # financial core (B4)
+from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
 
 API_PREFIX = "/api/v1"
 
@@ -34,6 +34,8 @@ ROUTERS = [
     insurance.router,
     agent.router,
     wallet.router,
+    incidents.router,
+    claims.router,
 ]
 
 logger = logging.getLogger("veyra.api")
