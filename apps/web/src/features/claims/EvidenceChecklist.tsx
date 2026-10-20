@@ -24,7 +24,7 @@ export function EvidenceChecklist({ items, renderFix, className }: EvidenceCheck
           "Every requirement is on file."
         ) : (
           <>
-            <Mono>{missing}</Mono> of <Mono>{items.length}</Mono> {missing === 1 ? "requirement is" : "requirements are"} missing.
+            <Mono>{missing}</Mono> of <Mono>{items.length}</Mono> requirements {missing === 1 ? "is" : "are"} missing.
           </>
         )}
       </p>
@@ -45,7 +45,11 @@ export function EvidenceChecklist({ items, renderFix, className }: EvidenceCheck
                   <span className="font-bold">{item.label}</span>
                   <span className={cn("text-sm font-bold", present ? "text-ok" : "text-danger")}>{present ? "Present" : "Missing"}</span>
                 </p>
-                {present && item.ref && <Mono className="text-sm text-muted">{item.ref}</Mono>}
+                {present && item.detail ? (
+                  <span className="text-sm text-muted">{item.detail}</span>
+                ) : (
+                  present && item.ref && <Mono className="text-sm text-muted">{item.ref}</Mono>
+                )}
                 {fix && <div className="text-sm">{fix}</div>}
               </div>
             </li>

@@ -5,7 +5,7 @@ import { ButtonLink } from "../../components/Button";
 import { EarTag } from "../../components/EarTag";
 import { EvidenceFrame, type EvidenceView } from "../../components/EvidenceFrame";
 import { ErrorNotice, LoadingRegion, Skeleton } from "../../components/feedback";
-import { Money, Mono, Range, Timestamp } from "../../components/figures";
+import { Money, Mono, Range, TimeWindow, Timestamp } from "../../components/figures";
 import { PageHeader, Section } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill, type StatusTone } from "../../components/StatusPill";
@@ -307,7 +307,7 @@ function AlertsSection({ passport }: { passport: Passport }) {
                   <span className="flex flex-col">
                     <span className="font-bold underline-offset-4 hover:underline">{alertKindLabel(alert.kind)}</span>
                     <span className="text-sm text-muted">
-                      <Timestamp value={alert.window_start} mode="absolute" /> – <Timestamp value={alert.window_end} mode="absolute" />
+                      <TimeWindow start={alert.window_start} end={alert.window_end} />
                     </span>
                   </span>
                 </span>

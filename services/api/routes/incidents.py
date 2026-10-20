@@ -19,19 +19,19 @@ def record_incident(body: IncidentRequest, principal: Principal = Depends(requir
                     session: Session = Depends(get_session)) -> dict:
     incident = claims.record_incident(session, principal, **body.model_dump())
     session.commit()
-    return claims.incident_view(incident)
+    return claims.incident_view(session, incident)
 
 
 @router.get("", response_model=list[IncidentDetail], responses=error_responses(401))
 def list_incidents(animal_id: str | None = None, principal: Principal = Depends(current_principal),
                    session: Session = Depends(get_read_session)) -> list[dict]:
-    return [claims.incident_view(i) for i in claims.list_incidents(session, principal.farm_id, animal_id)]
+    return [claims.incident_view(session, i) for i in claims.list_incidents(session, principal.farm_id, animal_id)]
 
 
 @router.get("/{incident_id}", response_model=IncidentDetail, responses=error_responses(401, 404))
 def get_incident(incident_id: str, principal: Principal = Depends(current_principal),
                  session: Session = Depends(get_read_session)) -> dict:
-    return claims.incident_view(claims.farm_incident(session, principal.farm_id, incident_id))
+    return claims.incident_view(session, claims.farm_incident(session, principal.farm_id, incident_id))
 
 
 @router.post("/{incident_id}/findings", response_model=IncidentDetail, status_code=201,
@@ -41,4 +41,4 @@ def add_finding(incident_id: str, body: FindingRequest,
                 session: Session = Depends(get_session)) -> dict:
     incident = claims.add_finding(session, principal, incident_id, **body.model_dump())
     session.commit()
-    return claims.incident_view(incident)
+    return claims.incident_view(session, incident)

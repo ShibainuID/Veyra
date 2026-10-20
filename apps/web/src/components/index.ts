@@ -8,7 +8,7 @@ export type { EarTagState, EarTagSize } from "./EarTag";
 export { EvidenceFrame } from "./EvidenceFrame";
 export type { EvidenceView, EvidenceQuality } from "./EvidenceFrame";
 export { EmptyState, ErrorNotice, LoadingRegion, Skeleton } from "./feedback";
-export { Money, Mono, Range, Timestamp } from "./figures";
+export { Money, Mono, Range, TimeWindow, Timestamp } from "./figures";
 export { FilterChips } from "./FilterChips";
 export type { FilterOption } from "./FilterChips";
 export { PageHeader, Section } from "./layout";

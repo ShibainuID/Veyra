@@ -61,6 +61,7 @@ def test_incident_links_active_policy_and_keeps_fields_distinct(client):
     assert (finding["finding_type"], finding["author_id"], finding["author_role"]) == (
         "vet_assessment", "user-vet", "vet")
     fetched = client.get(f"{API}/incidents/{incident['id']}", headers=ASSESSOR).json()
+    assert fetched["reported_by"] == "user-operator" and fetched["reported_by_name"]
     assert fetched["description"].startswith("Left hind") and fetched["facts"] == {"location": "Pen A"}
     with SessionLocal() as session:
         types = session.scalars(select(AuditEvent.event_type).where(AuditEvent.subject_id == incident["id"])).all()
@@ -72,7 +73,8 @@ def test_incident_roles_and_scope(client):
     assert _incident(client, animal_id="animal-other-001").status_code == 404
     incident = _incident(client).json()
     assert _finding(client, incident["id"], headers=OPERATOR).status_code == 403
-    assert _finding(client, incident["id"], headers=MANAGER).status_code == 201
+    assert _finding(client, incident["id"], headers=MANAGER).status_code == 403
+    assert _finding(client, incident["id"]).status_code == 201
     assert client.get(f"{API}/incidents/{incident['id']}", headers=OTHER_FARM).status_code == 404
     other_alert = _alert(animal_id="animal-demo-003", alert_id="alr-melati")
     assert _incident(client, linked_alert_ids=[other_alert]).status_code == 422
@@ -193,3 +195,15 @@ def test_cover_moved_after_approval_blocks_submission(client):
     response = propose(client, action_type="CLAIM_SUBMISSION", claim_id=claim["id"])
     assert error_code(response) == "EVIDENCE_INCOMPLETE"
     assert response.json()["error"]["details"]["missing"] == ["active_policy"]
+
+
+def test_a_finding_added_after_the_declaration_completes_the_checklist(client):
+    incident = _incident(client, linked_alert_ids=[_alert()]).json()
+    claim = _draft(client, incident["id"]).json()
+    client.patch(f"{API}/claims/{claim['id']}", json={"declaration_confirmed": True}, headers=MANAGER)
+    assert _finding(client, incident["id"]).status_code == 201
+    fresh = client.get(f"{API}/claims/{claim['id']}", headers=MANAGER).json()
+    status = {item["key"]: item["status"] for item in fresh["checklist"]}
+    assert status["vet_assessment"] == "present" and status["farmer_declaration"] == "present"
+    declaration = next(item for item in fresh["checklist"] if item["key"] == "farmer_declaration")
+    assert declaration["detail"].startswith("Confirmed by ")

@@ -335,7 +335,9 @@ def action_view(session: Session, action: AgentAction) -> dict:
                                "items": list(manifest.items)} if manifest else None),
         "execution": _columns(execution) if execution else None,
         "review": {"recipient": provider_name(catalog, payload.get("provider_id", "")),
-                   "animal_id": action.animal_id, "amount_minor": amount, "currency": payload.get("currency"),
+                   "animal_id": action.animal_id, "currency": payload.get("currency"),
+                   # A claim moves no money; its review shows the claimed amount.
+                   "amount_minor": amount if amount is not None else payload.get("claimed_amount_minor"),
                    "terms_version": payload.get("terms_version"),
                    "evidence_manifest_version": payload.get("evidence_manifest_version"),
                    "balance_after_minor": balance_after},

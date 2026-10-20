@@ -1269,6 +1269,8 @@ export interface components {
             status: "present" | "missing";
             /** Ref */
             ref: string | null;
+            /** Detail */
+            detail?: string | null;
         };
         /** ClaimDetail */
         ClaimDetail: {
@@ -1871,6 +1873,8 @@ export interface components {
             created_at: string;
             /** Animal Id */
             animal_id: string;
+            /** Reported By Name */
+            reported_by_name?: string | null;
         };
         /** IncidentOut */
         IncidentOut: {

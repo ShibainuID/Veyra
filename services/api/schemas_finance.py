@@ -215,6 +215,8 @@ class FindingRequest(BaseModel):
 
 class IncidentDetail(IncidentOut):
     animal_id: str
+    # The reporter's display name, so the farm's report reads as a person rather than a user id.
+    reported_by_name: str | None = None
 
 
 class ClaimDraftRequest(BaseModel):
@@ -230,6 +232,8 @@ class ChecklistItem(BaseModel):
     label: str
     status: Literal["present", "missing"]
     ref: str | None
+    # Words for a person-shaped ref, e.g. "Confirmed by W. Santoso" for the declaration.
+    detail: str | None = None
 
 
 class IllustrativePayout(BaseModel):
