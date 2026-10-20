@@ -82,7 +82,7 @@ export function EvidenceFrame({
           <span className="font-bold">{caption ?? label}</span>
           {capturedAt ? (
             <Timestamp value={capturedAt} mode="absolute" className="text-sm text-muted" />
-          ) : (
+          ) : src ? null : (
             <span className="text-sm text-muted">{recorded ? "No footage" : "Not captured"}</span>
           )}
         </div>

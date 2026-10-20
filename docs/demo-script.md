@@ -54,6 +54,11 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 - **Audit**: agent proposals, the manager's decisions, and the providers' results are separate rows, each tied to `animal-demo-001`.
 - Point at the `simulated` chips, "Template explanation (offline)", and "Sandbox · no real funds".
 
+## Extra beats (if time allows)
+
+- **Right cow at claim:** record a second incident with **Use the sample death** → on its claim, **Verify identity** → **Use sample: wrong cow** (Mismatch, submission blocked) → **Use sample: matching scan** (Match, the checklist item turns present); with the muzzle model installed, upload a muzzle photo instead for a `prototype` result.
+- **Cameras learn the herd:** on Sari's passport, **Location → Camera gallery** names which pen cameras hold the current gallery version; as Manager, **Push to cameras** publishes it and the cameras' acknowledgements arrive, labeled `simulated`.
+
 ## Fallbacks
 
 | If | Do |
