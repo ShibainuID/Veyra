@@ -15,7 +15,9 @@ from sqlalchemy.orm import Session
 
 from domain.audit import actor_ref, user_names
 from domain.errors import DomainError
-from domain.passbook import action_amount, awaiting_actions, build_passbook, exposure_summary, product_name
+from domain.passbook import (
+    AWAITING_STATUSES, action_amount, awaiting_actions, build_passbook, exposure_summary, product_name,
+)
 from persistence.media import signed_url
 from persistence.models import (
     AgentAction, Alert, Animal, AnimalReference, Camera, Claim, Estimate, Incident, Observation, Policy,
@@ -25,7 +27,7 @@ from persistence.models import (
 COVERAGE_STATUSES = ("active", "pending", "none")
 PENDING_POLICY_STATUSES = ("awaiting_payment", "paid_pending_activation")
 COVERAGE_ACTION_TYPES = ("POLICY_APPLICATION", "PREMIUM_PAYMENT")
-IN_FLIGHT_ACTION_STATUSES = ("pending_approval", "approved", "executing")
+IN_FLIGHT_ACTION_STATUSES = AWAITING_STATUSES
 WALLET_SIGNS = {"credit": 1, "debit": -1, "hold": -1, "release": 1}
 DEFAULT_CURRENCY = "USD"
 
@@ -121,7 +123,7 @@ def _card(animal: Animal, herd: _Herd) -> dict:
         "coverage": _coverage(herd.policies[animal.id], herd.actions[animal.id]),
         "alerts": {"open_count": len(open_alerts), "kinds": sorted({alert.kind for alert in open_alerts})},
         "last_observation": _last_seen(herd.last_observation.get(animal.id), herd.camera_names),
-        "pending_actions": sum(action.status == "pending_approval" for action in herd.actions[animal.id]),
+        "awaiting_approval_count": sum(action.status == "pending_approval" for action in herd.actions[animal.id]),
     }
 
 
