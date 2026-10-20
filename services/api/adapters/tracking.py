@@ -13,7 +13,8 @@ import yaml
 EMIT_HZ = 5.0
 CONF = 0.25
 IMG_SIZE = 800
-METHOD_VERSION = "calf_detector_v1+botsort_reid"
+# COCO animal classes (cat..giraffe). With a COCO detector only these are kept, so people are never tracked.
+COCO_ANIMALS = list(range(15, 24))
 
 
 def _device() -> str:
@@ -45,10 +46,12 @@ def track_video(video_path: Path, weights: str, emit_hz: float = EMIT_HZ) -> dic
         raise ValueError("video could not be read")
     every = max(1, round(fps / emit_hz))
     model = YOLO(weights)
+    # The fine-tuned detector has one class (calf); a COCO detector is restricted to animals.
+    classes = COCO_ANIMALS if len(model.names) > 1 else None
     frames = []
     with tempfile.TemporaryDirectory() as tmp:
         stream = model.track(source=str(video_path), tracker=_tracker_config(Path(tmp)), conf=CONF, imgsz=IMG_SIZE,
-                             persist=True, stream=True, verbose=False, device=_device())
+                             classes=classes, persist=True, stream=True, verbose=False, device=_device())
         for i, r in enumerate(stream):
             if i % every:
                 continue
@@ -57,8 +60,8 @@ def track_video(video_path: Path, weights: str, emit_hz: float = EMIT_HZ) -> dic
                 for tid, xyxy, conf in zip(r.boxes.id.int().tolist(), r.boxes.xyxy.tolist(), r.boxes.conf.tolist()):
                     boxes.append([str(tid), *(round(v, 1) for v in xyxy), round(conf, 3)])
             frames.append([round(i / fps, 3), boxes])
-    return {"width": width, "height": height, "fps": fps, "source": "prototype", "method_version": METHOD_VERSION,
-            "frames": frames}
+    return {"width": width, "height": height, "fps": fps, "source": "prototype",
+            "method_version": f"{Path(weights).stem}+botsort_reid", "frames": frames}
 
 
 def extract_clip(video_path: Path, out_path: Path, start_s: float, end_s: float, track_id: str, tracks: dict) -> bool:
