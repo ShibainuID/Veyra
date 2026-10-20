@@ -28,6 +28,989 @@
         }
       }
     },
+    "/api/v1/auth/whoami": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Whoami",
+        "operationId": "whoami_api_v1_auth_whoami_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhoAmI"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/animals": {
+      "get": {
+        "tags": [
+          "animals"
+        ],
+        "summary": "List Animals",
+        "operationId": "list_animals_api_v1_animals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "coverage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "none",
+                    "active",
+                    "pending"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Coverage"
+            }
+          },
+          {
+            "name": "alerts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "open",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Alerts"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalList"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/animals/{animal_id}/passport": {
+      "get": {
+        "tags": [
+          "animals"
+        ],
+        "summary": "Get Passport",
+        "operationId": "get_passport_api_v1_animals__animal_id__passport_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "animal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Animal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Passport"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/audit-events": {
+      "get": {
+        "tags": [
+          "audit"
+        ],
+        "summary": "List Audit Events",
+        "operationId": "list_audit_events_api_v1_audit_events_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "animal_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Animal Id"
+            }
+          },
+          {
+            "name": "subject_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Type"
+            }
+          },
+          {
+            "name": "subject_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subject Id"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AuditEventOut"
+                  },
+                  "title": "Response List Audit Events Api V1 Audit Events Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Create Enrollment",
+        "operationId": "create_enrollment_api_v1_enrollments_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EnrollmentCreate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "List Enrollments",
+        "operationId": "list_enrollments_api_v1_enrollments_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "created",
+                    "uploaded",
+                    "processing",
+                    "review",
+                    "confirmed",
+                    "rejected",
+                    "failed"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentList"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}": {
+      "get": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Get Enrollment",
+        "operationId": "get_enrollment_api_v1_enrollments__enrollment_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/video": {
+      "put": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Upload Video",
+        "operationId": "upload_video_api_v1_enrollments__enrollment_id__video_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_video_api_v1_enrollments__enrollment_id__video_put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/process": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Process Enrollment",
+        "operationId": "process_enrollment_api_v1_enrollments__enrollment_id__process_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobAccepted"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/confirm": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Confirm Enrollment",
+        "operationId": "confirm_enrollment_api_v1_enrollments__enrollment_id__confirm_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/enrollments/{enrollment_id}/retry": {
+      "post": {
+        "tags": [
+          "enrollments"
+        ],
+        "summary": "Retry Enrollment",
+        "operationId": "retry_enrollment_api_v1_enrollments__enrollment_id__retry_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnrollmentCreated"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "tags": [
+          "jobs"
+        ],
+        "summary": "Get Job",
+        "operationId": "get_job_api_v1_jobs__job_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/media/{media_id}": {
       "get": {
         "tags": [
@@ -90,6 +1073,11 @@
         ],
         "summary": "Reset",
         "operationId": "reset_api_v1_demo_reset_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "scenario",
@@ -117,15 +1105,45 @@
               }
             }
           },
-          "422": {
-            "description": "Validation Error",
+          "401": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ErrorEnvelope"
                 }
               }
-            }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
           }
         }
       }
@@ -147,8 +1165,33 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -177,6 +1220,164 @@
               }
             }
           },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/demo/replays": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "List Scenarios",
+        "operationId": "list_scenarios_api_v1_demo_replays_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScenarioList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/demo/replays/{scenario_id}/start": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Start Replay",
+        "operationId": "start_replay_api_v1_demo_replays__scenario_id__start_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "scenario_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scenario Id"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayStarted"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
           "422": {
             "description": "Validation Error",
             "content": {
@@ -189,10 +1390,2102 @@
           }
         }
       }
+    },
+    "/api/v1/replays/{replay_id}": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Get Replay",
+        "operationId": "get_replay_api_v1_replays__replay_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Replay Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReplayOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/cameras": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "List Cameras",
+        "operationId": "list_cameras_api_v1_cameras_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CameraList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cameras/{camera_id}/observations": {
+      "post": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Ingest Observation",
+        "operationId": "ingest_observation_api_v1_cameras__camera_id__observations_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "camera_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Camera Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ObservationIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ObservationIngested"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/animals/{animal_id}/observations": {
+      "get": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Animal Observations",
+        "operationId": "animal_observations_api_v1_animals__animal_id__observations_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "animal_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Animal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnimalObservations"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tracks/{track_id}": {
+      "patch": {
+        "tags": [
+          "monitoring"
+        ],
+        "summary": "Review Track",
+        "operationId": "review_track_api_v1_tracks__track_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "track_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Track Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackOut"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/alerts": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "List Alerts",
+        "operationId": "list_alerts_api_v1_alerts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "open",
+                    "acknowledged",
+                    "resolved"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "reduced_movement",
+                    "observation_quality"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "animal_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Animal Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertList"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/alerts/{alert_id}": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Get Alert",
+        "operationId": "get_alert_api_v1_alerts__alert_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertView"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Review Alert",
+        "operationId": "review_alert_api_v1_alerts__alert_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "alert_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Alert Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertView"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/query": {
+      "post": {
+        "tags": [
+          "assistant"
+        ],
+        "summary": "Query",
+        "operationId": "query_api_v1_assistant_query_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantQuery"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantAnswer"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorEnvelope"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
     }
   },
   "components": {
     "schemas": {
+      "ActorRef": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "id",
+          "name"
+        ],
+        "title": "ActorRef"
+      },
+      "AlertCounts": {
+        "properties": {
+          "open_count": {
+            "type": "integer",
+            "title": "Open Count"
+          },
+          "kinds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Kinds"
+          }
+        },
+        "type": "object",
+        "required": [
+          "open_count",
+          "kinds"
+        ],
+        "title": "AlertCounts"
+      },
+      "AlertList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AlertView"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "AlertList"
+      },
+      "AlertOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "track_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Id"
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "baseline_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Start"
+          },
+          "baseline_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline End"
+          },
+          "rule": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rule"
+          },
+          "clip": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip"
+          },
+          "notes": {
+            "items": {},
+            "type": "array",
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "camera_id",
+          "track_id",
+          "window_start",
+          "window_end",
+          "baseline_start",
+          "baseline_end",
+          "rule",
+          "clip",
+          "notes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AlertOut"
+      },
+      "AlertReview": {
+        "properties": {
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "acknowledged",
+                  "resolved"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "title": "AlertReview"
+      },
+      "AlertView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "reduced_movement",
+              "observation_quality"
+            ],
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "acknowledged",
+              "resolved"
+            ],
+            "title": "Status"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "track_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Id"
+          },
+          "track_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track Key"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "camera_name": {
+            "type": "string",
+            "title": "Camera Name"
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "baseline_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Start"
+          },
+          "baseline_end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline End"
+          },
+          "rule": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Rule"
+          },
+          "clip": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip"
+          },
+          "notes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Notes"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "animal_id",
+          "animal_name",
+          "track_id",
+          "track_key",
+          "camera_id",
+          "camera_name",
+          "window_start",
+          "window_end",
+          "baseline_start",
+          "baseline_end",
+          "rule",
+          "clip",
+          "notes",
+          "summary",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AlertView"
+      },
+      "AnimalIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "breed": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Breed"
+          },
+          "breed_category": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Breed Category"
+          },
+          "sex": {
+            "type": "string",
+            "enum": [
+              "F",
+              "M"
+            ],
+            "title": "Sex"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "breed",
+          "breed_category",
+          "sex"
+        ],
+        "title": "AnimalIn"
+      },
+      "AnimalLastObservation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "camera_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Name"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Bbox"
+          },
+          "visibility": {
+            "type": "number",
+            "title": "Visibility"
+          },
+          "association_status": {
+            "type": "string",
+            "enum": [
+              "unassigned",
+              "associated",
+              "uncertain"
+            ],
+            "title": "Association Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "camera_id",
+          "camera_name",
+          "observed_at",
+          "bbox",
+          "visibility",
+          "association_status"
+        ],
+        "title": "AnimalLastObservation"
+      },
+      "AnimalList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnimalListItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/HerdSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "summary"
+        ],
+        "title": "AnimalList"
+      },
+      "AnimalListItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "breed": {
+            "type": "string",
+            "title": "Breed"
+          },
+          "breed_category": {
+            "type": "string",
+            "title": "Breed Category"
+          },
+          "sex": {
+            "type": "string",
+            "title": "Sex"
+          },
+          "identity_status": {
+            "type": "string",
+            "title": "Identity Status"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RangeEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RangeEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valuation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValuationBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/AlertCounts"
+          },
+          "last_observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "awaiting_approval_count": {
+            "type": "integer",
+            "title": "Awaiting Approval Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "breed",
+          "breed_category",
+          "sex",
+          "identity_status",
+          "age",
+          "weight",
+          "valuation",
+          "coverage",
+          "alerts",
+          "last_observation",
+          "awaiting_approval_count"
+        ],
+        "title": "AnimalListItem"
+      },
+      "AnimalObservations": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "last_observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnimalLastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackOut"
+            },
+            "type": "array",
+            "title": "Tracks"
+          },
+          "recent": {
+            "items": {
+              "$ref": "#/components/schemas/ObservationOut"
+            },
+            "type": "array",
+            "title": "Recent"
+          },
+          "quality_summary": {
+            "$ref": "#/components/schemas/QualitySummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id",
+          "last_observation",
+          "tracks",
+          "recent",
+          "quality_summary"
+        ],
+        "title": "AnimalObservations"
+      },
+      "ApplicationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "terms_version": {
+            "type": "string",
+            "title": "Terms Version"
+          },
+          "insured_value_minor": {
+            "type": "integer",
+            "title": "Insured Value Minor"
+          },
+          "premium_minor": {
+            "type": "integer",
+            "title": "Premium Minor"
+          },
+          "deductible_minor": {
+            "type": "integer",
+            "title": "Deductible Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "coverage_start": {
+            "type": "string",
+            "format": "date",
+            "title": "Coverage Start"
+          },
+          "coverage_end": {
+            "type": "string",
+            "format": "date",
+            "title": "Coverage End"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "provider_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Ref"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "product_id",
+          "product_name",
+          "provider_id",
+          "terms_version",
+          "insured_value_minor",
+          "premium_minor",
+          "deductible_minor",
+          "currency",
+          "coverage_start",
+          "coverage_end",
+          "status",
+          "provider_ref",
+          "created_at"
+        ],
+        "title": "ApplicationOut"
+      },
+      "AssistantAnswer": {
+        "properties": {
+          "intent": {
+            "type": "string",
+            "enum": [
+              "animal_lookup",
+              "location_lookup",
+              "alert_lookup",
+              "coverage_lookup",
+              "unknown"
+            ],
+            "title": "Intent"
+          },
+          "parsed_by": {
+            "type": "string",
+            "enum": [
+              "live",
+              "simulated"
+            ],
+            "title": "Parsed By"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantFact"
+            },
+            "type": "array",
+            "title": "Facts"
+          },
+          "records": {
+            "$ref": "#/components/schemas/AssistantRecords"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "fallback_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallback Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "intent",
+          "parsed_by",
+          "answer",
+          "facts",
+          "records",
+          "missing",
+          "fallback_reason"
+        ],
+        "title": "AssistantAnswer"
+      },
+      "AssistantFact": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "title": "Value"
+          },
+          "record_type": {
+            "type": "string",
+            "title": "Record Type"
+          },
+          "record_id": {
+            "type": "string",
+            "title": "Record Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "label",
+          "value",
+          "record_type",
+          "record_id"
+        ],
+        "title": "AssistantFact"
+      },
+      "AssistantQuery": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "AssistantQuery"
+      },
+      "AssistantRecords": {
+        "properties": {
+          "animals": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Animals"
+          },
+          "last_observations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Last Observations"
+          },
+          "coverage": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertView"
+            },
+            "type": "array",
+            "title": "Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animals",
+          "last_observations",
+          "coverage",
+          "alerts"
+        ],
+        "title": "AssistantRecords"
+      },
+      "AuditEventOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ActorRef"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "subject_type": {
+            "type": "string",
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "created_at",
+          "actor",
+          "event_type",
+          "subject_type",
+          "subject_id",
+          "animal_id",
+          "data"
+        ],
+        "title": "AuditEventOut"
+      },
+      "Body_upload_video_api_v1_enrollments__enrollment_id__video_put": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_video_api_v1_enrollments__enrollment_id__video_put"
+      },
+      "CameraLastObservation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "track_id": {
+            "type": "string",
+            "title": "Track Id"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "association_status": {
+            "type": "string",
+            "enum": [
+              "unassigned",
+              "associated",
+              "uncertain"
+            ],
+            "title": "Association Status"
+          },
+          "visibility": {
+            "type": "number",
+            "title": "Visibility"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Bbox"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "observed_at",
+          "track_id",
+          "animal_id",
+          "animal_name",
+          "association_status",
+          "visibility",
+          "bbox"
+        ],
+        "title": "CameraLastObservation"
+      },
+      "CameraList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CameraOut"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "CameraList"
+      },
+      "CameraOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "map_x": {
+            "type": "number",
+            "title": "Map X"
+          },
+          "map_y": {
+            "type": "number",
+            "title": "Map Y"
+          },
+          "last_observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CameraLastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "location",
+          "map_x",
+          "map_y",
+          "last_observation"
+        ],
+        "title": "CameraOut"
+      },
+      "CameraSeen": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "camera_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Name"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "last_observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Observed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "camera_name",
+          "count",
+          "last_observed_at"
+        ],
+        "title": "CameraSeen"
+      },
+      "Candidate": {
+        "properties": {
+          "animal_id": {
+            "type": "string",
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "cosine": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cosine"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "animal_id"
+        ],
+        "title": "Candidate"
+      },
+      "ClaimOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "policy_id": {
+            "type": "string",
+            "title": "Policy Id"
+          },
+          "incident_id": {
+            "type": "string",
+            "title": "Incident Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "checklist": {
+            "items": {},
+            "type": "array",
+            "title": "Checklist"
+          },
+          "blocked_reason": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked Reason"
+          },
+          "declaration_confirmed": {
+            "type": "boolean",
+            "title": "Declaration Confirmed"
+          },
+          "declaration_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Declaration By"
+          },
+          "claimed_amount_minor": {
+            "type": "integer",
+            "title": "Claimed Amount Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "evidence_manifest_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Manifest Id"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt"
+          },
+          "assessment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assessment Status"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "policy_id",
+          "incident_id",
+          "status",
+          "checklist",
+          "blocked_reason",
+          "declaration_confirmed",
+          "declaration_by",
+          "claimed_amount_minor",
+          "currency",
+          "evidence_manifest_id",
+          "receipt",
+          "assessment_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ClaimOut"
+      },
+      "ConfirmBody": {
+        "properties": {
+          "decision": {
+            "type": "string",
+            "enum": [
+              "register_new",
+              "link_existing",
+              "reject"
+            ],
+            "title": "Decision"
+          },
+          "animal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnimalIn"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "For `register_new`; defaults to the sample's proposal."
+          },
+          "link_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link To",
+            "description": "For `link_existing`: an animal id on this farm."
+          },
+          "override_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Note",
+            "description": "Required to register a possible duplicate, or with a required view missing or an uncertain identity."
+          },
+          "reject_reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reject Reason",
+            "description": "Required for `reject`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "decision"
+        ],
+        "title": "ConfirmBody"
+      },
+      "Coverage": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "pending",
+              "none"
+            ],
+            "title": "Status"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
+          },
+          "policy_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "policy_id",
+          "product_id",
+          "policy_status"
+        ],
+        "title": "Coverage"
+      },
       "DemoSettingsOut": {
         "properties": {
           "payment_mode": {
@@ -258,6 +3551,741 @@
         ],
         "title": "DemoSettingsUpdate"
       },
+      "EnrollmentCreate": {
+        "properties": {
+          "sample_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Key",
+            "description": "A demo sample from `demo/fixtures/enrollment_samples.json`."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EnrollmentCreate"
+      },
+      "EnrollmentCreated": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploaded",
+              "processing",
+              "review",
+              "confirmed",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "sample_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Key"
+          },
+          "retry_of_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry Of Id"
+          },
+          "upload": {
+            "$ref": "#/components/schemas/UploadTarget"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "sample_key",
+          "retry_of_id",
+          "upload"
+        ],
+        "title": "EnrollmentCreated"
+      },
+      "EnrollmentList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/EnrollmentSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "EnrollmentList"
+      },
+      "EnrollmentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploaded",
+              "processing",
+              "review",
+              "confirmed",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "sample_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Key"
+          },
+          "video_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Media Id"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "processing_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Mode"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Review Reasons"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "retry_of_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry Of Id"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "manifest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Manifest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Identity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estimates": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "sample_key",
+          "video_media_id",
+          "video_url",
+          "processing_mode",
+          "review_reasons",
+          "sources",
+          "capabilities",
+          "decision",
+          "reviewer_id",
+          "animal_id",
+          "retry_of_id",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "job",
+          "manifest",
+          "identity",
+          "estimates"
+        ],
+        "title": "EnrollmentOut"
+      },
+      "EnrollmentSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "created",
+              "uploaded",
+              "processing",
+              "review",
+              "confirmed",
+              "rejected",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "sample_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Key"
+          },
+          "video_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Media Id"
+          },
+          "video_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Url"
+          },
+          "processing_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Mode"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Review Reasons"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources"
+          },
+          "capabilities": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capabilities"
+          },
+          "decision": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision"
+          },
+          "reviewer_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewer Id"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "retry_of_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry Of Id"
+          },
+          "created_by": {
+            "type": "string",
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "job": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/JobRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "sample_key",
+          "video_media_id",
+          "video_url",
+          "processing_mode",
+          "review_reasons",
+          "sources",
+          "capabilities",
+          "decision",
+          "reviewer_id",
+          "animal_id",
+          "retry_of_id",
+          "created_by",
+          "created_at",
+          "updated_at",
+          "job"
+        ],
+        "title": "EnrollmentSummary"
+      },
+      "ErrorBody": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "ErrorBody"
+      },
+      "ErrorEnvelope": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorEnvelope"
+      },
+      "EstimateOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "range_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Low"
+          },
+          "range_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range High"
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "method_version": {
+            "type": "string",
+            "title": "Method Version"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence"
+          },
+          "review_required": {
+            "type": "boolean",
+            "title": "Review Required"
+          },
+          "review_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "range_low",
+          "range_high",
+          "point",
+          "unit",
+          "source",
+          "method_version",
+          "evidence",
+          "review_required",
+          "review_reason",
+          "created_at"
+        ],
+        "title": "EstimateOut"
+      },
+      "ExposureSummary": {
+        "properties": {
+          "exposure_low_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure Low Minor"
+          },
+          "exposure_high_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure High Minor"
+          },
+          "insured_minor": {
+            "type": "integer",
+            "title": "Insured Minor"
+          },
+          "uninsured_low_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Uninsured Low Minor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exposure_low_minor",
+          "exposure_high_minor",
+          "insured_minor",
+          "uninsured_low_minor",
+          "currency"
+        ],
+        "title": "ExposureSummary"
+      },
+      "FarmRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "FarmRef"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -270,6 +4298,1606 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HerdSummary": {
+        "properties": {
+          "animal_count": {
+            "type": "integer",
+            "title": "Animal Count"
+          },
+          "exposure_low_minor": {
+            "type": "integer",
+            "title": "Exposure Low Minor"
+          },
+          "exposure_high_minor": {
+            "type": "integer",
+            "title": "Exposure High Minor"
+          },
+          "insured_minor": {
+            "type": "integer",
+            "title": "Insured Minor"
+          },
+          "uncovered_count": {
+            "type": "integer",
+            "title": "Uncovered Count"
+          },
+          "open_alerts": {
+            "type": "integer",
+            "title": "Open Alerts"
+          },
+          "pending_approvals": {
+            "type": "integer",
+            "title": "Pending Approvals"
+          },
+          "wallet_balance_minor": {
+            "type": "integer",
+            "title": "Wallet Balance Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_count",
+          "exposure_low_minor",
+          "exposure_high_minor",
+          "insured_minor",
+          "uncovered_count",
+          "open_alerts",
+          "pending_approvals",
+          "wallet_balance_minor",
+          "currency"
+        ],
+        "title": "HerdSummary"
+      },
+      "Identity": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "method_version": {
+            "type": "string",
+            "title": "Method Version"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "candidate",
+              "new",
+              "uncertain"
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "title": "Candidates",
+            "default": []
+          },
+          "possible_duplicate": {
+            "type": "boolean",
+            "title": "Possible Duplicate"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "source",
+          "method_version",
+          "outcome",
+          "possible_duplicate"
+        ],
+        "title": "Identity"
+      },
+      "IncidentOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "estimated_loss_minor": {
+            "type": "integer",
+            "title": "Estimated Loss Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "reported_by": {
+            "type": "string",
+            "title": "Reported By"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Facts"
+          },
+          "documents": {
+            "items": {},
+            "type": "array",
+            "title": "Documents"
+          },
+          "professional_findings": {
+            "items": {},
+            "type": "array",
+            "title": "Professional Findings"
+          },
+          "linked_alert_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Linked Alert Ids"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "policy_id",
+          "kind",
+          "occurred_at",
+          "description",
+          "estimated_loss_minor",
+          "currency",
+          "reported_by",
+          "facts",
+          "documents",
+          "professional_findings",
+          "linked_alert_ids",
+          "created_at"
+        ],
+        "title": "IncidentOut"
+      },
+      "JobAccepted": {
+        "properties": {
+          "job_id": {
+            "type": "string",
+            "title": "Job Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ],
+        "title": "JobAccepted"
+      },
+      "JobOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "subject_id",
+          "status",
+          "result",
+          "error"
+        ],
+        "title": "JobOut"
+      },
+      "JobRef": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "succeeded",
+              "failed"
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status"
+        ],
+        "title": "JobRef"
+      },
+      "LastObservation": {
+        "properties": {
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "camera_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Name"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "association_status": {
+            "type": "string",
+            "title": "Association Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "camera_id",
+          "camera_name",
+          "observed_at",
+          "association_status"
+        ],
+        "title": "LastObservation"
+      },
+      "Manifest": {
+        "properties": {
+          "processing_mode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Processing Mode"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "method_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method Version"
+          },
+          "video": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video"
+          },
+          "views": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ViewOut"
+            },
+            "type": "object",
+            "title": "Views",
+            "default": {}
+          },
+          "checks": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Checks",
+            "default": {}
+          },
+          "review_required": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Required"
+          },
+          "review_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Review Reasons",
+            "default": []
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "Manifest"
+      },
+      "ObservationIn": {
+        "properties": {
+          "track_key": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Track Key"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 4,
+            "title": "Bbox"
+          },
+          "visibility": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Visibility"
+          },
+          "event": {
+            "type": "string",
+            "enum": [
+              "frame",
+              "muzzle_match",
+              "track_lost"
+            ],
+            "title": "Event",
+            "default": "frame"
+          },
+          "candidate_animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Animal Id"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "media_ref": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Ref"
+          },
+          "replay_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "track_key",
+          "observed_at",
+          "bbox",
+          "visibility"
+        ],
+        "title": "ObservationIn"
+      },
+      "ObservationIngested": {
+        "properties": {
+          "observation": {
+            "$ref": "#/components/schemas/ObservationOut"
+          },
+          "track": {
+            "$ref": "#/components/schemas/TrackOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observation",
+          "track"
+        ],
+        "title": "ObservationIngested"
+      },
+      "ObservationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "track_id": {
+            "type": "string",
+            "title": "Track Id"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "association_status": {
+            "type": "string",
+            "enum": [
+              "unassigned",
+              "associated",
+              "uncertain"
+            ],
+            "title": "Association Status"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Bbox"
+          },
+          "visibility": {
+            "type": "number",
+            "title": "Visibility"
+          },
+          "event": {
+            "type": "string",
+            "title": "Event"
+          },
+          "media_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Ref"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "camera_id",
+          "track_id",
+          "animal_id",
+          "association_status",
+          "observed_at",
+          "bbox",
+          "visibility",
+          "event",
+          "media_ref",
+          "source"
+        ],
+        "title": "ObservationOut"
+      },
+      "ObservationSummary": {
+        "properties": {
+          "last": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/CameraSeen"
+            },
+            "type": "array",
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "required": [
+          "last",
+          "count",
+          "cameras"
+        ],
+        "title": "ObservationSummary"
+      },
+      "Passbook": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/PassbookLine"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/ExposureSummary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lines",
+          "summary"
+        ],
+        "title": "Passbook"
+      },
+      "PassbookLine": {
+        "properties": {
+          "no": {
+            "type": "integer",
+            "title": "No"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "event",
+              "awaiting"
+            ],
+            "title": "Kind"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "actor": {
+            "$ref": "#/components/schemas/ActorRef"
+          },
+          "amount_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "stamp": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Stamp"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "action_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Id"
+          },
+          "subject_type": {
+            "type": "string",
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "type": "string",
+            "title": "Subject Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "posted",
+              "awaiting",
+              "void"
+            ],
+            "title": "Status"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "payload_hash_prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload Hash Prefix"
+          }
+        },
+        "type": "object",
+        "required": [
+          "no",
+          "at",
+          "kind",
+          "event_type",
+          "title",
+          "detail",
+          "actor",
+          "amount_minor",
+          "currency",
+          "stamp",
+          "action_id",
+          "subject_type",
+          "subject_id",
+          "status",
+          "expires_at",
+          "payload_hash_prefix"
+        ],
+        "title": "PassbookLine"
+      },
+      "Passport": {
+        "properties": {
+          "animal": {
+            "$ref": "#/components/schemas/PassportAnimal"
+          },
+          "references": {
+            "items": {
+              "$ref": "#/components/schemas/ReferenceOut"
+            },
+            "type": "array",
+            "title": "References"
+          },
+          "estimates": {
+            "items": {
+              "$ref": "#/components/schemas/EstimateOut"
+            },
+            "type": "array",
+            "title": "Estimates"
+          },
+          "valuations": {
+            "items": {
+              "$ref": "#/components/schemas/ValuationOut"
+            },
+            "type": "array",
+            "title": "Valuations"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyOut"
+            },
+            "type": "array",
+            "title": "Policies"
+          },
+          "applications": {
+            "items": {
+              "$ref": "#/components/schemas/ApplicationOut"
+            },
+            "type": "array",
+            "title": "Applications"
+          },
+          "observations": {
+            "$ref": "#/components/schemas/ObservationSummary"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "incidents": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentOut"
+            },
+            "type": "array",
+            "title": "Incidents"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ClaimOut"
+            },
+            "type": "array",
+            "title": "Claims"
+          },
+          "pending_actions": {
+            "items": {
+              "$ref": "#/components/schemas/PendingActionOut"
+            },
+            "type": "array",
+            "title": "Pending Actions"
+          },
+          "passbook": {
+            "$ref": "#/components/schemas/Passbook"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal",
+          "references",
+          "estimates",
+          "valuations",
+          "policies",
+          "applications",
+          "observations",
+          "alerts",
+          "incidents",
+          "claims",
+          "pending_actions",
+          "passbook"
+        ],
+        "title": "Passport"
+      },
+      "PassportAnimal": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "breed": {
+            "type": "string",
+            "title": "Breed"
+          },
+          "breed_category": {
+            "type": "string",
+            "title": "Breed Category"
+          },
+          "sex": {
+            "type": "string",
+            "title": "Sex"
+          },
+          "identity_status": {
+            "type": "string",
+            "title": "Identity Status"
+          },
+          "age": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RangeEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "weight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RangeEstimate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valuation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValuationBrief"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coverage": {
+            "$ref": "#/components/schemas/Coverage"
+          },
+          "alerts": {
+            "$ref": "#/components/schemas/AlertCounts"
+          },
+          "last_observation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LastObservation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "awaiting_approval_count": {
+            "type": "integer",
+            "title": "Awaiting Approval Count"
+          },
+          "birth_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
+          "ownership_doc_refs": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ownership Doc Refs"
+          },
+          "confirmed_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed By"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "breed",
+          "breed_category",
+          "sex",
+          "identity_status",
+          "age",
+          "weight",
+          "valuation",
+          "coverage",
+          "alerts",
+          "last_observation",
+          "awaiting_approval_count",
+          "birth_date",
+          "ownership_doc_refs",
+          "confirmed_by",
+          "confirmed_at",
+          "enrollment_id"
+        ],
+        "title": "PassportAnimal"
+      },
+      "PendingActionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "action_type": {
+            "type": "string",
+            "title": "Action Type"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "subject_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Type"
+          },
+          "subject_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Id"
+          },
+          "payload_hash": {
+            "type": "string",
+            "title": "Payload Hash"
+          },
+          "amount_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount Minor"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "rationale": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rationale"
+          },
+          "proposed_by": {
+            "$ref": "#/components/schemas/ActorRef"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "action_type",
+          "status",
+          "version",
+          "subject_type",
+          "subject_id",
+          "payload_hash",
+          "amount_minor",
+          "currency",
+          "rationale",
+          "proposed_by",
+          "expires_at",
+          "created_at"
+        ],
+        "title": "PendingActionOut"
+      },
+      "PolicyOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "application_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Application Id"
+          },
+          "product_id": {
+            "type": "string",
+            "title": "Product Id"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "provider_id": {
+            "type": "string",
+            "title": "Provider Id"
+          },
+          "terms_version": {
+            "type": "string",
+            "title": "Terms Version"
+          },
+          "insured_value_minor": {
+            "type": "integer",
+            "title": "Insured Value Minor"
+          },
+          "premium_minor": {
+            "type": "integer",
+            "title": "Premium Minor"
+          },
+          "deductible_minor": {
+            "type": "integer",
+            "title": "Deductible Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "expiry_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry Date"
+          },
+          "activation_receipt": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activation Receipt"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "application_id",
+          "product_id",
+          "product_name",
+          "provider_id",
+          "terms_version",
+          "insured_value_minor",
+          "premium_minor",
+          "deductible_minor",
+          "currency",
+          "status",
+          "effective_date",
+          "expiry_date",
+          "activation_receipt",
+          "created_at"
+        ],
+        "title": "PolicyOut"
+      },
+      "QualitySummary": {
+        "properties": {
+          "observations": {
+            "type": "integer",
+            "title": "Observations"
+          },
+          "mean_visibility": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mean Visibility"
+          },
+          "low_visibility": {
+            "type": "integer",
+            "title": "Low Visibility"
+          },
+          "min_visibility": {
+            "type": "number",
+            "title": "Min Visibility"
+          },
+          "open_quality_alerts": {
+            "type": "integer",
+            "title": "Open Quality Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "observations",
+          "mean_visibility",
+          "low_visibility",
+          "min_visibility",
+          "open_quality_alerts"
+        ],
+        "title": "QualitySummary"
+      },
+      "RangeEstimate": {
+        "properties": {
+          "range_low": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range Low"
+          },
+          "range_high": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Range High"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "range_low",
+          "range_high",
+          "unit",
+          "source"
+        ],
+        "title": "RangeEstimate"
+      },
+      "ReferenceOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "view": {
+            "type": "string",
+            "title": "View"
+          },
+          "frame_time_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Time S"
+          },
+          "quality": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Quality"
+          },
+          "media_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Url"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "view",
+          "frame_time_s",
+          "quality",
+          "media_url",
+          "crop_url"
+        ],
+        "title": "ReferenceOut"
+      },
+      "ReplayOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "finished",
+              "failed",
+              "stopped"
+            ],
+            "title": "Status"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          },
+          "progress_s": {
+            "type": "number",
+            "title": "Progress S"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/TrackOut"
+            },
+            "type": "array",
+            "title": "Tracks"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertView"
+            },
+            "type": "array",
+            "title": "Alerts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "scenario_id",
+          "camera_id",
+          "status",
+          "speed",
+          "started_at",
+          "finished_at",
+          "duration_s",
+          "progress_s",
+          "tracks",
+          "alerts"
+        ],
+        "title": "ReplayOut"
+      },
+      "ReplayStarted": {
+        "properties": {
+          "replay_id": {
+            "type": "string",
+            "title": "Replay Id"
+          },
+          "scenario_id": {
+            "type": "string",
+            "title": "Scenario Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "running",
+              "finished",
+              "failed",
+              "stopped"
+            ],
+            "title": "Status"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "speed": {
+            "type": "number",
+            "title": "Speed"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          }
+        },
+        "type": "object",
+        "required": [
+          "replay_id",
+          "scenario_id",
+          "status",
+          "started_at",
+          "speed",
+          "duration_s"
+        ],
+        "title": "ReplayStarted"
       },
       "ResetResult": {
         "properties": {
@@ -298,6 +5926,421 @@
           "animals"
         ],
         "title": "ResetResult"
+      },
+      "Scenario": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "camera_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Camera Name"
+          },
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "duration_s": {
+            "type": "number",
+            "title": "Duration S"
+          },
+          "fps": {
+            "type": "number",
+            "title": "Fps"
+          },
+          "window_s": {
+            "type": "number",
+            "title": "Window S"
+          },
+          "clip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clip"
+          },
+          "tracks": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioTrack"
+            },
+            "type": "array",
+            "title": "Tracks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "description",
+          "camera_id",
+          "camera_name",
+          "source",
+          "duration_s",
+          "fps",
+          "window_s",
+          "clip",
+          "tracks"
+        ],
+        "title": "Scenario"
+      },
+      "ScenarioEvent": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "muzzle_match",
+              "track_lost"
+            ],
+            "title": "Type"
+          },
+          "candidate_animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Animal Id"
+          },
+          "inliers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inliers"
+          },
+          "quality": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quality"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t",
+          "type"
+        ],
+        "title": "ScenarioEvent"
+      },
+      "ScenarioFrame": {
+        "properties": {
+          "t": {
+            "type": "number",
+            "title": "T"
+          },
+          "bbox": {
+            "items": {
+              "type": "number"
+            },
+            "type": "array",
+            "title": "Bbox"
+          },
+          "visibility": {
+            "type": "number",
+            "title": "Visibility"
+          }
+        },
+        "type": "object",
+        "required": [
+          "t",
+          "bbox",
+          "visibility"
+        ],
+        "title": "ScenarioFrame"
+      },
+      "ScenarioList": {
+        "properties": {
+          "scenarios": {
+            "items": {
+              "$ref": "#/components/schemas/Scenario"
+            },
+            "type": "array",
+            "title": "Scenarios"
+          },
+          "cameras": {
+            "items": {
+              "$ref": "#/components/schemas/CameraOut"
+            },
+            "type": "array",
+            "title": "Cameras"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenarios",
+          "cameras"
+        ],
+        "title": "ScenarioList"
+      },
+      "ScenarioTrack": {
+        "properties": {
+          "track_key": {
+            "type": "string",
+            "title": "Track Key"
+          },
+          "frames": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioFrame"
+            },
+            "type": "array",
+            "title": "Frames"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/ScenarioEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "track_key",
+          "frames",
+          "events"
+        ],
+        "title": "ScenarioTrack"
+      },
+      "Stamp": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "approved",
+              "declined",
+              "posted",
+              "failed",
+              "unknown",
+              "confirmed"
+            ],
+            "title": "Kind"
+          },
+          "by": {
+            "type": "string",
+            "title": "By"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "by",
+          "at"
+        ],
+        "title": "Stamp"
+      },
+      "TrackOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "replay_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Id"
+          },
+          "camera_id": {
+            "type": "string",
+            "title": "Camera Id"
+          },
+          "track_key": {
+            "type": "string",
+            "title": "Track Key"
+          },
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id"
+          },
+          "animal_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Name"
+          },
+          "association_status": {
+            "type": "string",
+            "enum": [
+              "unassigned",
+              "associated",
+              "uncertain"
+            ],
+            "title": "Association Status"
+          },
+          "association_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Association Method"
+          },
+          "association_evidence": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Association Evidence"
+          },
+          "first_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "First Seen"
+          },
+          "last_seen": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Last Seen"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "replay_id",
+          "camera_id",
+          "track_key",
+          "animal_id",
+          "animal_name",
+          "association_status",
+          "association_method",
+          "association_evidence",
+          "first_seen",
+          "last_seen"
+        ],
+        "title": "TrackOut"
+      },
+      "TrackReview": {
+        "properties": {
+          "animal_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Animal Id",
+            "description": "The confirmed animal to associate, or null to unassign the track."
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "animal_id"
+        ],
+        "title": "TrackReview"
+      },
+      "UploadTarget": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "const": "PUT",
+            "title": "Method"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "method",
+          "url"
+        ],
+        "title": "UploadTarget"
       },
       "ValidationError": {
         "properties": {
@@ -338,6 +6381,244 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValuationBrief": {
+        "properties": {
+          "value_low_minor": {
+            "type": "integer",
+            "title": "Value Low Minor"
+          },
+          "value_high_minor": {
+            "type": "integer",
+            "title": "Value High Minor"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "price_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Price Date"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value_low_minor",
+          "value_high_minor",
+          "currency",
+          "price_date",
+          "version"
+        ],
+        "title": "ValuationBrief"
+      },
+      "ValuationOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "weight_low_kg": {
+            "type": "number",
+            "title": "Weight Low Kg"
+          },
+          "weight_high_kg": {
+            "type": "number",
+            "title": "Weight High Kg"
+          },
+          "weight_basis": {
+            "type": "string",
+            "title": "Weight Basis"
+          },
+          "estimate_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimate Id"
+          },
+          "unit_price_minor_per_kg": {
+            "type": "integer",
+            "title": "Unit Price Minor Per Kg"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "price_source": {
+            "type": "string",
+            "title": "Price Source"
+          },
+          "price_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Price Date"
+          },
+          "value_low_minor": {
+            "type": "integer",
+            "title": "Value Low Minor"
+          },
+          "value_high_minor": {
+            "type": "integer",
+            "title": "Value High Minor"
+          },
+          "confirmed_by": {
+            "type": "string",
+            "title": "Confirmed By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "weight_low_kg",
+          "weight_high_kg",
+          "weight_basis",
+          "estimate_id",
+          "unit_price_minor_per_kg",
+          "currency",
+          "price_source",
+          "price_date",
+          "value_low_minor",
+          "value_high_minor",
+          "confirmed_by",
+          "created_at"
+        ],
+        "title": "ValuationOut"
+      },
+      "ViewOut": {
+        "properties": {
+          "frame_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frame Id"
+          },
+          "time_s": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Time S"
+          },
+          "media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Media Id"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "crop_media_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Media Id"
+          },
+          "crop_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Crop Url"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "frame_id",
+          "time_s"
+        ],
+        "title": "ViewOut"
+      },
+      "WhoAmI": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "farm": {
+            "$ref": "#/components/schemas/FarmRef"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "name",
+          "role",
+          "farm"
+        ],
+        "title": "WhoAmI"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "description": "A demo user token, e.g. `demo-manager`.",
+        "scheme": "bearer"
+      },
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "description": "The internal worker token.",
+        "in": "header",
+        "name": "X-Service-Token"
       }
     }
   }
