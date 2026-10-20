@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "wide-tracking",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/landing-tag.html"
+        ],
+        "createdAt": "2026-10-20T09:40:07.353Z",
+        "reason": "Claude triage: the 0.06em tracking is on short uppercase stamp labels, sanctioned by DESIGN.md rule 'Uppercase Belongs To The Stamp'; file is a decision sketch, not shipped"
+      }
+    ]
+  }
+}
