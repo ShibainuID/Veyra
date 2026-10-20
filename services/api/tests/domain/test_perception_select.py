@@ -4,8 +4,11 @@ The ML modules are replaced with fakes at their import targets (`sys.modules` en
 these tests prove which adapter the facade calls and with what, without torch or a YOLO download.
 """
 
+import json
 import logging
 import sys
+import threading
+import time
 import types
 from pathlib import Path
 
@@ -196,10 +199,14 @@ def fake_video_worker(monkeypatch, fake_ultralytics):
 
     def process_video(video_path, out_dir, models, marker_cm=15.0):
         calls.update(video_path=video_path, out_dir=out_dir, models=models)
+        if "raise" in calls:
+            raise calls["raise"]
         return {"processing_mode": "prototype", "method_version": "video_enrollment_v1",
-                "video": {"path": str(video_path), "sha256": "abc", "duration_s": 7.0},
-                "views": {"muzzle": {"frame_id": "frame_0006", "time_s": 1.5, "path": "m.jpg", "crop_path": "c.jpg"}},
-                "checks": {}, "review_required": True, "review_reasons": ["marker_not_detected"]}
+                "video": {"path": str(video_path), "sha256": "abc", "duration_s": np.float64(7.0)},
+                "views": {"muzzle": {"frame_id": "frame_0006", "time_s": np.float32(1.5), "path": "m.jpg",
+                                     "crop_path": "c.jpg", "box": np.array([1.0, 2.0])}},
+                "checks": {"required_views_present": np.bool_(False)}, "review_required": True,
+                "review_reasons": ["marker_not_detected"]}
 
     module = types.ModuleType("workers.video_enrollment")
     module.Models, module.process_video = Models, process_video
@@ -230,7 +237,7 @@ def test_video_prototype_import_failure_falls_back(video, tmp_path, monkeypatch,
     manifest = Perception(ALL).extract_views(video, tmp_path / "out", "sample-enrollment-001")
 
     assert manifest["processing_mode"] == "fixture"
-    assert manifest["fallback"]["from"] == "prototype" and "ModuleNotFoundError" in manifest["fallback"]["error"]
+    assert manifest["fallback"] == {"from": "prototype", "reason": "prototype_unavailable"}
     assert set(manifest["views"]) == {"muzzle", "teeth", "body"}
 
 
@@ -275,7 +282,8 @@ def test_muzzle_prototype_gets_the_crop_and_the_gallery(tmp_path, fake_identifie
     assert shape == (100, 118, 3)
     assert gallery == {"animal-demo-002": ["ref:media-a", "ref:media-b"], "animal-demo-003": ["ref:media-c"]}
     assert [image_id for image_id, _ in fake_identifier["references"]] == ["media-a", "media-b", "media-c"]  # cached
-    assert first["gallery"] == {"animals": 2, "references": 3, "unusable_references": 0}
+    assert first["gallery"] == {"animals": 2, "references": 3, "unusable_references": 0,
+                                "pending_animals": 0}
 
 
 def test_muzzle_prototype_skipped_without_a_crop_or_capability(tmp_path, fake_identifier):
@@ -309,6 +317,37 @@ def test_weight_prototype_gets_the_body_frame(tmp_path, monkeypatch, fake_ultral
     assert (result["source"], result["range_low"]) == ("prototype", 400.0)
 
 
+def test_weight_prototype_reuses_the_video_marker_scale(tmp_path, monkeypatch, fake_ultralytics):
+    calls = {}
+
+    def fake_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None, scale_override=None):
+        calls.update(marker_cm=marker_cm, scale_override=scale_override)
+        return {"source": "prototype", "range_low": 400.0, "range_high": 450.0, "unit": "kg"}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", fake_estimate)
+    scale = {"marker_id": 7, "px_per_cm": 8.25, "marker_cm": 12.0}
+
+    Perception(ALL).weight(_image(tmp_path / "body.jpg"), "sample-enrollment-001", scale=scale)
+
+    assert calls == {"marker_cm": 12.0, "scale_override": scale}
+
+
+def test_yolo_weights_come_from_settings(tmp_path, monkeypatch, fake_ultralytics):
+    calls = {}
+
+    def fake_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None):
+        calls["weights"] = model.weights
+        return {"source": "prototype", "range_low": 400.0, "range_high": 450.0, "unit": "kg"}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", fake_estimate)
+    monkeypatch.setenv("VEYRA_YOLO_WEIGHTS", str(tmp_path / "models" / "yolov8x-seg.pt"))
+    get_settings.cache_clear()
+
+    Perception(ALL).weight(_image(tmp_path / "body.jpg"), "sample-enrollment-001")
+
+    assert calls["weights"] == str(tmp_path / "models" / "yolov8x-seg.pt")
+
+
 def test_weight_prototype_error_falls_back_to_the_fixture(tmp_path, monkeypatch, fake_ultralytics):
     def broken(*args, **kwargs):
         raise RuntimeError("segmentation failed")
@@ -318,7 +357,8 @@ def test_weight_prototype_error_falls_back_to_the_fixture(tmp_path, monkeypatch,
     result = Perception(ALL).weight(_image(tmp_path / "body.jpg"), "sample-enrollment-001")
 
     assert result["source"] == "simulated" and result["range_low"] == 480.0
-    assert "RuntimeError" in result["fallback"]["error"]
+    assert result["fallback"] == {"from": "prototype", "reason": "prototype_error"}
+    assert "segmentation failed" not in json.dumps(result)
 
 
 def test_steps_fall_back_independently(video, tmp_path, fake_identifier):
@@ -348,3 +388,125 @@ def test_real_muzzle_identifier_on_a_synthetic_crop(tmp_path):
     # The same crop registered in the gallery verifies against itself: the matcher really ran.
     assert again["outcome"] == "candidate" and again["animal_id"] == "animal-demo-009"
     assert again["possible_duplicate"] is True
+
+
+# ----- hardening: JSON-safe results, prototype guards, model lock, pending gallery ---------------------------
+
+
+def test_prototype_views_are_plain_json(video, tmp_path, fake_video_worker):
+    manifest = Perception(ALL).extract_views(video, tmp_path / "out", None, video_sha256="stored-hash")
+
+    json.dumps(manifest)
+    assert type(manifest["views"]["muzzle"]["time_s"]) is float
+    assert manifest["views"]["muzzle"]["box"] == [1.0, 2.0]
+    assert manifest["checks"]["required_views_present"] is False
+    assert manifest["video"]["sha256"] == "stored-hash"
+
+
+def test_prototype_weight_with_numpy_values_is_plain_json(tmp_path, monkeypatch, fake_ultralytics):
+    def numpy_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None):
+        return {"source": "prototype", "method_version": "weight_side_view_v2", "range_low": np.float64(480.5),
+                "range_high": np.float32(530.0), "unit": "kg", "review_required": np.bool_(False),
+                "review_reason": None, "flags": [],
+                "landmarks_px": {"withers": (np.int64(10), np.int64(20)), "front_is_left": np.bool_(True),
+                                 "trunk_x": (np.int32(3), np.int32(300))},
+                "measurements": [{"name": "withers_height", "value": np.float64(121.4)}],
+                "mask_area": np.array([[1, 2], [3, 4]])}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", numpy_estimate)
+
+    result = Perception(ALL).weight(_image(tmp_path / "body.jpg"), None)
+
+    json.dumps(result)
+    assert result["landmarks_px"]["front_is_left"] is True
+    assert result["landmarks_px"]["withers"] == [10, 20]
+    assert result["review_required"] is False and type(result["range_low"]) is float
+    assert result["mask_area"] == [[1, 2], [3, 4]]
+
+
+def test_prototype_identity_with_numpy_values_is_plain_json(tmp_path, monkeypatch):
+    class NumpyIdentifier:
+        def __init__(self, model_path):
+            pass
+
+        def reference(self, image_id, crop_bgr):
+            return image_id
+
+        def check_duplicate(self, crop_bgr, gallery):
+            return {"source": "prototype", "method_version": "muzzle_hybrid_v1", "outcome": "new",
+                    "reason": "no_verified_match", "possible_duplicate": np.bool_(False),
+                    "candidates": [{"animal_id": "animal-demo-002", "cosine": np.float32(0.41),
+                                    "inliers": np.int64(2)}]}
+
+    monkeypatch.setattr(adapters.muzzle, "MuzzleIdentifier", NumpyIdentifier)
+    refs = [GalleryRef("animal-demo-002", "media-a", _image(tmp_path / "a.jpg"))]
+
+    result = Perception(ALL).identify(_image(tmp_path / "crop.jpg"), refs, None)
+
+    json.dumps(result)
+    assert result["possible_duplicate"] is False
+    assert type(result["candidates"][0]["inliers"]) is int
+
+
+def test_long_video_skips_the_prototype(video, tmp_path, monkeypatch, fake_video_worker):
+    monkeypatch.setattr(perception, "MAX_PROTOTYPE_SECONDS", 5.0)
+
+    manifest = Perception(ALL).extract_views(video, tmp_path / "out", "sample-enrollment-001")
+
+    assert "video_path" not in fake_video_worker
+    assert manifest["processing_mode"] == "fixture"
+    assert manifest["fallback"] == {"from": "prototype", "reason": "video_too_large"}
+
+
+def test_video_prototype_error_falls_back_without_exposing_the_message(video, tmp_path, fake_video_worker, caplog):
+    fake_video_worker["raise"] = ValueError("secret internal detail")
+
+    with caplog.at_level(logging.ERROR, logger="veyra.perception"):
+        manifest = Perception(ALL).extract_views(video, tmp_path / "out", "sample-enrollment-001")
+
+    assert manifest["fallback"] == {"from": "prototype", "reason": "prototype_error"}
+    assert "secret internal detail" not in json.dumps(manifest)
+    assert any("secret internal detail" in (r.exc_text or "") or r.exc_info for r in caplog.records)
+    assert set(manifest["views"]) == {"muzzle", "teeth", "body"}
+
+
+def test_fixture_views_reuse_the_stored_hash(video, tmp_path):
+    manifest = Perception(NONE).extract_views(video, tmp_path / "out", None, video_sha256="stored-hash")
+
+    assert manifest["video"]["sha256"] == "stored-hash"
+
+
+def test_shared_model_inference_is_serialized(tmp_path, monkeypatch, fake_ultralytics):
+    active, peak = [0], [0]
+    guard = threading.Lock()
+
+    def slow_estimate(image_bgr, model, marker_cm=15.0, tape_heart_girth_cm=None):
+        with guard:
+            active[0] += 1
+            peak[0] = max(peak[0], active[0])
+        time.sleep(0.05)
+        with guard:
+            active[0] -= 1
+        return {"source": "prototype", "method_version": "weight_side_view_v2", "range_low": 1.0,
+                "range_high": 2.0, "unit": "kg", "review_required": False, "review_reason": None}
+
+    monkeypatch.setattr(adapters.weight, "estimate_weight", slow_estimate)
+    body = _image(tmp_path / "body.jpg")
+    threads = [threading.Thread(target=Perception(ALL).weight, args=(body, None)) for _ in range(4)]
+
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert peak[0] == 1
+    assert len(fake_ultralytics.instances) == 1  # one shared model, loaded once
+
+
+def test_pending_gallery_animals_are_labeled(tmp_path, fake_identifier):
+    refs = [GalleryRef("animal-demo-002", "media-a", _image(tmp_path / "a.jpg"), "pending_review")]
+
+    result = Perception(ALL).identify(_image(tmp_path / "crop.jpg"), refs, None)
+
+    assert result["animal_id"] == "animal-demo-002" and result["animal_identity_status"] == "pending_review"
+    assert result["gallery"]["pending_animals"] == 1

@@ -14,7 +14,7 @@ so an unassigned or uncertain track can never become an animal's last-seen obser
 """
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -26,6 +26,7 @@ from persistence.models import Animal, Camera, Observation, Replay, Track
 
 MIN_INLIERS = 5  # exclusive: inliers must be greater than this
 MIN_QUALITY = 0.6  # inclusive
+LIVE_TRACK_GAP = timedelta(seconds=30)  # a live track key silent this long starts a new track
 EVENTS = ("frame", "muzzle_match", "track_lost")
 STATUSES = ("unassigned", "associated", "uncertain")
 RULE = {"name": "muzzle_association_v1", "min_inliers_exclusive": MIN_INLIERS, "min_quality": MIN_QUALITY}
@@ -79,10 +80,16 @@ def _validate(item: ObservationInput) -> None:
         raise DomainError("VALIDATION_FAILED", "The observation is not valid.", {"problems": problems})
 
 
-def _find_track(session: Session, replay_id: str | None, camera_id: str, track_key: str) -> Track | None:
+def _find_track(session: Session, replay_id: str | None, camera_id: str, track_key: str,
+                observed_at: datetime) -> Track | None:
+    """The open track for this key. A live feed (no replay) may reuse a key for a different animal later, so a key
+    silent for more than `LIVE_TRACK_GAP` starts a new, unassigned track instead of inheriting the old identity."""
     query = select(Track).where(Track.camera_id == camera_id, Track.track_key == track_key)
     query = query.where(Track.replay_id.is_(None) if replay_id is None else Track.replay_id == replay_id)
-    return session.scalar(query.order_by(Track.first_seen.desc()).limit(1))
+    track = session.scalar(query.order_by(Track.last_seen.desc()).limit(1))
+    if track is not None and replay_id is None and observed_at - track.last_seen > LIVE_TRACK_GAP:
+        return None
+    return track
 
 
 def _set_track(track: Track, *, status: str, animal_id: str | None, method: str | None, evidence: dict) -> None:
@@ -155,7 +162,7 @@ def ingest(session: Session, *, farm_id: str, camera_id: str, item: ObservationI
         replay = session.get(Replay, replay_id)
         if replay is None or replay.farm_id != farm_id or replay.camera_id != camera_id:
             raise DomainError("NOT_FOUND", "Replay not found for this camera.")
-    track = _find_track(session, replay_id, camera_id, item.track_key)
+    track = _find_track(session, replay_id, camera_id, item.track_key, item.observed_at)
     if track is None:
         track = Track(id=new_id("trk"), replay_id=replay_id, camera_id=camera_id, track_key=item.track_key,
                       animal_id=None, association_status="unassigned", association_method=None,

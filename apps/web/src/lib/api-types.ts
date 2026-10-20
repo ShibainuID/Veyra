@@ -287,7 +287,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Replay */
+        /**
+         * Start Replay
+         * @description 202 while a threaded replay runs; 200 with the final status once a speed-0 replay has already finished.
+         */
         post: operations["start_replay_api_v1_demo_replays__scenario_id__start_post"];
         delete?: never;
         options?: never;
@@ -583,6 +586,26 @@ export interface paths {
         put?: never;
         /** Execute */
         post: operations["execute_api_v1_agent_actions__action_id__execute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/agent/actions/{action_id}/revise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revise
+         * @description Prepare the action again from its own references; the new version needs a fresh approval.
+         */
+        post: operations["revise_api_v1_agent_actions__action_id__revise_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2420,6 +2443,11 @@ export interface components {
             started_at: string;
             /** Finished At */
             finished_at: string | null;
+            /**
+             * Anchor At
+             * Format: date-time
+             */
+            anchor_at: string;
             /** Duration S */
             duration_s: number;
             /** Progress S */
@@ -2445,6 +2473,12 @@ export interface components {
              * Format: date-time
              */
             started_at: string;
+            /**
+             * Anchor At
+             * Format: date-time
+             * @description Observation time of scenario t=0: replays are footage ending by now.
+             */
+            anchor_at: string;
             /** Speed */
             speed: number;
             /** Duration S */
@@ -3693,6 +3727,15 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
+            /** @description Replay already ran to completion (speed 0). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReplayStarted"];
+                };
+            };
             /** @description Successful Response */
             202: {
                 headers: {
@@ -4768,6 +4811,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revise_api_v1_agent_actions__action_id__revise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
                 };
             };
         };

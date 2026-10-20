@@ -9,6 +9,7 @@ before anything is written: the farm id and extension must be plain tokens, the 
 
 import hashlib
 import hmac
+import os
 import re
 import shutil
 from pathlib import Path
@@ -89,6 +90,19 @@ def store_file(session: Session, farm_id: str, kind: str, src_path: Path, conten
     media = Media(id=media_id, farm_id=farm_id, kind=kind, path=relative, sha256=_file_sha256(target),
                   content_type=content_type, bytes=target.stat().st_size)
     return _add_row(session, media, target)
+
+
+def place_file(farm_id: str, kind: str, src_path: Path, content_type: str, sha256: str, size: int) -> Media:
+    """Move an already-hashed file into the media dir and return its row, not yet added to a session.
+
+    For large uploads: hash while receiving, move (`os.replace`, same volume) before any writing transaction
+    opens, then add only the row in a short transaction; on rollback, unlink `media_path(media)`.
+    """
+    src_path = Path(src_path)
+    media_id, relative, content_type, target = _new_media(farm_id, kind, content_type, src_path.suffix or "bin")
+    os.replace(src_path, target)
+    return Media(id=media_id, farm_id=farm_id, kind=kind, path=relative, sha256=sha256, content_type=content_type,
+                 bytes=size)
 
 
 def media_path(media: Media) -> Path:

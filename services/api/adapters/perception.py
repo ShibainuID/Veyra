@@ -8,6 +8,11 @@ age) picks the prototype adapter when its capability is available and falls back
 its own, so one enrollment can mix sources; every result carries `source` (`prototype`, `simulated`, or
 `documented`) and `method_version`. The ML modules are imported lazily inside the methods: the video worker
 imports torch and open_clip at module top, so fixture mode must never import it.
+
+Results are plain JSON (`_jsonable`): the ML adapters return numpy scalars and arrays, which the JSON columns
+cannot store. A prototype that fails is logged with its traceback and labeled `fallback: {from, reason}` in
+the result; exception text never reaches the stored payload. The shared YOLO/CLIP models are not thread-safe,
+so their inference runs under one lock (two job threads may process enrollments at once).
 """
 
 import hashlib
@@ -34,6 +39,10 @@ YOLO_WEIGHTS = "yolov8x-seg.pt"
 FIXTURE_VIEWS_VERSION = "fixture_views_v1"
 SAMPLES_FILE = "enrollment_samples.json"
 AGE_FILE = "age_estimates.json"
+# The prototype video worker decodes every frame and reads the whole file to hash it: longer or larger footage
+# goes to the fixture view extractor instead (labeled `fallback`), so one upload cannot stall the job pool.
+MAX_PROTOTYPE_SECONDS = 60.0
+MAX_PROTOTYPE_SIDE_PX = 3840
 
 logger = logging.getLogger("veyra.perception")
 
@@ -69,17 +78,39 @@ def effective_capabilities(settings: Settings | None = None) -> dict[str, bool]:
     return probed
 
 
+def _jsonable(value):
+    """Plain JSON types from an adapter result: numpy scalars → `.item()`, arrays → lists, tuples → lists."""
+    try:
+        import numpy as np
+    except ImportError:  # pragma: no cover - numpy is a base dependency
+        np = None
+    if isinstance(value, dict):
+        return {str(k): _jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_jsonable(v) for v in value]
+    if np is not None:
+        if isinstance(value, np.ndarray):
+            return _jsonable(value.tolist())
+        if isinstance(value, np.generic):
+            return value.item()
+    if isinstance(value, Path):
+        return str(value)
+    return value
+
+
 @dataclass(frozen=True)
 class GalleryRef:
-    """One registered muzzle crop of a confirmed animal: the matcher's gallery entry."""
+    """One registered muzzle crop: the matcher's gallery entry. Pending animals are included and labeled."""
 
     animal_id: str
     media_id: str
     path: Path
+    identity_status: str = "confirmed"
 
 
 # Process-wide caches. Models are heavy to load; gallery references are keyed by media id, which is immutable.
 _lock = threading.Lock()
+_model_lock = threading.Lock()  # YOLO and CLIP inference are not thread-safe
 _muzzle_identifier = None
 _yolo = None
 _video_models = None
@@ -109,7 +140,7 @@ def _get_yolo():
         if _yolo is None:
             from ultralytics import YOLO
 
-            _yolo = YOLO(YOLO_WEIGHTS)
+            _yolo = YOLO(get_settings().yolo_weights)
         return _yolo
 
 
@@ -139,6 +170,23 @@ def guide_box_crop(frame):
     return frame[y0:y0 + ch, x0:x0 + cw]
 
 
+def probe_video(video_path: Path) -> dict | None:
+    """Duration and frame size from the container header (no decoding), or None when cv2 cannot open it."""
+    import cv2
+
+    cap = cv2.VideoCapture(str(video_path))
+    try:
+        fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
+        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        if not cap.isOpened() or fps <= 0 or count <= 0:
+            return None
+        return {"duration_s": count / fps, "fps": fps, "frames": count,
+                "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0),
+                "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)}
+    finally:
+        cap.release()
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -155,6 +203,11 @@ def _dedupe(items: list[str]) -> list[str]:
     return list(dict.fromkeys(items))
 
 
+def _fallback(result: dict, reason: str) -> dict:
+    result["fallback"] = {"from": "prototype", "reason": reason}
+    return result
+
+
 class Perception:
     """The facade. Construct one per job: it snapshots the effective capabilities and the sample fixtures."""
 
@@ -168,25 +221,44 @@ class Perception:
 
     # ----- views -------------------------------------------------------------------------------------------
 
-    def extract_views(self, video_path: Path | None, out_dir: Path, sample_key: str | None) -> dict:
-        """Best frame per required view, a muzzle crop, checks, and review reasons (the ML manifest's shape)."""
-        out_dir = Path(out_dir)
-        if video_path is not None and self.capabilities.get("video"):
-            try:
-                return self._prototype_views(Path(video_path), out_dir)
-            except (ImportError, OSError) as exc:
-                logger.warning("video prototype unavailable (%s); extracting fixture views", exc)
-                manifest = self._fixture_views(Path(video_path), out_dir, sample_key)
-                manifest["fallback"] = {"from": "prototype", "error": f"{type(exc).__name__}: {exc}"}
-                return manifest
-        if video_path is not None:
-            return self._fixture_views(Path(video_path), out_dir, sample_key)
-        return self._sample_views(sample_key)
+    def extract_views(self, video_path: Path | None, out_dir: Path, sample_key: str | None,
+                      video_sha256: str | None = None) -> dict:
+        """Best frame per required view, a muzzle crop, checks, and review reasons (the ML manifest's shape).
 
-    def _prototype_views(self, video_path: Path, out_dir: Path) -> dict:
+        `video_sha256` is the stored media hash; passing it avoids hashing the video again.
+        """
+        return _jsonable(self._extract_views(video_path, Path(out_dir), sample_key, video_sha256))
+
+    def _extract_views(self, video_path: Path | None, out_dir: Path, sample_key: str | None,
+                       video_sha256: str | None) -> dict:
+        if video_path is None:
+            return self._sample_views(sample_key)
+        video_path = Path(video_path)
+        if not self.capabilities.get("video"):
+            return self._fixture_views(video_path, out_dir, sample_key, video_sha256)
+        probe = probe_video(video_path)
+        if probe is None:
+            return self._fixture_views(video_path, out_dir, sample_key, video_sha256)
+        if probe["duration_s"] > MAX_PROTOTYPE_SECONDS or max(probe["width"], probe["height"]) > MAX_PROTOTYPE_SIDE_PX:
+            logger.warning("video %s exceeds the prototype limits (%.1f s, %dx%d); extracting fixture views",
+                           video_path.name, probe["duration_s"], probe["width"], probe["height"])
+            return _fallback(self._fixture_views(video_path, out_dir, sample_key, video_sha256), "video_too_large")
+        try:
+            return self._prototype_views(video_path, out_dir, video_sha256)
+        except (ImportError, OSError):
+            logger.warning("video prototype unavailable; extracting fixture views", exc_info=True)
+            reason = "prototype_unavailable"
+        except Exception:
+            logger.exception("video prototype failed; extracting fixture views")
+            reason = "prototype_error"
+        return _fallback(self._fixture_views(video_path, out_dir, sample_key, video_sha256), reason)
+
+    def _prototype_views(self, video_path: Path, out_dir: Path, video_sha256: str | None) -> dict:
         from workers.video_enrollment import process_video
 
-        manifest = process_video(video_path, out_dir, _get_video_models())
+        with _model_lock:
+            models = _get_video_models()
+            manifest = dict(process_video(video_path, out_dir, models))
         manifest.setdefault("processing_mode", "prototype")
         manifest.setdefault("method_version", "video_enrollment_v1")
         manifest.setdefault("views", {})
@@ -196,8 +268,10 @@ class Perception:
         reasons += [r for r in _missing_view_reasons(manifest["views"]) if r not in reasons]
         manifest["review_reasons"] = reasons
         manifest["review_required"] = bool(reasons)
-        video = manifest.get("video") or {}
+        video = dict(manifest.get("video") or {})
         video.pop("path", None)  # a worker-local temp path, meaningless once the frames are stored as media
+        if video_sha256:
+            video["sha256"] = video_sha256
         manifest["video"] = video
         return manifest
 
@@ -225,23 +299,22 @@ class Perception:
                  for name, spec in sample["views"].items()}
         return self._fixture_base(["footage_not_attached"], views, "sample_fixture", None)
 
-    def _fixture_views(self, video_path: Path, out_dir: Path, sample_key: str | None) -> dict:
+    def _fixture_views(self, video_path: Path, out_dir: Path, sample_key: str | None,
+                       video_sha256: str | None = None) -> dict:
         """Frames read with cv2 at the sample's view times (or 20/50/80% of the video for unknown samples)."""
         import cv2
 
         sample = self._sample(sample_key)
-        cap = cv2.VideoCapture(str(video_path))
-        fps = cap.get(cv2.CAP_PROP_FPS) or 0.0
-        frames, wanted, reasons = {}, {}, []
-        count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-        if not cap.isOpened() or fps <= 0 or count <= 0:
-            cap.release()
+        digest = video_sha256 or _sha256(video_path)
+        probe = probe_video(video_path)
+        if probe is None:
             fallback = self._sample_views(sample_key)
             fallback["review_reasons"] = _dedupe(["video_unreadable"] + fallback["review_reasons"])
             fallback["review_required"] = True
-            fallback["video"] = {"sha256": _sha256(video_path), "duration_s": None}
+            fallback["video"] = {"sha256": digest, "duration_s": None}
             return fallback
-        duration = count / fps
+        fps, count, duration = probe["fps"], probe["frames"], probe["duration_s"]
+        reasons, wanted, frames = [], {}, {}
         if sample is not None:
             times = {name: spec["time_s"] for name, spec in sample["views"].items()}
             assignment = "sample_fixture"
@@ -252,8 +325,8 @@ class Perception:
         for name, t in times.items():
             wanted.setdefault(min(count - 1, max(0, round(t * fps))), []).append(name)
 
-        index = 0
-        last = max(wanted)
+        cap = cv2.VideoCapture(str(video_path))
+        index, last = 0, max(wanted)
         while index <= last:
             ok, frame = cap.read()
             if not ok:
@@ -279,22 +352,23 @@ class Perception:
                     cv2.imwrite(str(crop_path), guide_box_crop(frame))
                     view["crop_path"] = str(crop_path)
                 views[name] = view
-        video = {"sha256": _sha256(video_path), "duration_s": round(duration, 2), "fps": round(fps, 3),
-                 "frames": count}
+        video = {"sha256": digest, "duration_s": round(duration, 2), "fps": round(fps, 3), "frames": count,
+                 "width": probe["width"], "height": probe["height"]}
         return self._fixture_base(reasons, views, assignment, video)
 
     # ----- identity ----------------------------------------------------------------------------------------
 
     def identify(self, crop_path: Path | None, gallery_refs: list[GalleryRef], sample_key: str | None) -> dict:
         """Identity candidate plus the duplicate check, always with `possible_duplicate`. Never a decision."""
+        return _jsonable(self._identify(crop_path, gallery_refs, sample_key))
+
+    def _identify(self, crop_path: Path | None, gallery_refs: list[GalleryRef], sample_key: str | None) -> dict:
         if crop_path is not None and self.capabilities.get("muzzle"):
             try:
                 return self._prototype_identity(Path(crop_path), gallery_refs)
-            except Exception as exc:  # a broken model or unreadable crop must not fail the enrollment
+            except Exception:  # a broken model or unreadable crop must not fail the enrollment
                 logger.exception("muzzle prototype failed; using the fixture identity")
-                result = self._fixture_identity(sample_key, matcher=False)
-                result["fallback"] = {"from": "prototype", "error": f"{type(exc).__name__}: {exc}"}
-                return result
+                return _fallback(self._fixture_identity(sample_key, matcher=False), "prototype_error")
         return self._fixture_identity(sample_key, matcher=bool(self.capabilities.get("muzzle")))
 
     def _prototype_identity(self, crop_path: Path, gallery_refs: list[GalleryRef]) -> dict:
@@ -307,6 +381,7 @@ class Perception:
         if crop is None:
             raise OSError(f"muzzle crop is unreadable: {crop_path.name}")
         gallery = Gallery()
+        statuses: dict[str, str] = {}
         skipped = 0
         for ref in gallery_refs:
             reference = _reference_cache.get(ref.media_id)
@@ -318,11 +393,17 @@ class Perception:
                     continue
                 _reference_cache[ref.media_id] = reference
             gallery.add(ref.animal_id, reference)
+            statuses[ref.animal_id] = ref.identity_status
         result = dict(identifier.check_duplicate(crop, gallery))
         result.setdefault("source", "prototype")
         result.setdefault("method_version", "muzzle_hybrid_v1")
+        result["candidates"] = [{**c, "identity_status": statuses.get(c.get("animal_id"))}
+                                for c in result.get("candidates") or []]
+        if result.get("animal_id"):
+            result["animal_identity_status"] = statuses.get(result["animal_id"])
         result["gallery"] = {"animals": len(gallery.animals), "references": len(gallery_refs) - skipped,
-                             "unusable_references": skipped}
+                             "unusable_references": skipped,
+                             "pending_animals": sum(1 for s in statuses.values() if s != "confirmed")}
         return result
 
     def _fixture_identity(self, sample_key: str | None, matcher: bool) -> dict:
@@ -340,18 +421,20 @@ class Perception:
 
     # ----- weight ------------------------------------------------------------------------------------------
 
-    def weight(self, body_frame_path: Path | None, sample_key: str | None) -> dict:
+    def weight(self, body_frame_path: Path | None, sample_key: str | None, scale: dict | None = None) -> dict:
+        """`scale` is the video worker's ArUco reading for the body frame; reusing it skips a second detection."""
+        return _jsonable(self._weight(body_frame_path, sample_key, scale))
+
+    def _weight(self, body_frame_path: Path | None, sample_key: str | None, scale: dict | None) -> dict:
         if body_frame_path is not None and self.capabilities.get("weight"):
             try:
-                return self._prototype_weight(Path(body_frame_path))
-            except Exception as exc:
+                return self._prototype_weight(Path(body_frame_path), scale)
+            except Exception:
                 logger.exception("weight prototype failed; using the fixture weight")
-                result = self._fixture_weight(sample_key)
-                result["fallback"] = {"from": "prototype", "error": f"{type(exc).__name__}: {exc}"}
-                return result
+                return _fallback(self._fixture_weight(sample_key), "prototype_error")
         return self._fixture_weight(sample_key)
 
-    def _prototype_weight(self, body_frame_path: Path) -> dict:
+    def _prototype_weight(self, body_frame_path: Path, scale: dict | None) -> dict:
         import cv2
 
         from adapters.weight import estimate_weight
@@ -359,7 +442,9 @@ class Perception:
         image = cv2.imread(str(body_frame_path))
         if image is None:
             raise OSError(f"body frame is unreadable: {body_frame_path.name}")
-        result = dict(estimate_weight(image, _get_yolo()))
+        scale_args = {"marker_cm": scale.get("marker_cm") or 15.0, "scale_override": scale} if scale else {}
+        with _model_lock:
+            result = dict(estimate_weight(image, _get_yolo(), **scale_args))
         result.setdefault("source", "prototype")
         result.setdefault("method_version", "weight_side_view_v2")
         result.setdefault("unit", "kg")
@@ -382,5 +467,5 @@ class Perception:
             observed_on=None) -> dict:
         from adapters.age import estimate_age
 
-        return estimate_age(sample_key or "", teeth_frame_ids, documented_birth_date=documented_birth_date,
-                            observed_on=observed_on, fixtures_path=self.settings.fixtures_dir / AGE_FILE)
+        return _jsonable(estimate_age(sample_key or "", teeth_frame_ids, documented_birth_date=documented_birth_date,
+                                      observed_on=observed_on, fixtures_path=self.settings.fixtures_dir / AGE_FILE))
