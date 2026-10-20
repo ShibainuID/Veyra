@@ -161,6 +161,20 @@ def test_human_review_is_farm_scoped_and_needs_a_confirmed_animal():
         "NOT_FOUND", "NOT_FOUND", "IDENTITY_UNCONFIRMED")
 
 
+def test_live_track_key_reused_after_a_gap_starts_a_new_unassigned_track():
+    gap = association.LIVE_TRACK_GAP.total_seconds()
+    matched, within, reused = _feed(_match("t-live", 0, "animal-demo-002"), _frame("t-live", gap),
+                                    _frame("t-live", 2 * gap + 1))
+    assert (matched.animal_id, within.animal_id, within.track_id) == ("animal-demo-002", "animal-demo-002",
+                                                                      matched.track_id)
+    assert reused.track_id != matched.track_id
+    assert (reused.animal_id, reused.association_status) == (None, "unassigned")
+    with read_session() as session:
+        old, new = session.get(Track, matched.track_id), session.get(Track, reused.track_id)
+    assert (old.association_status, old.animal_id) == ("associated", "animal-demo-002")
+    assert (new.association_status, new.animal_id, new.track_key) == ("unassigned", None, "t-live")
+
+
 def test_invalid_observation_is_refused():
     bad = ObservationInput(track_key="t-09", observed_at=T0, bbox=[0.5, 0.5, 1.2, 0.2], visibility=0.9)
     with SessionLocal() as session, pytest.raises(DomainError) as error:
