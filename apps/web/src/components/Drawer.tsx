@@ -12,6 +12,8 @@ export interface DrawerProps {
   children: ReactNode;
   /** Pinned below the scrolling body (decision buttons). */
   footer?: ReactNode;
+  /** Replaces the body padding (for content that brings its own, such as a passbook). */
+  bodyClassName?: string;
   className?: string;
 }
 
@@ -19,7 +21,7 @@ export interface DrawerProps {
  * A right-hand drawer on the native modal <dialog>: the browser traps focus, Esc closes it, and
  * focus returns to the opener. Clicking the backdrop also closes it.
  */
-export function Drawer({ open, onClose, title, description, children, footer, className }: DrawerProps) {
+export function Drawer({ open, onClose, title, description, children, footer, bodyClassName, className }: DrawerProps) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
@@ -65,7 +67,7 @@ export function Drawer({ open, onClose, title, description, children, footer, cl
           </div>
           <IconButton label="Close" icon={X} variant="secondary" onClick={onClose} className="-mr-2" />
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className={cn("min-h-0 flex-1 overflow-y-auto", bodyClassName ?? "px-6 py-5")}>{children}</div>
         {footer && <footer className="border-t-2 border-ink px-6 pt-4 pb-[calc(16px+env(safe-area-inset-bottom))]">{footer}</footer>}
       </div>
     </dialog>
