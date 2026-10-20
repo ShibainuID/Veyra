@@ -2,7 +2,8 @@
 
 States: `created → uploaded → processing → review → confirmed | rejected`, plus `failed` when processing
 could not produce anything to review. Every transition is a guarded update on the expected status. A retry
-never reopens an enrollment: it creates a new one with `retry_of_id`, and the old one stays as it was.
+never reopens an enrollment: it creates a new one with `retry_of_id`; an old one still under review or
+processing is superseded (`superseded_by_retry`) in the same transaction, otherwise it stays as it was.
 
 Perception only proposes. A person decides at review time:
 - `register_new` creates the animal. A possible duplicate (identity `candidate`, or `possible_duplicate`),
@@ -11,13 +12,17 @@ Perception only proposes. A person decides at review time:
   can be prepared for it (`IDENTITY_UNCONFIRMED` downstream).
 - `link_existing` adds the enrollment's references to an animal already on the farm; no animal is created and
   no estimates are added (the existing animal's valuation basis does not change behind the manager's back).
+  Unless the matcher returned that very animal as its `candidate`, linking needs an `override_note`.
+- The duplicate check ran against the herd at processing time. If an animal was registered (or got a muzzle
+  reference from another enrollment) since then, `register_new` needs an `override_note`, or a retry re-runs
+  the check (`herd_changed_since_processing`).
 - `reject` keeps the record with the reason.
 No valuation is created here: the manager confirms the valuation inputs separately.
 """
 
 import json
 import re
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 from sqlalchemy import select, update
@@ -29,13 +34,15 @@ from domain.auth import Principal
 from domain.errors import DomainError
 from domain.ids import new_id
 from domain.passbook import PassbookContext, register_formatter
-from persistence.media import media_path, signed_url, store_file
-from persistence.models import Animal, AnimalReference, AuditEvent, Enrollment, Estimate, Job
+from persistence.media import media_path, signed_url
+from persistence.models import Animal, AnimalReference, AuditEvent, Enrollment, Estimate, Job, Media
 from workers import jobs
 
 STATUSES = ("created", "uploaded", "processing", "review", "confirmed", "rejected", "failed")
 DECISIONS = ("register_new", "link_existing", "reject")
-RETRYABLE = ("review", "rejected", "failed")
+# `processing` is retryable so a job that hangs or dies leaves a way out; the old job's guarded save then fails.
+RETRYABLE = ("review", "processing", "rejected", "failed")
+SUPERSEDED = "superseded_by_retry"
 PROCESS_JOB = "enrollment.process"
 MAX_VIDEO_BYTES = 200 * 1024 * 1024
 VIDEO_EXT_BY_TYPE = {"video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov"}
@@ -115,19 +122,28 @@ def check_uploadable(session: Session, farm_id: str, enrollment_id: str) -> Enro
     return enrollment
 
 
-def attach_video(session: Session, principal: Principal, enrollment_id: str, src_path: Path,
-                 content_type: str) -> Enrollment:
+def attach_video(session: Session, principal: Principal, enrollment_id: str, media: Media) -> Path | None:
+    """Insert the placed video's row (`persistence.media.place_file`) and point the enrollment at it.
+
+    A re-upload replaces the previous video: its row is deleted here and its file path returned, for the caller
+    to unlink after commit. On rollback the caller unlinks the new file.
+    """
     enrollment = check_uploadable(session, principal.farm_id, enrollment_id)
-    media = store_file(session, principal.farm_id, "video", src_path, content_type)
-    try:
-        _transition(session, enrollment, ("created", "uploaded"), "uploaded", video_media_id=media.id)
-    except DomainError:
-        media_path(media).unlink(missing_ok=True)  # the row rolls back with the caller's transaction
-        raise
+    previous_id = enrollment.video_media_id
+    session.add(media)
+    session.flush()
+    _transition(session, enrollment, ("created", "uploaded"), "uploaded", video_media_id=media.id)
+    replaced = None
+    if previous_id is not None:
+        previous = session.get(Media, previous_id)
+        if previous is not None:
+            replaced = media_path(previous)
+            session.delete(previous)
+            session.flush()
     _audit(session, principal, enrollment, "enrollment.video_uploaded",
            data={"media_id": media.id, "content_type": media.content_type, "bytes": media.bytes,
-                 "sha256": media.sha256})
-    return enrollment
+                 "sha256": media.sha256, "replaced_media_id": previous_id})
+    return replaced
 
 
 def start_processing(session: Session, principal: Principal, enrollment_id: str) -> Job:
@@ -148,11 +164,25 @@ def start_processing(session: Session, principal: Principal, enrollment_id: str)
 
 
 def retry(session: Session, principal: Principal, enrollment_id: str) -> Enrollment:
+    """A new enrollment linked to the old one. An old one still under review or processing is superseded in the
+    same transaction (review → rejected, processing → failed), so it can no longer be confirmed or saved."""
     old = _get(session, principal.farm_id, enrollment_id)
     if old.status not in RETRYABLE:
-        raise DomainError("INVALID_STATE", "Only an enrollment under review, rejected, or failed can be retried.",
+        raise DomainError("INVALID_STATE",
+                          "Only an enrollment under review, processing, rejected, or failed can be retried.",
                           {"status": old.status, "expected": list(RETRYABLE)})
-    return create(session, principal, old.sample_key, retry_of_id=old.id)
+    previous_status = old.status
+    new = create(session, principal, old.sample_key, retry_of_id=old.id)
+    if previous_status == "review":
+        _transition(session, old, ("review",), "rejected", reviewer_id=principal.user_id,
+                    decision=_decision(principal, "reject", reject_reason=SUPERSEDED, superseded_by=new.id))
+    elif previous_status == "processing":
+        _transition(session, old, ("processing",), "failed",
+                    review_reasons=[*(old.review_reasons or []), SUPERSEDED])
+    if previous_status in ("review", "processing"):
+        _audit(session, principal, old, "enrollment.superseded",
+               data={"superseded_by": new.id, "previous_status": previous_status})
+    return new
 
 
 # ----- decision -------------------------------------------------------------------------------------------
@@ -165,6 +195,29 @@ def missing_views(enrollment: Enrollment) -> list[str]:
 
 def possible_duplicate(identity: dict) -> bool:
     return identity.get("outcome") == "candidate" or bool(identity.get("possible_duplicate"))
+
+
+def _gallery_as_of(enrollment: Enrollment) -> datetime:
+    stamp = ((enrollment.manifest or {}).get("perception") or {}).get("gallery_as_of")
+    if stamp:
+        try:
+            return datetime.fromisoformat(stamp)
+        except ValueError:
+            pass
+    return enrollment.created_at  # unknown: the most cautious time this enrollment's check could have run
+
+
+def herd_changes_since_processing(session: Session, enrollment: Enrollment) -> list[str]:
+    """Animals the duplicate check could not have seen: registered, or given a muzzle reference by another
+    enrollment, after this enrollment's gallery snapshot. Read in the confirm transaction (it holds the lock)."""
+    as_of = _gallery_as_of(enrollment)
+    new_animals = session.scalars(select(Animal.id).where(Animal.farm_id == enrollment.farm_id,
+                                                          Animal.created_at > as_of))
+    new_refs = session.scalars(
+        select(AnimalReference.animal_id).join(Animal, Animal.id == AnimalReference.animal_id)
+        .where(Animal.farm_id == enrollment.farm_id, AnimalReference.view == "muzzle",
+               AnimalReference.created_at > as_of, AnimalReference.enrollment_id.is_distinct_from(enrollment.id)))
+    return sorted(set(new_animals) | set(new_refs))
 
 
 def next_animal_id(session: Session) -> str:
@@ -217,12 +270,25 @@ def _link_existing(session: Session, principal: Principal, enrollment: Enrollmen
                           {"field": "link_to", "link_to": link_to})
     identity = enrollment.identity or {}
     suggested = identity.get("animal_id")
+    matches = identity.get("outcome") == "candidate" and suggested == animal.id
+    # Linking adds this video's frames as the animal's references, so the matcher must have verified that very
+    # animal; anything else is a human override and is recorded as one.
+    overrides = [] if matches else ["unverified_link"]
+    if overrides and note is None:
+        message = "Linking to an animal the matcher did not verify needs an override note."
+        raise DomainError("VALIDATION_FAILED", message, {
+            "field": "override_note", "override_required": overrides, "candidate_animal_id": suggested,
+            "identity_outcome": identity.get("outcome"),
+            "options": ["link_existing with override_note", "register_new", "reject"],
+        })
     _transition(session, enrollment, ("review",), "confirmed", reviewer_id=principal.user_id, animal_id=animal.id,
                 decision=_decision(principal, "link_existing", animal_id=animal.id, override_note=note,
-                                   matches_candidate=suggested == animal.id if suggested else None))
+                                   overrides=overrides, matches_candidate=matches))
     references = _add_references(session, enrollment, animal.id)
     _audit(session, principal, enrollment, "enrollment.confirmed", animal_id=animal.id,
-           data={"decision": "link_existing", "sample_key": enrollment.sample_key, "references": len(references)})
+           data={"decision": "link_existing", "sample_key": enrollment.sample_key, "references": len(references),
+                 "override_note": note, "overrides": overrides,
+                 "flags": ["unverified_link_override"] if overrides else []})
     actor_type, actor_id = audit.actor_from(principal)
     audit.record(session, farm_id=animal.farm_id, actor_type=actor_type, actor_id=actor_id,
                  event_type="animal.references_linked", subject_type="animal", subject_id=animal.id,
@@ -254,14 +320,17 @@ def _register_new(session: Session, principal: Principal, enrollment: Enrollment
     identity = enrollment.identity or {}
     missing = missing_views(enrollment)
     uncertain = identity.get("outcome") == "uncertain"
+    changed = herd_changes_since_processing(session, enrollment)
     overrides = ([*(["possible_duplicate"] if possible_duplicate(identity) else []),
                   *(["required_views_missing"] if missing else []),
-                  *(["identity_uncertain"] if uncertain else [])])
+                  *(["identity_uncertain"] if uncertain else []),
+                  *(["herd_changed_since_processing"] if changed else [])])
     if overrides and note is None:
         raise DomainError("VALIDATION_FAILED", "Registering this animal as new needs an override note.", {
             "field": "override_note", "override_required": overrides, "missing_views": missing,
-            "candidate_animal_id": identity.get("animal_id"),
-            "options": ["link_existing", "register_new with override_note", "reject"],
+            "candidate_animal_id": identity.get("animal_id"), "changed_animal_ids": changed,
+            "options": ["link_existing", "register_new with override_note", "reject",
+                        *(["retry to re-run the duplicate check"] if changed else [])],
         })
     fields = _animal_fields(enrollment, animal_in)
     pending = "muzzle" in missing or uncertain
@@ -271,7 +340,8 @@ def _register_new(session: Session, principal: Principal, enrollment: Enrollment
     _transition(session, enrollment, ("review",), "confirmed", reviewer_id=principal.user_id,
                 decision=_decision(principal, "register_new", animal_id=animal_id, override_note=note,
                                    overrides=overrides, identity_status="pending_review" if pending else "confirmed"))
-    animal = Animal(id=animal_id, farm_id=enrollment.farm_id, identity_status="pending_review" if pending else "confirmed",
+    animal = Animal(id=animal_id, farm_id=enrollment.farm_id,
+                    identity_status="pending_review" if pending else "confirmed",
                     confirmed_by=None if pending else principal.user_id, confirmed_at=None if pending else now,
                     ownership_doc_refs=[], enrollment_id=enrollment.id, created_at=now, **fields)
     session.add(animal)
@@ -330,7 +400,8 @@ def _add_estimates(session: Session, enrollment: Enrollment, animal: Animal, now
     age = estimates.get("age")
     if animal.birth_date is not None:  # a documented birth date outranks the fixture (age adapter priority)
         teeth = views.get("teeth") or {}
-        age = Perception(capabilities={}).age(enrollment.sample_key, [teeth["frame_id"]] if teeth.get("frame_id") else [],
+        teeth_ids = [teeth["frame_id"]] if teeth.get("frame_id") else []
+        age = Perception(capabilities={}).age(enrollment.sample_key, teeth_ids,
                                               documented_birth_date=animal.birth_date, observed_on=now.date())
     for kind, result, view in (("age", age, "teeth"), ("weight", estimates.get("weight"), "body")):
         if not result:

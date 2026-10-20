@@ -4,7 +4,7 @@ Any signed-in role may read. Starting a replay and reviewing tracks needs a mana
 observation feed needs `X-Service-Token`. Every read is scoped to the principal's farm.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -77,15 +77,22 @@ def list_scenarios(principal: Principal = Depends(current_principal),
 
 
 @router.post("/demo/replays/{scenario_id}/start", status_code=status.HTTP_202_ACCEPTED, response_model=ReplayStarted,
-             dependencies=[Depends(require_demo_mode)], responses=error_responses(401, 403, 404))
-def start_replay(scenario_id: str, principal: Principal = Depends(require_roles(*ENROLLERS))) -> dict:
+             dependencies=[Depends(require_demo_mode)],
+             responses={200: {"model": ReplayStarted, "description": "Replay already ran to completion (speed 0)."},
+                        **error_responses(401, 403, 404)})
+def start_replay(scenario_id: str, response: Response,
+                 principal: Principal = Depends(require_roles(*ENROLLERS))) -> dict:
+    """202 while a threaded replay runs; 200 with the final status once a speed-0 replay has already finished."""
     # No session dependency: the replay opens its own short writing sessions (speed 0 runs inside this request).
     settings = get_settings()
     replay = replays.start(settings, farm_id=principal.farm_id, actor=audit.actor_from(principal),
                            scenario_id=scenario_id)
-    scenario = replays.load_scenario(settings, scenario_id)
+    duration = replays.load_scenario(settings, scenario_id)["duration_s"]
+    if replay.status != "running":
+        response.status_code = status.HTTP_200_OK
     return {"replay_id": replay.id, "scenario_id": scenario_id, "status": replay.status,
-            "started_at": replay.started_at, "speed": replay.speed, "duration_s": scenario["duration_s"]}
+            "started_at": replay.started_at, "anchor_at": replays.anchor_of(replay, duration), "speed": replay.speed,
+            "duration_s": duration}
 
 
 @router.get("/replays/{replay_id}", response_model=ReplayOut, responses=error_responses(401, 404))
@@ -105,7 +112,7 @@ def get_replay(replay_id: str, principal: Principal = Depends(current_principal)
                                       .order_by(Alert.created_at, Alert.id))) if tracks else []
     return {"id": replay.id, "scenario_id": replay.scenario_id, "camera_id": replay.camera_id,
             "status": replay.status, "speed": replay.speed, "started_at": replay.started_at,
-            "finished_at": replay.finished_at, "duration_s": duration,
+            "finished_at": replay.finished_at, "anchor_at": replays.anchor_of(replay, duration), "duration_s": duration,
             "progress_s": replays.progress_of(replay, duration, session),
             "tracks": [_track(track, names) for track in tracks],
             "alerts": alert_rules.views(session, principal.farm_id, alert_rows)}

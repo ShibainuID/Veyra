@@ -13,7 +13,7 @@ API = "/api/v1"
 @pytest.fixture
 def alert_id(client):
     assert client.post(f"{API}/demo/reset?scenario=post-enrollment", headers=MANAGER).status_code == 200
-    assert client.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 202
+    assert client.post(f"{API}/demo/replays/anomaly/start", headers=OPERATOR).status_code == 200
     items = client.get(f"{API}/alerts", headers=OPERATOR, params={"kind": "reduced_movement"}).json()["items"]
     return items[0]["id"]
 

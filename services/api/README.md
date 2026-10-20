@@ -20,6 +20,23 @@ Perception adapters and workers behind the enrollment flow (PRD Sections 4.1–4
 - The body view needs the printed ArUco marker (`DICT_4X4_50`, 15 cm by default) in the plane of the flank.
 - Teeth-view detection uses a CLIP prompt that has not been tested on real teeth footage yet.
 
+## Backend
+
+FastAPI + SQLAlchemy on SQLite (single process, `BEGIN IMMEDIATE` writing sessions, deferred read sessions; see the `persistence/db.py` docstring for the session rules). The full contract is exported to `shared/schemas/openapi.json`; the web app generates its types from it.
+
+| Area | Modules | Notes |
+| --- | --- | --- |
+| Auth and roles | `domain/auth.py`, `routes/deps.py` | Demo bearer tokens (`demo-manager`, `demo-operator`, `demo-vet`, `demo-assessor`); farm-scoped, other farms' rows return 404 |
+| Errors | `domain/errors.py`, `main.py` | One envelope everywhere: `{"error": {"code", "message", "details"}}` |
+| Records and media | `persistence/models.py`, `persistence/media.py` | Signed media URLs, allow-listed content types, SHA-256 per file |
+| Audit and passbook | `domain/audit.py`, `domain/passbook.py`, `domain/passport.py` | Every change is audited; each animal's passbook is built from its audit trail plus awaiting actions |
+| Enrollment and perception | `domain/enrollment.py`, `adapters/perception.py`, `workers/jobs.py`, `workers/enrollment_job.py` | Real muzzle matcher when its model is present; per-capability fallback to labeled fixtures (`VEYRA_PERCEPTION_MODE`) |
+| Valuation and insurance | `domain/valuation.py`, `domain/eligibility.py`, `adapters/llm/explain.py` | Deterministic eligibility and premiums; Claude only explains them (offline template without a key) |
+| Agent wallet | `domain/actions.py`, `domain/wallet.py`, `adapters/sandbox/` | Approval bound to payload hash + version; idempotent execution; sandbox insurer and payment providers |
+| Monitoring | `domain/association.py`, `domain/movement.py`, `workers/replay.py` | Recorded scenario replays, strict identity association, reduced-movement and observation-quality alerts |
+| Assistant | `domain/assistant.py`, `adapters/llm/query.py` | Claude parses the question; the backend writes every answer from records |
+| Claims | `domain/claims.py` | Policy-specific evidence checklist; submission blocked while items are missing |
+
 ## Setup
 
 ```bash
