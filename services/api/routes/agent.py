@@ -69,6 +69,15 @@ def execute(action_id: str, idempotency_key: str | None = Header(default=None, a
         return actions.action_view(session, actions.farm_action(session, principal.farm_id, action_id))
 
 
+@router.post("/{action_id}/revise", response_model=ActionOut, status_code=201,
+             responses=error_responses(401, 403, 404, 409, 422))
+def revise(action_id: str, principal: Principal = Depends(require_roles(*ENROLLERS)),
+           session: Session = Depends(get_session)) -> dict:
+    """Prepare the action again from its own references; the new version needs a fresh approval."""
+    action = commit_or_raise(session, lambda: actions.revise(session, principal, action_id))
+    return actions.action_view(session, action)
+
+
 @router.post("/{action_id}/cancel", response_model=ActionOut, responses=error_responses(401, 403, 404, 409))
 def cancel(action_id: str, principal: Principal = Depends(require_roles(*ENROLLERS)),
            session: Session = Depends(get_session)) -> dict:
