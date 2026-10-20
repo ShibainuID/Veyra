@@ -63,7 +63,9 @@ Upload: `demo/uploads/video_hp.mp4`. You can also pick **Use the phone enrollmen
 
 Open it from **Find insurance with the VEYRA agent** on the passport.
 
-1. **Expect:** the agent notices "Not insured" and asks only what's missing, for example the cover start date.
+Use **Manager** or **Operator**. Vets can't open agent conversations (403).
+
+1. **Expect:** a passport summary with "Not insured". The agent asks only questions whose answer is missing from the records, at most three. For Sari, the one question is whether you hold an ownership document; dairy breeds also get asked about a recent vet check. If you already uploaded the ownership PDF in step 4, it skips straight to the comparison.
 2. **Expect:** the plan comparison card:
    - Basic Mortality & Accident: eligible;
    - Mortality + Theft: eligible once the ownership document is on file, otherwise needs review;
@@ -103,10 +105,15 @@ Open it from **Find insurance with the VEYRA agent** on the passport.
 
 Open `/agent?animal=animal-demo-002&intent=file_claim`, or **File a claim with the VEYRA agent** on Bima's passport.
 
-1. Tell the agent what happened: an accidental injury, the date, and a short description. You can attach `demo/uploads/incident-photo.jpg`.
-2. **Expect:** a checklist of present and missing items, with **vet assessment missing**, so submission is blocked.
+1. **Expect:** the agent checks Bima's active policy and cover window, then asks what happened, offering the incident kinds; covered perils are highlighted. Answer: **accidental injury**, then the date, a short description, and the estimated loss (e.g. `600`). It records the incident and drafts the claim.
+2. **Expect:** a checklist of present and missing items, each missing one with its fix, so submission stays blocked until they are done:
+   - **Vet assessment:** only a vet can add it (next step).
+   - **Farmer declaration:** a manager confirms it, from a button right in the chat.
+   - **Identity verified:** click **Use the sample re-scan (demo)**, or re-scan on the claim page (see step 9).
+   - **Camera evidence:** Bima has no seeded camera alert, so this stays listed as missing and links to Monitor. It doesn't block a sandbox submission. Mention it while presenting: the agent never invents evidence.
+   - The Claims list has no "open the agent" button. Start from Bima's passport or the URL above.
 3. Switch to **Vet**, open the claim (`/claims/<id>`), and **Add assessment**.
-4. Switch to **Manager** and confirm the **declaration**.
+4. Switch to **Manager** and confirm the **declaration**. You can do this in the agent chat or on the claim page.
 5. Back in the agent: **Prepare claim submission**, then **Approve and stamp**. **Expect:** "Submitted — Pending assessment" with a sandbox receipt.
 6. **Track the claim** (`intent=track_claim`):
    - **Expect:** only insurer-reported status.
@@ -137,6 +144,6 @@ Open `/agent?animal=animal-demo-002&intent=file_claim`, or **File a claim with t
 | --- | --- |
 | Muzzle matching | The real ONNX model with SIFT verification |
 | Enrollment frames | Real OpenCV extraction. Weight and age use labeled fixtures unless the perception extra is installed |
-| Camera replays | Recorded scenarios. The Veo footage is AI-generated and labeled so in the app |
+| Camera replays | Recorded scenarios. The Veo footage is AI-generated and labeled so in the app (the pitch film shows it unlabeled) |
 | Insurance and payments | A sandbox insurer and ledger: fictional policies, no real money |
 | Language model | GPT-6 Luna only explains and parses; every decision and number comes from the records |
