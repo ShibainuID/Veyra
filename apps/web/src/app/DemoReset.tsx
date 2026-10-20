@@ -66,7 +66,7 @@ function ResetPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
       resetAskHistory();
       queryClient.clear();
       close();
-      navigate("/");
+      navigate("/herd");
       toast.show({
         tone: "ok",
         title: "Demo reset",

@@ -13,7 +13,7 @@ export function NotFoundPage() {
         title="Nothing lives at this address"
         icon={ClipboardList}
         action={
-          <ButtonLink to="/" variant="primary">
+          <ButtonLink to="/herd" variant="primary">
             Back to the herd
           </ButtonLink>
         }

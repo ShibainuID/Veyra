@@ -15,7 +15,7 @@ const under = (...prefixes: string[]) => (pathname: string) =>
   prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
 export const NAV_ITEMS: readonly NavItem[] = [
-  { to: "/", label: "Herd", icon: ClipboardList, matches: (p) => p === "/" || under("/animals")(p), inTabs: true },
+  { to: "/herd", label: "Herd", icon: ClipboardList, matches: under("/herd", "/animals"), inTabs: true },
   { to: "/enroll", label: "Enroll", icon: ScanLine, matches: under("/enroll"), inTabs: true },
   { to: "/monitor", label: "Monitor", icon: Cctv, matches: under("/monitor", "/alerts"), inTabs: true },
   { to: "/approvals", label: "Approvals", icon: Stamp, matches: under("/approvals"), inTabs: true, badge: "approvals" },

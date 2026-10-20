@@ -161,16 +161,26 @@
   --text-xl--line-height: 1.15;
   --text-2xl: 2.203rem; /* 35.2px */
   --text-2xl--line-height: 1.1;
+  /* Pitch surface only (the landing page at /): a display headline and a lead size beyond the app ramp. */
+  --text-display: clamp(2.5rem, 1rem + 4.4vw, 4.75rem);
+  --text-display--line-height: 0.98;
+  --text-display--letter-spacing: -0.03em;
+  --text-lead: 1.375rem;
+  --text-lead--line-height: 1.45;
 
   --font-weight-*: initial;
   --font-weight-regular: 400;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
+  --font-weight-heavy: 800; /* pitch display headline and wordmark only */
 
   --radius-*: initial;
   --radius-control: 10px;
   --radius-panel: 14px;
   --radius-pill: 999px;
+  /* The pitch page's ear tag (hero and its sticky companion): rounded shoulders and a heavier
+     rounded bottom, as on the molded tag, in proportion to the tag's own size. */
+  --radius-hero-tag: 11% 11% 18% 18% / 10% 10% 16% 16%;
 
   /* Depth: offset plus soft blur, never a hard block */
   --shadow-*: initial;

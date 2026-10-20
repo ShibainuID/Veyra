@@ -9,7 +9,7 @@ This is a hackathon prototype. Every insurer, payment, and claim is a sandbox; t
 | Path | What it holds |
 | --- | --- |
 | `services/api/` | FastAPI backend on SQLite: passport and passbook, enrollment, valuation, insurance advisory, agent wallet (approvals and sandbox execution), monitoring replays and alerts, assistant, claims, audit. See `services/api/README.md`. |
-| `apps/web/` | React 19 + Vite + Tailwind 4 web app (Herd, Enroll, Monitor, Approvals, Claims, Audit, Ask). |
+| `apps/web/` | React 19 + Vite + Tailwind 4 web app: the pitch page at `/`, and the app from `/herd` (Herd, Enroll, Monitor, Approvals, Claims, Audit, Ask). |
 | `demo/` | Fixtures (`demo/fixtures/`: herd, policies, enrollment samples, age estimates, sample incident) and recorded camera scenarios (`demo/scenarios/`). |
 | `ml/` | Training and evaluation for the muzzle matcher and the weight estimate. The API calls it only through `services/api/adapters/perception.py`. |
 | `shared/schemas/openapi.json` | The API contract. The web app generates its types from it. |
@@ -22,6 +22,8 @@ One image runs everything: the web app is built in a Node stage and served by th
 ```bash
 docker compose up --build                # http://localhost:8000
 ```
+
+`/` is the pitch page; the app itself opens at `/herd` (the page's **Open the live demo** goes there).
 
 - **Claude:** set `ANTHROPIC_API_KEY` in your shell or a root `.env` file to turn on Claude's policy explanations and question parsing. Without it, every answer is a labeled offline template.
 - **Port:** `VEYRA_PORT=8090 docker compose up` serves on another port.

@@ -5,7 +5,7 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 ## Before you start
 
 1. Start the API and the web app (see the README quick start). Leave `VEYRA_REPLAY_SPEED` at its default of 10, so the replay raises its alert about 15 seconds after it starts.
-2. Open `http://localhost:5173` at 1440 wide (a laptop at 100% zoom), acting as **Manager**.
+2. Open `http://localhost:5173/herd` at 1440 wide (a laptop at 100% zoom), acting as **Manager**. (`/` is the pitch page; its **Open the live demo** button opens the herd too.)
 3. Reset: as Manager, **flask button (Demo)** in the top bar → **Fresh herd** → **Reset demo…** → **Reset the demo**. From a terminal instead:
 
    ```bash
