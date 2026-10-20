@@ -473,15 +473,15 @@ Table~\ref{tab:muzzle} reports identification on held-out test animals. Fine-tun
 \label{tab:muzzle}
 \small
 \setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lccccc}
+\begin{tabular}{lccc}
 \toprule
-Method & Rank-1 & Top-5 & \makecell{Correct match\\at threshold} & \makecell{Wrong match\\(registered)} & \makecell{Unknown\\false} \\
+Method & \makecell{Correct match\\at threshold} & \makecell{Wrong match\\(registered)} & \makecell{Unknown\\false} \\
 \midrule
-\textbf{Hybrid (embedding + SIFT/RANSAC)} & 0.927 & 0.927 & \textbf{0.925} & 0.005 & \textbf{0.014} \\
-DINOv3 + ArcFace, cosine only & \textbf{0.966} & \textbf{0.976} & 0.952 & 0.005 & 0.324 \\
-SIFT + RANSAC only & 0.925 & 0.925 & 0.924 & 0.001 & 0.017 \\
-DINOv3 ViT-S/16 zero-shot & 0.939 & 0.961 & 0.843 & 0.002 & 0.145 \\
-DINOv2 ViT-S/14 zero-shot & 0.925 & 0.953 & 0.827 & 0.007 & 0.153 \\
+\textbf{Hybrid (embedding + SIFT/RANSAC)} & \textbf{0.925} & 0.005 & \textbf{0.014} \\
+DINOv3 + ArcFace, cosine only & 0.952 & 0.005 & 0.324 \\
+SIFT + RANSAC only & 0.924 & 0.001 & 0.017 \\
+DINOv3 ViT-S/16 zero-shot & 0.843 & 0.002 & 0.145 \\
+DINOv2 ViT-S/14 zero-shot & 0.827 & 0.007 & 0.153 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -512,15 +512,15 @@ On ten minutes of the held-out test session, the fine-tuned detector with BoT-SO
 \caption{Tracking on the held-out 8-Calves test session (12{,}000 frames).}
 \label{tab:tracking}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Detector + tracker & Recall & MOTA & IDF1 & ID switches \\
+Detector + tracker & Recall & MOTA & IDF1 \\
 \midrule
-COCO + ByteTrack & 0.405 & 0.319 & 0.136 & 751 \\
-COCO + BoT-SORT re-ID & 0.410 & 0.323 & 0.160 & 735 \\
-\texttt{calf\_detector\_v1} + ByteTrack & 0.997 & 0.977 & 0.666 & 143 \\
-\texttt{calf\_detector\_v1} + BoT-SORT & 0.997 & 0.977 & 0.668 & 116 \\
-\textbf{\texttt{calf\_detector\_v1} + BoT-SORT re-ID} & \textbf{0.997} & \textbf{0.976} & \textbf{0.709} & 120 \\
+COCO + ByteTrack & 0.405 & 0.319 & 0.136 \\
+COCO + BoT-SORT re-ID & 0.410 & 0.323 & 0.160 \\
+\texttt{calf\_detector\_v1} + ByteTrack & 0.997 & 0.977 & 0.666 \\
+\texttt{calf\_detector\_v1} + BoT-SORT & 0.997 & 0.977 & 0.668 \\
+\textbf{\texttt{calf\_detector\_v1} + BoT-SORT re-ID} & \textbf{0.997} & 0.976 & \textbf{0.709} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -557,13 +557,13 @@ Table~\ref{tab:weight} reports out-of-fold weight accuracy. The image path halve
 \caption{Weight estimation, 6-fold cross-validation on tape-measured cattle (341--644\,kg).}
 \label{tab:weight}
 \small
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Method & MAPE & Bias & Within 10\% & 80\% band \\
+Method & MAPE & Bias & 80\% band \\
 \midrule
-Predict the mean (baseline) & 15.8\% & +3.4\% & 44\% & $\pm$22.6\% \\
-\textbf{Image path: withers height, log-linear} & \textbf{8.7\%} & \textbf{+0.2\%} & 59\% & $\pm$12.1\% \\
-\textbf{Tape path: heart girth, Schaeffer + Crevat} & \textbf{5.4\%} & \textbf{+0.9\%} & \textbf{86\%} & $\pm$9.7\% \\
+Predict the mean (baseline) & 15.8\% & +3.4\% & $\pm$22.6\% \\
+\textbf{Image path: withers height, log-linear} & \textbf{8.7\%} & \textbf{+0.2\%} & $\pm$12.1\% \\
+\textbf{Tape path: heart girth, Schaeffer + Crevat} & \textbf{5.4\%} & \textbf{+0.9\%} & $\pm$9.7\% \\
 \bottomrule
 \end{tabular}
 \end{table}
