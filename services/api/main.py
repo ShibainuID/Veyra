@@ -16,7 +16,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine
 from persistence.seed import seed_if_empty
-from routes import animals, audit, auth_routes, demo, health, media
+from routes import animals, audit, auth_routes, demo, enrollments, health, jobs, media
 
 API_PREFIX = "/api/v1"
 
@@ -25,6 +25,8 @@ ROUTERS = [
     auth_routes.router,
     animals.router,
     audit.router,
+    enrollments.router,
+    jobs.router,
     media.router,
     demo.router,
 ]
