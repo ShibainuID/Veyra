@@ -45,8 +45,8 @@ export function EvidenceChecklist({ items, renderFix, className }: EvidenceCheck
                   <span className="font-bold">{item.label}</span>
                   <span className={cn("text-sm font-bold", present ? "text-ok" : "text-danger")}>{present ? "Present" : "Missing"}</span>
                 </p>
-                {present && item.detail ? (
-                  <span className="text-sm text-muted">{item.detail}</span>
+                {item.detail ? (
+                  <span className={cn("text-sm", present ? "text-muted" : "text-ink")}>{item.detail}</span>
                 ) : (
                   present && item.ref && <Mono className="text-sm text-muted">{item.ref}</Mono>
                 )}

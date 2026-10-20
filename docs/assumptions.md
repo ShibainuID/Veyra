@@ -8,6 +8,25 @@
   `anchor + t`, with the anchor set so no observation is stamped after it is ingested (`anchor_at` on the replay).
 - **Monitoring: a live track key silent for more than 30 s starts a new, unassigned track**, so a reused key never
   carries an earlier animal's identity.
+- **Claims: a death claim needs a muzzle re-scan that matches** (`identity_verified`). The requirement is added in
+  code for every `death` incident (`domain/claims.py` `IDENTITY_CHECK_KINDS`), not listed in `policies.json`, so no
+  death-covering product can skip it; theft has no animal to scan and is refused. `POST /claims/{id}/identity-checks`
+  crops a photo to the capture guide box (90% width, 1.18 aspect) or takes a video's muzzle crop from the perception
+  facade, then runs the real muzzle matcher against this animal's enrolled references plus every other confirmed
+  animal's. The matcher's candidate is the claimed animal → `match`; another animal → `mismatch` naming it; no verified
+  match → `mismatch`; ambiguous or low-detail → `uncertain` (retake). When the claimed animal has no enrolled muzzle
+  image on disk (seeded animals), "no match" reads `uncertain`, since there was nothing to compare with. Only the
+  latest check counts; `mismatch` and `uncertain` keep `CLAIM_SUBMISSION` at `EVIDENCE_INCOMPLETE`, and a newer check
+  after approval makes the approved submission stale. Without the muzzle capability an upload is `uncertain`
+  (`simulated`); the demo samples (`match` / `mismatch`) are fixture outcomes labeled `simulated`.
+- **Cameras: the gallery version is computed, not stored.** `version` = the gallery's animals (`confirmed`, plus
+  `pending_review` flagged) + their muzzle references. Animals and references are only ever added, so it only grows
+  and every enrollment that adds an animal or a muzzle reference bumps it (the fresh herd is v10; enrolling Sari makes
+  v12). A camera is in sync when its last acknowledged version (`POST /cameras/{id}/gallery/ack`, service token)
+  equals the current one. A status change with no new animal or reference would not change the version; no such
+  transition exists today. **Push to cameras** (`POST /cameras/gallery/publish`, manager) records the published
+  version and, in demo mode, simulates every farm camera's acknowledgement (labeled `simulated`); seeded references
+  have no footage, so their gallery entries carry no image.
 
 ## Data and fixture provenance
 

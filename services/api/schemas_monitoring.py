@@ -67,6 +67,16 @@ class CameraLastObservation(BaseModel):
     bbox: Bbox
 
 
+class CameraGalleryStatus(BaseModel):
+    """Whether this camera holds the farm's current muzzle gallery (`domain.gallery`)."""
+
+    current_version: int
+    synced_version: int | None
+    synced_at: UTCDateTime | None
+    in_sync: bool
+    source: Literal["prototype", "simulated"] | None = None
+
+
 class CameraOut(BaseModel):
     id: str
     name: str
@@ -74,6 +84,7 @@ class CameraOut(BaseModel):
     map_x: float
     map_y: float
     last_observation: CameraLastObservation | None
+    gallery: CameraGalleryStatus | None = None
 
 
 class CameraList(BaseModel):

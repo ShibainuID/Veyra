@@ -442,3 +442,51 @@ class AuditEvent(Base):
     animal_id: Mapped[str | None]
     data: Mapped[dict] = mapped_column(default=dict)
     created_at: Mapped[datetime] = _created_at()
+
+
+class IdentityCheck(Base):
+    """A claim-time muzzle re-scan compared with the claimed animal's enrolled references (the anti-fraud step)."""
+
+    __tablename__ = "identity_checks"
+    __table_args__ = (Index("ix_identity_checks_claim_created", "claim_id", "created_at"),)
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    claim_id: Mapped[str] = mapped_column(ForeignKey("claims.id"))
+    animal_id: Mapped[str] = _animal_fk()
+    media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    crop_media_id: Mapped[str | None] = mapped_column(ForeignKey("media.id"))
+    reference_id: Mapped[str | None] = mapped_column(ForeignKey("animal_references.id"))
+    outcome: Mapped[str]
+    reason: Mapped[str | None]
+    matched_animal_id: Mapped[str | None]
+    candidates: Mapped[list] = mapped_column(default=list)
+    inliers: Mapped[int | None]
+    source: Mapped[str]
+    method_version: Mapped[str]
+    evidence: Mapped[dict] = mapped_column(default=dict)
+    checked_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
+class CameraGallerySync(Base):
+    """The muzzle gallery version a camera worker last acknowledged."""
+
+    __tablename__ = "camera_gallery_syncs"
+
+    camera_id: Mapped[str] = mapped_column(ForeignKey("cameras.id"), primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    synced_version: Mapped[int]
+    synced_at: Mapped[datetime]
+    source: Mapped[str]
+
+
+class GalleryPublication(Base):
+    """The gallery version a manager last pushed to the farm's cameras."""
+
+    __tablename__ = "gallery_publications"
+
+    farm_id: Mapped[str] = mapped_column(ForeignKey("farms.id"), primary_key=True)
+    version: Mapped[int]
+    published_by: Mapped[str]
+    published_at: Mapped[datetime]
