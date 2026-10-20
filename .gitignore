@@ -15,3 +15,6 @@ dist/
 .impeccable/questions/
 .impeccable/hook.cache.json
 .claude/worktrees/
+services/api/.venv/
+services/api/var/
+.pytest_cache/
