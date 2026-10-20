@@ -9,12 +9,17 @@ from fastapi.testclient import TestClient
 from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "services" / "api"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from config import Settings  # noqa: E402
 from domain.security import new_token, token_hash  # noqa: E402
 from main import create_app  # noqa: E402
 from persistence.db import Base, Database  # noqa: E402
+from domain.perception import set_perception  # noqa: E402
+from fakes import FakePerception  # noqa: E402
 from persistence.models import Farm, User  # noqa: E402
+from persistence.storage import MediaStore  # noqa: E402
+from workers.runner import WorkerContext, run_once  # noqa: E402
 
 TEST_DB_URL = os.getenv("VEYRA_TEST_DATABASE_URL", "postgresql+psycopg://veyra:veyra@localhost:5432/veyra_test")
 
@@ -65,3 +70,24 @@ def make_user(db: Database):
             return user, {"Authorization": f"Bearer {token}"}
 
     return _make
+
+
+@pytest.fixture(autouse=True)
+def fake_perception():
+    set_perception(FakePerception())
+    yield
+    set_perception(None)
+
+
+@pytest.fixture
+def worker(db: Database, settings: Settings):
+    """Run queued jobs the way the worker process would; returns how many jobs ran."""
+    ctx = WorkerContext(settings, MediaStore(settings.media_root, settings.max_upload_bytes))
+
+    def _drain() -> int:
+        n = 0
+        while run_once(db, ctx):
+            n += 1
+        return n
+
+    return _drain
