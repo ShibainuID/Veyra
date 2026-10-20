@@ -17,7 +17,7 @@ from persistence.models import AuditEvent, User
 ACTOR_TYPES = ("user", "agent", "system", "provider")
 AGENT_NAME = "VEYRA agent"
 SYSTEM_NAME = "VEYRA"
-SYSTEM_ACTOR_NAMES = {"seed": "Demo seed", "service-worker": "VEYRA worker"}
+SYSTEM_ACTOR_NAMES = {"seed": "Demo seed", "service-worker": "VEYRA worker", "camera-worker": "Camera worker"}
 _ROWID = literal_column("audit_events.rowid")
 
 

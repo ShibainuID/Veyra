@@ -95,14 +95,25 @@ class CameraLastObservation(BaseModel):
     bbox: Bbox
 
 
+class CameraGalleryStatus(BaseModel):
+    """Whether this camera holds the farm's current muzzle gallery (`domain.gallery`)."""
+
+    current_version: int
+    synced_version: int | None
+    synced_at: UTCDateTime | None
+    in_sync: bool
+    source: Literal["prototype", "simulated"] | None = None
+
+
 class CameraOut(BaseModel):
     id: str
     name: str
     location: str
     map_x: float
     map_y: float
-    scan_zone: ScanZone | None = Field(description="The calibrated scan zone, if the camera has one.")
+    scan_zone: ScanZone | None = Field(default=None, description="The calibrated scan zone, if the camera has one.")
     last_observation: CameraLastObservation | None
+    gallery: CameraGalleryStatus | None = None
 
 
 class CameraList(BaseModel):

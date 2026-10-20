@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 import domain.monitoring_passbook  # noqa: F401  (registers the passbook formatters)
 from config import get_settings
 from domain import alerts as alert_rules
-from domain import association, audit
+from domain import association, audit, gallery
 from domain.auth import ENROLLERS, Principal, ServicePrincipal
 from domain.errors import DomainError
 from persistence.db import SessionLocal, get_read_session, get_session
@@ -56,6 +56,7 @@ def _scan_zone(session: Session, camera_id: str) -> dict | None:
 
 def _cameras(session: Session, farm_id: str) -> list[dict]:
     names = _animal_names(session, farm_id)
+    galleries = gallery.status(session, farm_id)
     items = []
     for camera in session.scalars(select(Camera).where(Camera.farm_id == farm_id).order_by(Camera.id)):
         last = session.scalar(select(Observation).where(Observation.camera_id == camera.id)
@@ -63,6 +64,7 @@ def _cameras(session: Session, farm_id: str) -> list[dict]:
         items.append({
             "id": camera.id, "name": camera.name, "location": camera.location, "map_x": camera.map_x,
             "map_y": camera.map_y, "scan_zone": _scan_zone(session, camera.id),
+            "gallery": galleries.get(camera.id),
             "last_observation": None if last is None else {
                 "id": last.id, "observed_at": last.observed_at, "track_id": last.track_id,
                 "animal_id": last.animal_id, "animal_name": names.get(last.animal_id) if last.animal_id else None,

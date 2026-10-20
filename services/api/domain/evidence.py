@@ -61,6 +61,9 @@ def _media_sha(session: Session, media_id: str | None) -> str | None:
     return media.sha256 if media else None
 
 
+media_sha = _media_sha
+
+
 def _num(value) -> str:
     """A range bound without a trailing `.0` (480, not 480.0)."""
     return f"{value:g}" if isinstance(value, float) else str(value)

@@ -24,6 +24,7 @@ from routes import (
     alerts, animals, assistant, audit, auth_routes, demo, enrollments, health, jobs, media, monitoring,
 )
 from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
+from routes import gallery  # camera muzzle gallery sync
 from workers.jobs import recover_interrupted
 
 API_PREFIX = "/api/v1"
@@ -37,6 +38,7 @@ ROUTERS = [
     jobs.router,
     media.router,
     demo.router,
+    gallery.router,  # before monitoring: `/cameras/gallery/publish` is a fixed path
     monitoring.router,
     alerts.router,
     assistant.router,

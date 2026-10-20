@@ -283,6 +283,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cameras/gallery/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish Gallery */
+        post: operations["publish_gallery_api_v1_cameras_gallery_publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{camera_id}/gallery": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Camera Gallery */
+        get: operations["camera_gallery_api_v1_cameras__camera_id__gallery_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cameras/{camera_id}/gallery/ack": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge Gallery */
+        post: operations["acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/demo/replays": {
         parameters: {
             query?: never;
@@ -796,6 +847,26 @@ export interface paths {
         patch: operations["patch_claim_api_v1_claims__claim_id__patch"];
         trace?: never;
     };
+    "/api/v1/claims/{claim_id}/identity-checks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Identity
+         * @description Compare a muzzle re-scan of the claimed animal with its enrolled references; a death claim needs a match.
+         */
+        post: operations["check_identity_api_v1_claims__claim_id__identity_checks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1232,6 +1303,40 @@ export interface components {
             /** File */
             file: string;
         };
+        /** CameraGallery */
+        CameraGallery: {
+            /** Camera Id */
+            camera_id: string;
+            /** Farm Id */
+            farm_id: string;
+            /** Version */
+            version: number;
+            /** Updated At */
+            updated_at: string | null;
+            /** Animals */
+            animals: components["schemas"]["GalleryAnimal"][];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+        };
+        /**
+         * CameraGalleryStatus
+         * @description Whether this camera holds the farm's current muzzle gallery (`domain.gallery`).
+         */
+        CameraGalleryStatus: {
+            /** Current Version */
+            current_version: number;
+            /** Synced Version */
+            synced_version: number | null;
+            /** Synced At */
+            synced_at: string | null;
+            /** In Sync */
+            in_sync: boolean;
+            /** Source */
+            source?: ("prototype" | "simulated") | null;
+        };
         /** CameraLastObservation */
         CameraLastObservation: {
             /** Id */
@@ -1275,8 +1380,9 @@ export interface components {
             /** Map Y */
             map_y: number;
             /** @description The calibrated scan zone, if the camera has one. */
-            scan_zone: components["schemas"]["ScanZone"] | null;
+            scan_zone?: components["schemas"]["ScanZone"] | null;
             last_observation: components["schemas"]["CameraLastObservation"] | null;
+            gallery?: components["schemas"]["CameraGalleryStatus"] | null;
         };
         /** CameraSeen */
         CameraSeen: {
@@ -1370,6 +1476,15 @@ export interface components {
             /** Product Id */
             product_id: string | null;
             illustrative_payout: components["schemas"]["IllustrativePayout"] | null;
+            /** Incident Kind */
+            incident_kind?: string | null;
+            /**
+             * Identity Check Required
+             * @default false
+             */
+            identity_check_required: boolean;
+            /** Identity Checks */
+            identity_checks?: components["schemas"]["IdentityCheckOut"][];
         };
         /** ClaimDraftRequest */
         ClaimDraftRequest: {
@@ -1813,6 +1928,69 @@ export interface components {
              */
             finding_type: "vet_assessment" | "vet_health_record";
         };
+        /** GalleryAck */
+        GalleryAck: {
+            /** Version */
+            version: number;
+        };
+        /** GalleryAckOut */
+        GalleryAckOut: {
+            /** Camera Id */
+            camera_id: string;
+            gallery: components["schemas"]["CameraGalleryStatus"];
+        };
+        /** GalleryAnimal */
+        GalleryAnimal: {
+            /** Animal Id */
+            animal_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Identity Status
+             * @enum {string}
+             */
+            identity_status: "confirmed" | "pending_review";
+            /** References */
+            references: components["schemas"]["GalleryReference"][];
+        };
+        /** GalleryPublishOut */
+        GalleryPublishOut: {
+            /** Version */
+            version: number;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+            /** Acknowledged */
+            acknowledged: string[];
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+            /** Cameras */
+            cameras: {
+                [key: string]: components["schemas"]["CameraGalleryStatus"];
+            };
+        };
+        /** GalleryReference */
+        GalleryReference: {
+            /** Reference Id */
+            reference_id: string;
+            /**
+             * View
+             * @constant
+             */
+            view: "muzzle";
+            /** Media Url */
+            media_url: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1880,6 +2058,92 @@ export interface components {
             possible_duplicate: boolean;
         } & {
             [key: string]: unknown;
+        };
+        /** IdentityCandidate */
+        IdentityCandidate: {
+            /** Animal Id */
+            animal_id: string | null;
+            /** Animal Name */
+            animal_name?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Cosine */
+            cosine?: number | null;
+        };
+        /** IdentityCheckOut */
+        IdentityCheckOut: {
+            /** Id */
+            id: string;
+            /** Claim Id */
+            claim_id: string;
+            /** Animal Id */
+            animal_id: string;
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "match" | "mismatch" | "uncertain";
+            /** Reason */
+            reason: string | null;
+            /** Matched Animal Id */
+            matched_animal_id: string | null;
+            /** Matched Animal Name */
+            matched_animal_name: string | null;
+            /** Candidates */
+            candidates: components["schemas"]["IdentityCandidate"][];
+            /** Inliers */
+            inliers: number | null;
+            /** Accept Inliers */
+            accept_inliers: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "prototype" | "simulated";
+            /** Method Version */
+            method_version: string;
+            /** Input */
+            input: ("photo" | "video" | "sample") | null;
+            /** Fallback */
+            fallback?: {
+                [key: string]: unknown;
+            } | null;
+            /** Checked By */
+            checked_by: string;
+            /** Checked By Name */
+            checked_by_name: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            scan: components["schemas"]["IdentityScan"];
+            reference: components["schemas"]["IdentityReference"] | null;
+        };
+        /** IdentityCheckResult */
+        IdentityCheckResult: {
+            check: components["schemas"]["IdentityCheckOut"];
+            claim: components["schemas"]["ClaimDetail"];
+        };
+        /** IdentityReference */
+        IdentityReference: {
+            /** Reference Id */
+            reference_id: string;
+            /** Crop Url */
+            crop_url: string | null;
+            /** Frame Url */
+            frame_url: string | null;
+            /** Note */
+            note?: string | null;
+        };
+        /** IdentityScan */
+        IdentityScan: {
+            /** Media Url */
+            media_url: string | null;
+            /** Content Type */
+            content_type: string | null;
+            /** Crop Url */
+            crop_url: string | null;
         };
         /** IllustrativePayout */
         IllustrativePayout: {
@@ -3885,6 +4149,155 @@ export interface operations {
             };
         };
     };
+    publish_gallery_api_v1_cameras_gallery_publish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalleryPublishOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    camera_gallery_api_v1_cameras__camera_id__gallery_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CameraGallery"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_gallery_api_v1_cameras__camera_id__gallery_ack_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                camera_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GalleryAck"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GalleryAckOut"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
     list_scenarios_api_v1_demo_replays_get: {
         parameters: {
             query?: never;
@@ -5643,6 +6056,90 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ClaimDetail"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
+            };
+        };
+    };
+    check_identity_api_v1_claims__claim_id__identity_checks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                claim_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A muzzle photo (JPEG, PNG, WebP) or short video (MP4, WebM, MOV).
+                     */
+                    file: string;
+                };
+                "application/json": {
+                    /**
+                     * Sample
+                     * @enum {string}
+                     */
+                    sample: "match" | "mismatch";
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IdentityCheckResult"];
                 };
             };
             /** @description Unauthorized */
