@@ -13,6 +13,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from domain.actions import recover_stranded
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine, writer_scope
 from persistence.seed import seed_if_empty
@@ -91,6 +92,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
     seed_if_empty()
     recover_interrupted()  # jobs a previous process left queued or running can never finish
+    recover_stranded()  # executions left `executing` by a previous process become `unknown`
     yield
     reset_engine()
 
