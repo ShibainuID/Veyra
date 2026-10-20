@@ -4,13 +4,16 @@ Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 """
 
 import logging
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from domain.actions import recover_stranded
@@ -107,7 +110,25 @@ def create_app() -> FastAPI:
     app.add_middleware(_WriterScopeMiddleware)
     for router in ROUTERS:
         app.include_router(router, prefix=API_PREFIX)
+    web_dist = os.environ.get("VEYRA_WEB_DIST")
+    if web_dist and (Path(web_dist) / "index.html").is_file():
+        _mount_web(app, Path(web_dist).resolve())
     return app
+
+
+def _mount_web(app: FastAPI, dist: Path) -> None:
+    """Serve the built web app from the same origin (the Docker image); `/api` keeps its JSON 404s."""
+    if (dist / "assets").is_dir():
+        app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def web(path: str) -> FileResponse:
+        if path == "api" or path.startswith("api/"):
+            raise StarletteHTTPException(status_code=404)
+        candidate = (dist / path).resolve()
+        if path and candidate.is_file() and candidate.is_relative_to(dist):
+            return FileResponse(candidate)
+        return FileResponse(dist / "index.html")  # client-side routes such as /animals/:id
 
 
 app = create_app()

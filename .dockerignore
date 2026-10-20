@@ -1,0 +1,17 @@
+# Keep the build context to what the image needs: the API, the web source, and the demo fixtures.
+.git
+.claude
+.impeccable
+.env
+docs
+ml
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/.pytest_cache
+services/api/.data
+services/api/var
+services/api/tests
+apps/web/src/**/*.test.ts
+apps/web/src/**/*.test.tsx

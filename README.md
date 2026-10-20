@@ -15,7 +15,23 @@ This is a hackathon prototype. Every insurer, payment, and claim is a sandbox; t
 | `shared/schemas/openapi.json` | The API contract. The web app generates its types from it. |
 | `docs/` | `demo-script.md` (the five-minute demo), `assumptions.md` (fixtures, thresholds, what is simulated), integration notes. |
 
-## Quick start
+## Run with Docker
+
+One image runs everything: the web app is built in a Node stage and served by the API process on the same port. You need Docker and Git LFS (`git lfs pull`, so the muzzle model in `services/api/models/` is the real file).
+
+```bash
+docker compose up --build                # http://localhost:8000
+```
+
+- **Claude:** set `ANTHROPIC_API_KEY` in your shell or a root `.env` file to turn on Claude's policy explanations and question parsing. Without it, every answer is a labeled offline template.
+- **Port:** `VEYRA_PORT=8090 docker compose up` serves on another port.
+- **Data:** the database and media live in the `veyra-data` volume. `docker compose down -v` deletes them; the Demo button resets them without a restart.
+- **Prototype ML path:** `VEYRA_PERCEPTION_BUILD=true docker compose up --build` adds torch, Ultralytics, and OpenCLIP. The image grows by several GB, and YOLO weights download on first use.
+- **Without compose:** `docker build -t veyra .` then `docker run -p 8000:8000 -v veyra-data:/data veyra`.
+
+The container runs one uvicorn worker on purpose: background jobs and camera replays live in the API process.
+
+## Quick start (development)
 
 Requirements: Python 3.12 with [uv](https://docs.astral.sh/uv/), Node 22 with pnpm 10. The commands are the same on Windows (PowerShell or Git Bash) and macOS.
 
