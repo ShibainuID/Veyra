@@ -307,7 +307,7 @@ export function MonitorScreen() {
         <div className="flex min-w-0 flex-col gap-4">
           {scenario && (
             <p className="flex flex-wrap items-center gap-2 text-muted">
-              <Provenance source="simulated" />
+              <Provenance source={scenario.source === "prototype" ? "prototype" : "simulated"} />
               <span className="min-w-0">{scenario.description}</span>
             </p>
           )}
