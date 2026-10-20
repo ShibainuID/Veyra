@@ -3,19 +3,19 @@ import { createBrowserRouter, isRouteErrorResponse, useRouteError, type RouteObj
 import { ErrorNotice, LoadingRegion, Skeleton } from "../components/feedback";
 import { PageHeader } from "../components/layout";
 import { Page } from "../pages/Page";
+import { AuditPage } from "../features/audit/AuditPage";
+import { HerdPage } from "../features/herd/HerdPage";
+import { PassportPage } from "../features/passport/PassportPage";
 import {
   AlertPage,
   ApprovalsPage,
   AskPage,
-  AuditPage,
   ClaimPage,
   ClaimsPage,
   EnrollPage,
-  HerdPage,
   InsurancePage,
   MonitorPage,
   NotFoundPage,
-  PassportPage,
 } from "../pages/placeholders";
 import { AppShell } from "./AppShell";
 
