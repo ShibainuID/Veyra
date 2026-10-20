@@ -20,6 +20,7 @@ from routes import (
     alerts, animals, assistant, audit, auth_routes, demo, enrollments, health, jobs, media, monitoring,
 )
 from routes import agent, claims, incidents, insurance, valuations, wallet  # financial core (B4)
+from workers.jobs import recover_interrupted
 
 API_PREFIX = "/api/v1"
 
@@ -89,6 +90,7 @@ class _WriterScopeMiddleware:
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
     seed_if_empty()
+    recover_interrupted()  # jobs a previous process left queued or running can never finish
     yield
     reset_engine()
 
