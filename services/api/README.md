@@ -29,3 +29,5 @@ uv sync --extra perception                     # adds torch, ultralytics, open_c
 uv run uvicorn main:app --reload --port 8000   # http://localhost:8000/api/v1/health
 uv run pytest -q
 ```
+
+A plain `uv sync` removes the perception extra again, so on machines that run the ML pipeline always use `uv sync --extra perception`.
