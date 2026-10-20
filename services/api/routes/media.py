@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from domain.errors import DomainError
-from persistence.db import get_session
+from persistence.db import get_read_session
 from persistence.media import media_path, verify_signature
 from persistence.models import Media
 
@@ -22,7 +22,8 @@ def _not_found() -> DomainError:
 
 
 @router.get("/media/{media_id}", response_class=FileResponse)
-def get_media(media_id: str, exp: str = "", sig: str = "", session: Session = Depends(get_session)) -> FileResponse:
+def get_media(media_id: str, exp: str = "", sig: str = "",
+            session: Session = Depends(get_read_session)) -> FileResponse:
     try:
         expires = int(exp)
     except ValueError:

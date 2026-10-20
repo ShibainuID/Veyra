@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 from config import get_settings
 from domain import clock
 from domain.errors import DomainError
-from persistence.db import get_session
+from persistence.db import get_read_session, get_session
 from persistence.models import DemoSettings
 from persistence.seed import DEMO_FARM_ID, reset_database
 
@@ -65,7 +65,7 @@ def reset(scenario: Scenario = "fresh") -> ResetResult:
 
 
 @router.get("/settings")
-def get_demo_settings(session: Session = Depends(get_session)) -> DemoSettingsOut:
+def get_demo_settings(session: Session = Depends(get_read_session)) -> DemoSettingsOut:
     return _out(_settings_row(session))
 
 
