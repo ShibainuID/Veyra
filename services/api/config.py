@@ -15,6 +15,11 @@ class Settings:
     job_poll_seconds: float
     job_max_attempts: int
     yolo_weights: str = "yolov8x-seg.pt"
+    # Fine-tuned barn camera detector (models/MODEL_CARD.md).
+    calf_detector_weights: str = str(SERVICE_ROOT / "models" / "calf_detector_v1.pt")
+    # Enables /demo endpoints that replay labelled fixture scenarios.
+    demo_mode: bool = False
+    fixtures_root: Path = SERVICE_ROOT.parents[1] / "demo" / "fixtures"
     # Illustrative demo price, not a market quote (USD 4.00/kg).
     demo_price_minor_per_kg: int = 400
 
@@ -29,4 +34,7 @@ class Settings:
             job_max_attempts=int(os.getenv("VEYRA_JOB_MAX_ATTEMPTS", "2")),
             yolo_weights=os.getenv("VEYRA_YOLO_WEIGHTS", str(var / "models" / "yolov8x-seg.pt")),
             demo_price_minor_per_kg=int(os.getenv("VEYRA_DEMO_PRICE_MINOR_PER_KG", "400")),
+            calf_detector_weights=os.getenv("VEYRA_CALF_DETECTOR_WEIGHTS", str(SERVICE_ROOT / "models" / "calf_detector_v1.pt")),
+            demo_mode=os.getenv("VEYRA_DEMO_MODE", "0") == "1",
+            fixtures_root=Path(os.getenv("VEYRA_FIXTURES_ROOT", str(SERVICE_ROOT.parents[1] / "demo" / "fixtures"))),
         )

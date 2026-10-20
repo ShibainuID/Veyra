@@ -34,6 +34,13 @@ class Perception(Protocol):
     def estimate_weight(self, body_frame_path: Path, scale: dict, tape_heart_girth_cm: float | None) -> dict:
         """Weight adapter output for the body frame."""
 
+    def track_video(self, video_path: Path) -> dict:
+        """Barn camera tracks in the wire format of `domain.tracks` (detector + BoT-SORT)."""
+
+    def extract_clip(self, video_path: Path, out_path: Path, start_s: float, end_s: float, track_id: str,
+                     tracks: dict) -> bool:
+        """Write an evidence clip of [start_s, end_s] with the animal's track drawn; False if no frames were read."""
+
 
 _override: Perception | None = None
 _default: Perception | None = None
@@ -44,12 +51,12 @@ def set_perception(perception: Perception | None) -> None:
     _override = perception
 
 
-def get_perception(yolo_weights: str) -> Perception:
+def get_perception(yolo_weights: str, detector_weights: str | None = None) -> Perception:
     global _default
     if _override is not None:
         return _override
     if _default is None:
         from adapters.perception import RealPerception
 
-        _default = RealPerception(yolo_weights)
+        _default = RealPerception(yolo_weights, detector_weights)
     return _default

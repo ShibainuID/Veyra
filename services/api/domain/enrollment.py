@@ -48,7 +48,7 @@ def process(session: Session, job: Job, ctx: WorkerContext) -> dict:
         raise LookupError("enrollment not found for this job")
     video = session.get(Media, enrollment.video_media_id)
     inputs = enrollment.capture_inputs or {}
-    perception = get_perception(ctx.settings.yolo_weights)
+    perception = get_perception(ctx.settings.yolo_weights, ctx.settings.calf_detector_weights)
     out_dir = ctx.media.path(f"{enrollment.farm_id}/enrollments/{enrollment.id}")
     owner = enrollment.created_by
 

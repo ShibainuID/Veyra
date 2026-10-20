@@ -22,6 +22,8 @@ perception = [
     "torch>=2.5",
     "ultralytics>=8.3",
     "open_clip_torch>=2.26",
+    # Linear assignment solver used by the Ultralytics trackers (BoT-SORT).
+    "lap>=0.5",
 ]
 dev = [
     "pytest>=8.3",

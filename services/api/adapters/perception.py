@@ -29,8 +29,9 @@ def to_jsonable(obj):
 class RealPerception:
     model_version = f"muzzle_hybrid_v1:{MODEL_PATH.name}"
 
-    def __init__(self, yolo_weights: str):
+    def __init__(self, yolo_weights: str, detector_weights: str | None = None):
         self.yolo_weights = yolo_weights
+        self.detector_weights = detector_weights
 
     @cached_property
     def detector(self):
@@ -73,3 +74,16 @@ class RealPerception:
         image = cv2.imread(str(body_frame_path))
         return to_jsonable(estimate_weight(image, self.detector, marker_cm=scale.get("marker_cm") or 15.0,
                                            tape_heart_girth_cm=tape_heart_girth_cm, scale_override=scale))
+
+    def track_video(self, video_path: Path) -> dict:
+        from adapters.tracking import track_video
+
+        if not self.detector_weights:
+            raise RuntimeError("calf detector weights are not configured")
+        return to_jsonable(track_video(video_path, self.detector_weights))
+
+    def extract_clip(self, video_path: Path, out_path: Path, start_s: float, end_s: float, track_id: str,
+                     tracks: dict) -> bool:
+        from adapters.tracking import extract_clip
+
+        return extract_clip(video_path, out_path, start_s, end_s, track_id, tracks)
