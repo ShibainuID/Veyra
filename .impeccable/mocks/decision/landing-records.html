@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>VEYRA · Four records, one passport</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@500;700&family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--tag:#f6c800;--ink:#111;--muted:#4b505a;--line:#cfd2d8;--ground:#e9eaee;--ok:#1f7a4d;--danger:#c4281c}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif;color:var(--ink);background:#fff}
+.mono{font-family:"Atkinson Hyperlegible Mono",ui-monospace,monospace}
+nav{height:72px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:32px;padding:0 48px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px}
+.mini{width:24px;height:30px;background:var(--tag);border-radius:7px 7px 11px 11px;position:relative}
+.mini:after{content:"";position:absolute;top:5px;left:8px;width:8px;height:8px;border-radius:50%;background:var(--ink)}
+nav a{font-weight:600;opacity:.9}
+.navcta{margin-left:auto;background:var(--tag);color:var(--ink);font-weight:800;height:44px;padding:0 20px;border-radius:10px;display:flex;align-items:center}
+header{padding:48px 64px 32px;display:flex;align-items:flex-end;gap:48px}
+h1{font-size:68px;line-height:1;letter-spacing:-.03em;font-weight:800;max-width:15ch;text-wrap:balance}
+.right{margin-left:auto;max-width:460px;display:flex;flex-direction:column;gap:20px}
+.lead{font-size:20px;line-height:1.45}
+.cta{display:flex;gap:14px}
+.b{height:56px;padding:0 24px;border-radius:12px;font-weight:800;font-size:18px;display:flex;align-items:center}
+.b.p{background:var(--ink);color:var(--tag)}
+.b.s{border:2px solid var(--ink)}
+.stage{display:grid;grid-template-columns:1fr 92px 520px;height:520px}
+.mess{background:var(--ground);position:relative;padding:28px 40px}
+.mess h2{font-size:15px;color:var(--muted);font-weight:600}
+.slip{position:absolute;background:#fff;border:1px solid var(--line);padding:16px 18px;width:250px;box-shadow:0 6px 18px rgb(0 0 0/.12);font-size:14px;line-height:1.4}
+.slip b{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.s1{left:44px;top:76px;transform:rotate(-4deg)}
+.s2{left:320px;top:60px;transform:rotate(3deg)}
+.s3{left:80px;top:270px;transform:rotate(2.5deg)}
+.s4{left:350px;top:280px;transform:rotate(-3deg)}
+.cctv{height:70px;background:#2b2f36;color:#9aa1ab;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:8px}
+.arrow{display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;writing-mode:vertical-rl;background:var(--tag);letter-spacing:.08em}
+.pass{border-left:3px solid var(--ink);display:flex;flex-direction:column}
+.ph{background:var(--ink);color:#fff;padding:22px 28px;display:flex;gap:18px;align-items:center}
+.bigtag{width:74px;height:60px;background:var(--tag);color:var(--ink);border-radius:12px 12px 20px 20px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px;font-weight:700;font-size:24px}
+.ph h3{font-size:26px}
+.ph p{opacity:.85;font-size:14px}
+.lines{padding:6px 28px}
+.ln{display:grid;grid-template-columns:44px 1fr auto;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px;align-items:center}
+.ln .n{color:var(--muted)}
+.st{border:3px double var(--ok);color:var(--ok);padding:3px 8px;font-size:12px;font-weight:700;letter-spacing:.06em}
+.await{border:2px dashed var(--ink);padding:3px 8px;font-size:12px;font-weight:700;letter-spacing:.06em;background:#fff6d1}
+</style></head><body>
+<nav><div class="logo"><span class="mini"></span>VEYRA</div><a>Problem</a><a>How it works</a><a>Proof</a><a>Run it</a><span class="navcta">Open the live demo</span></nav>
+<header>
+ <h1>Four records. One animal. One stamp.</h1>
+ <div class="right"><p class="lead">VEYRA joins identity, value, camera evidence, and insurance into one passport per cow, and an AI agent prepares every insurance step for the manager to approve.</p>
+ <div class="cta"><span class="b p">Open the live demo</span><span class="b s">See how it works</span></div></div>
+</header>
+<div class="stage">
+ <section class="mess"><h2>Today, on a large farm: four places, no shared ID</h2>
+  <div class="slip s1"><b>Ear-tag register</b>Tag 001 · Bali cattle · F · paper book, shed office</div>
+  <div class="slip s2"><b>Valuation sheet</b>~520 kg × price per kg · spreadsheet, last updated?</div>
+  <div class="slip s3"><b>CCTV · Pen A</b>Which cow is moving less?<div class="cctv mono">no identity on footage</div></div>
+  <div class="slip s4"><b>Policy schedule</b>Insured value, premium, exclusions · PDF from insurer email</div>
+ </section>
+ <div class="arrow mono">ONE PASSPORT</div>
+ <section class="pass">
+  <div class="ph"><span class="bigtag mono">001</span><div><h3>Sari</h3><p class="mono">animal-demo-001 · identity confirmed</p></div></div>
+  <div class="lines">
+   <div class="ln"><span class="n mono">001</span><span>Enrolled · muzzle, teeth, body</span><span class="st mono">CONFIRMED</span></div>
+   <div class="ln"><span class="n mono">002</span><span>Valued <span class="mono">2,496–2,912 USD</span></span><span class="st mono">POSTED</span></div>
+   <div class="ln"><span class="n mono">003</span><span>Basic Mortality · premium <span class="mono">87.36 USD</span></span><span class="await mono">AWAITING STAMP</span></div>
+   <div class="ln"><span class="n mono">004</span><span>Pen A · movement 78% below baseline</span><span class="mono" style="font-size:13px;color:var(--muted)">alert, not a diagnosis</span></div>
+  </div>
+ </section>
+</div>
+</body></html>
