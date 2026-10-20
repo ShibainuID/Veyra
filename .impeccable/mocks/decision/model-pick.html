@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>VEYRA · Ear Tag</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--tag:#f6c800;--black:#111;--ink:#16181d;--muted:#4b505a;--line:#cfd2d8;--ok:#1f7a4d;--ok-soft:#e3f3ea;--danger:#c4281c;--danger-soft:#fbe5e2;--warn:#8a5a00;--warn-soft:#fdf0d5}
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:"Atkinson Hyperlegible Next",system-ui,sans-serif;font-size:17px;color:var(--ink);background:#fff}
+.mono{font-family:"Atkinson Hyperlegible Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+header{height:72px;background:var(--black);color:#fff;display:flex;align-items:center;gap:8px;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:22px;margin-right:24px}
+.mini{width:26px;height:32px;background:var(--tag);border-radius:8px 8px 12px 12px;position:relative}
+.mini:after{content:"";position:absolute;top:5px;left:9px;width:8px;height:8px;border-radius:50%;background:var(--black)}
+header a{height:48px;padding:0 18px;display:flex;align-items:center;border-radius:10px;font-weight:600;color:#fff}
+header a.on{background:var(--tag);color:var(--black)}
+.role{margin-left:auto;font-size:15px;opacity:.85}
+.wrap{display:grid;grid-template-columns:1fr 440px;height:828px}
+main{padding:24px 28px}
+.top{display:flex;align-items:baseline;gap:16px;margin-bottom:18px}
+h1{font-size:28px;font-weight:800}
+.sub{color:var(--muted);font-size:15px}
+.seg{display:flex;gap:8px;margin-bottom:16px}
+.s{height:44px;padding:0 16px;border:2px solid var(--black);border-radius:10px;display:flex;align-items:center;font-weight:700;font-size:15px}
+.s.on{background:var(--black);color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:14px;color:var(--muted);padding:10px 12px;border-bottom:3px solid var(--black)}
+td{height:64px;padding:0 12px;border-bottom:1px solid var(--line)}
+.tag{width:64px;height:44px;background:var(--tag);border-radius:10px 10px 16px 16px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;font-weight:700;font-size:20px;position:relative;color:var(--black)}
+.tag:before{content:"";position:absolute;top:5px;left:28px;width:8px;height:8px;border-radius:50%;background:#fff;border:2px solid var(--black)}
+.tag.out{background:#fff;border:3px dashed var(--black)}
+.tag.no{background:#e5e7eb;color:var(--muted);font-size:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border-radius:999px;font-size:14px;font-weight:700}
+.ok{background:var(--ok-soft);color:var(--ok)}.bad{background:var(--danger-soft);color:var(--danger)}.warn{background:var(--warn-soft);color:var(--warn)}.none{border:2px solid var(--line);color:var(--muted)}
+aside{border-left:3px solid var(--black);padding:28px;display:flex;flex-direction:column;gap:20px;background:#fafafa}
+.big{display:flex;gap:20px;align-items:center}
+.bigtag{width:120px;height:92px;background:var(--tag);border-radius:16px 16px 28px 28px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-weight:700;font-size:40px;position:relative}
+.bigtag:before{content:"";position:absolute;top:10px;left:52px;width:14px;height:14px;border-radius:50%;background:#fafafa;border:3px solid var(--black)}
+h2{font-size:26px}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fact{background:#fff;border:2px solid var(--line);border-radius:12px;padding:12px}
+.fact span{display:block;font-size:14px;color:var(--muted)}
+.fact b{font-size:19px}
+.act{margin-top:auto;background:#fff;border:3px solid var(--black);border-radius:14px;padding:16px}
+.act b{font-size:18px}
+.btns{display:flex;gap:12px;margin-top:12px}
+.b{height:52px;border-radius:10px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.b.ap{flex:1;background:var(--black);color:var(--tag)}
+.b.de{width:130px;border:2px solid var(--danger);color:var(--danger)}
+</style></head><body>
+<header><div class="logo"><span class="mini"></span>VEYRA</div><a class="on">Herd</a><a>Enroll</a><a>Monitor</a><a>Approvals · 1</a><a>Claims</a><span class="role">Manager · W. Santoso · Sandbox 10,000.00 USD</span></header>
+<div class="wrap">
+<main>
+ <div class="top"><h1>Herd</h1><span class="sub">6 tagged · 1 track unassigned on cam-pen-b</span></div>
+ <div class="seg"><span class="s on">All</span><span class="s">Not covered 3</span><span class="s">Alerts 2</span><span class="s">Unassigned tracks 1</span></div>
+ <table>
+  <tr><th>Tag</th><th>Animal</th><th>Exposure</th><th>Coverage</th><th>Last observed</th><th>Alerts</th></tr>
+  <tr><td><div class="tag mono">001</div></td><td><b>Sari</b><div class="sub">Bali cattle · F</div></td><td class="mono">2,496–2,912 USD</td><td><span class="pill warn">Premium pending</span></td><td class="mono">09:42 cam-pen-a</td><td><span class="pill bad">Reduced movement</span></td></tr>
+  <tr><td><div class="tag mono">002</div></td><td><b>Bima</b><div class="sub">Ongole · M</div></td><td class="mono">2,704–3,120 USD</td><td><span class="pill ok">Active</span></td><td class="mono">09:40 cam-pen-a</td><td>—</td></tr>
+  <tr><td><div class="tag mono">003</div></td><td><b>Melati</b><div class="sub">Brahman cross · F</div></td><td class="mono">2,288–2,662 USD</td><td><span class="pill ok">Active</span></td><td class="mono">09:31 cam-pen-b</td><td>—</td></tr>
+  <tr><td><div class="tag mono">004</div></td><td><b>Gatot</b><div class="sub">Limousin cross · M</div></td><td class="mono">3,016–3,432 USD</td><td><span class="pill none">Not covered</span></td><td class="mono">Yday 17:05</td><td><span class="pill warn">Low visibility</span></td></tr>
+  <tr><td><div class="tag out mono">007</div></td><td><b>New candidate</b><div class="sub">Enrollment awaiting review</div></td><td class="sub">—</td><td><span class="pill none">Not covered</span></td><td class="sub">—</td><td>—</td></tr>
+  <tr><td><div class="tag no">no tag</div></td><td><b>Track t-14</b><div class="sub">Unassigned · cam-pen-b</div></td><td class="sub">—</td><td class="sub">—</td><td class="mono">09:44 cam-pen-b</td><td>—</td></tr>
+ </table>
+</main>
+<aside>
+ <div class="big"><div class="bigtag mono">001</div><div><h2>Sari</h2><div class="sub mono">animal-demo-001 · identity confirmed</div></div></div>
+ <div class="facts"><div class="fact"><span>Weight (image path)</span><b class="mono">480–560 kg</b></div><div class="fact"><span>Age (simulated)</span><b class="mono">24–30 mo</b></div><div class="fact"><span>Indicative value</span><b class="mono">2,496–2,912</b></div><div class="fact"><span>Last observed</span><b class="mono">09:42 pen A</b></div></div>
+ <div class="act"><b>Premium payment · 87.36 USD</b><div class="sub">To Sandbox Mutual · Basic Mortality · terms sample-v1</div><div class="btns"><span class="b ap">Approve payment</span><span class="b de">Decline</span></div></div>
+</aside>
+</div>
+</body></html>
