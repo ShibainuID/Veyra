@@ -48,6 +48,17 @@ def _env_choice(name: str, default: str, choices: tuple[str, ...]) -> str:
     return value
 
 
+def _env_replay_speed() -> float:
+    raw = os.environ.get("VEYRA_REPLAY_SPEED") or "10.0"
+    try:
+        value = float(raw)
+    except ValueError:
+        raise ValueError(f"VEYRA_REPLAY_SPEED must be a number, got {raw!r}") from None
+    if value < 0:
+        raise ValueError(f"VEYRA_REPLAY_SPEED must be >= 0 (0 = instant), got {raw!r}")
+    return value
+
+
 @lru_cache
 def get_settings() -> Settings:
     data_dir = Path(os.environ.get("VEYRA_DATA_DIR") or API_DIR / ".data").resolve()
@@ -55,10 +66,10 @@ def get_settings() -> Settings:
         data_dir=data_dir,
         database_url=os.environ.get("VEYRA_DATABASE_URL") or f"sqlite:///{(data_dir / 'veyra.db').as_posix()}",
         media_dir=data_dir / "media",
-        media_secret=os.environ.get("VEYRA_MEDIA_SECRET", "dev-media-secret"),
-        service_token=os.environ.get("VEYRA_SERVICE_TOKEN", "demo-worker-token"),
+        media_secret=os.environ.get("VEYRA_MEDIA_SECRET") or "dev-media-secret",
+        service_token=os.environ.get("VEYRA_SERVICE_TOKEN") or "demo-worker-token",
         sync_jobs=_env_bool("VEYRA_SYNC_JOBS", False),
-        replay_speed=float(os.environ.get("VEYRA_REPLAY_SPEED") or 10.0),
+        replay_speed=_env_replay_speed(),
         perception_mode=_env_choice("VEYRA_PERCEPTION_MODE", "auto", PERCEPTION_MODES),
         llm_mode=_env_choice("VEYRA_LLM_MODE", "auto", LLM_MODES),
         llm_model=os.environ.get("VEYRA_LLM_MODEL") or "claude-opus-5-5",

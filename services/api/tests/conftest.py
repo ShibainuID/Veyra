@@ -1,13 +1,14 @@
-"""Shared fixtures: an isolated data dir, synchronous jobs, offline LLM, and fixture perception."""
+"""Shared fixtures: every test gets an isolated data dir, synchronous jobs, offline LLM, and fixture perception."""
 
 import pytest
 from fastapi.testclient import TestClient
 
 from config import get_settings
+from domain import clock
 from main import create_app
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def settings_env(tmp_path, monkeypatch):
     monkeypatch.setenv("VEYRA_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("VEYRA_SYNC_JOBS", "1")
@@ -17,6 +18,7 @@ def settings_env(tmp_path, monkeypatch):
     get_settings.cache_clear()
     yield get_settings()
     get_settings.cache_clear()
+    clock.reset()
 
 
 @pytest.fixture

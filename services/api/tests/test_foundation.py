@@ -12,7 +12,8 @@ from domain.ids import new_id
 
 def test_settings_defaults(monkeypatch):
     for name in ("VEYRA_DATA_DIR", "VEYRA_DATABASE_URL", "VEYRA_SYNC_JOBS", "VEYRA_REPLAY_SPEED",
-                 "VEYRA_PERCEPTION_MODE", "VEYRA_LLM_MODE", "VEYRA_DEMO_MODE"):
+                 "VEYRA_PERCEPTION_MODE", "VEYRA_LLM_MODE", "VEYRA_DEMO_MODE", "VEYRA_MEDIA_SECRET",
+                 "VEYRA_SERVICE_TOKEN", "VEYRA_LLM_MODEL"):
         monkeypatch.delenv(name, raising=False)
     get_settings.cache_clear()
     settings = get_settings()
@@ -29,7 +30,19 @@ def test_settings_defaults(monkeypatch):
     assert settings.perception_mode == "auto"
     assert settings.llm_mode == "auto"
     assert settings.demo_mode is True
+    assert settings.media_secret == "dev-media-secret"
+    assert settings.service_token == "demo-worker-token"
+    assert settings.llm_model == "claude-opus-5-5"
+
+
+def test_empty_secrets_fall_back_to_defaults(monkeypatch):
+    monkeypatch.setenv("VEYRA_MEDIA_SECRET", "")
+    monkeypatch.setenv("VEYRA_SERVICE_TOKEN", "")
     get_settings.cache_clear()
+    settings = get_settings()
+
+    assert settings.media_secret == "dev-media-secret"
+    assert settings.service_token == "demo-worker-token"
 
 
 def test_settings_from_env(settings_env, tmp_path):
@@ -44,7 +57,14 @@ def test_settings_reject_unknown_mode(monkeypatch):
     get_settings.cache_clear()
     with pytest.raises(ValueError):
         get_settings()
+
+
+@pytest.mark.parametrize("value", ["-1", "fast"])
+def test_settings_reject_bad_replay_speed(monkeypatch, value):
+    monkeypatch.setenv("VEYRA_REPLAY_SPEED", value)
     get_settings.cache_clear()
+    with pytest.raises(ValueError, match="VEYRA_REPLAY_SPEED"):
+        get_settings()
 
 
 @pytest.mark.parametrize(("mode", "env", "expected"), [
