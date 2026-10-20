@@ -53,7 +53,7 @@ function TopNavLink({ item, pathname, count }: { item: NavItem; pathname: string
       to={item.to}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-h-12 items-center gap-2 rounded-control px-2.5 font-bold whitespace-nowrap no-underline transition-colors xl:px-4",
+        "flex min-h-12 items-center gap-1.5 rounded-control px-2 font-bold whitespace-nowrap no-underline transition-colors xl:gap-2 xl:px-4",
         active ? "bg-tag text-ink" : "text-on-shell hover:bg-shell-2",
       )}
     >

@@ -30,3 +30,7 @@ Branch from `feat/veyra-app`. Run `cd services/api && uv sync --extra perception
 - tag every result with `source` and `method_version`;
 - fall back to the labeled fixture on any failure;
 - never be imported at the top of fixture-mode code paths.
+
+## Second merge: origin/main → feat/veyra-app (`3b454fa`, 2026-10-20)
+
+`origin/main` added the partner's camera-tracking work. The ML assets were carried over: the calf detector notebooks, scripts, and results under `ml/`, `services/api/models/calf_detector_v1.pt` (Git LFS) with its model card, and the BoT-SORT adapter `services/api/adapters/tracking.py`. Its backend modules were not, for the same reason as the first merge: they duplicate the integrated backend on a different stack (PostgreSQL, a separate job queue). That covers `domain/{jobs,monitoring,perception,replays,security,tracks}.py`, `persistence/storage.py`, `routes/{cameras,foundation}.py`, `seed.py`, `workers/runner.py`, the root `tests/`, `pytest.ini`, `docker-compose.yml`, and the Postgres scripts. Monitoring in the app still runs the recorded scenario replays through `workers/replay.py`; wiring `adapters/tracking.py` in would mean producing scenario-shaped tracks from footage behind the same association and movement rules.
