@@ -1,7 +1,8 @@
 """Signed media download (plan Section 5: `GET /media/{id}?exp&sig`).
 
 The signature is the credential. Every failure (bad or expired signature, unknown id, missing file) is the
-same `NOT_FOUND`, so a caller cannot probe which media ids exist.
+same `NOT_FOUND`, so a caller cannot probe which media ids exist. Responses are never content-sniffed, and
+documents download as attachments instead of rendering in the app's origin.
 """
 
 from fastapi import APIRouter, Depends
@@ -31,4 +32,9 @@ def get_media(media_id: str, exp: str = "", sig: str = "", session: Session = De
     media = session.get(Media, media_id)
     if media is None or not media_path(media).is_file():
         raise _not_found()
-    return FileResponse(media_path(media), media_type=media.content_type)
+    path = media_path(media)
+    headers = {"X-Content-Type-Options": "nosniff"}
+    if media.kind == "document":
+        return FileResponse(path, media_type=media.content_type, headers=headers, filename=path.name,
+                            content_disposition_type="attachment")
+    return FileResponse(path, media_type=media.content_type, headers=headers)

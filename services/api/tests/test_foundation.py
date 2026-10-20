@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -30,9 +31,11 @@ def test_settings_defaults(monkeypatch):
     assert settings.perception_mode == "auto"
     assert settings.llm_mode == "auto"
     assert settings.demo_mode is True
-    assert settings.media_secret == "dev-media-secret"
+    assert re.fullmatch(r"[0-9a-f]{64}", settings.media_secret)
     assert settings.service_token == "demo-worker-token"
     assert settings.llm_model == "claude-opus-5-5"
+    get_settings.cache_clear()
+    assert get_settings().media_secret == settings.media_secret
 
 
 def test_empty_secrets_fall_back_to_defaults(monkeypatch):
@@ -41,8 +44,15 @@ def test_empty_secrets_fall_back_to_defaults(monkeypatch):
     get_settings.cache_clear()
     settings = get_settings()
 
-    assert settings.media_secret == "dev-media-secret"
+    assert re.fullmatch(r"[0-9a-f]{64}", settings.media_secret)
     assert settings.service_token == "demo-worker-token"
+
+
+def test_media_secret_from_env(monkeypatch):
+    monkeypatch.setenv("VEYRA_MEDIA_SECRET", "configured-secret")
+    get_settings.cache_clear()
+
+    assert get_settings().media_secret == "configured-secret"
 
 
 def test_settings_from_env(settings_env, tmp_path):
