@@ -263,7 +263,8 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
         </>
       )}
 
-      <div className={cn("flex flex-col gap-3", !bar && "border-t-2 border-ink pt-4")}>
+      {/* On a desktop the balance and the decision stay in view while a long evidence list scrolls past. */}
+      <div className={cn("flex flex-col gap-3", !bar && "border-t-2 border-ink pt-4 lg:sticky lg:bottom-0 lg:z-[1] lg:bg-bg lg:pb-4")}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <span>
             {lineNo !== undefined ? (
