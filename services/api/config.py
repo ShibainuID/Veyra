@@ -36,6 +36,8 @@ class Settings:
     repo_root: Path = REPO_ROOT
     fixtures_dir: Path = REPO_ROOT / "demo" / "fixtures"
     scenarios_dir: Path = REPO_ROOT / "demo" / "scenarios"
+    # Ultralytics name (downloaded on first use) or a local path, e.g. pre-fetched weights on an offline demo machine.
+    yolo_weights: str = "yolov8x-seg.pt"
 
 
 def _env_bool(name: str, default: bool) -> bool:
@@ -78,4 +80,5 @@ def get_settings() -> Settings:
         llm_mode=_env_choice("VEYRA_LLM_MODE", "auto", LLM_MODES),
         llm_model=os.environ.get("VEYRA_LLM_MODEL") or "claude-opus-5-5",
         demo_mode=_env_bool("VEYRA_DEMO_MODE", True),
+        yolo_weights=os.environ.get("VEYRA_YOLO_WEIGHTS") or "yolov8x-seg.pt",
     )

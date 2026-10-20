@@ -73,9 +73,10 @@ def run_perception(perception: Perception, video_path: Path | None, work_dir: Pa
     views = manifest.get("views") or {}
     crop = (views.get("muzzle") or {}).get("crop_path")
     body = (views.get("body") or {}).get("path")
+    scale = (views.get("body") or {}).get("scale_reference")
     teeth_id = (views.get("teeth") or {}).get("frame_id")
     identity = perception.identify(Path(crop) if crop else None, refs, sample_key)
-    weight = perception.weight(Path(body) if body else None, sample_key)
+    weight = perception.weight(Path(body) if body else None, sample_key, scale=scale)
     age = perception.age(sample_key, [teeth_id] if teeth_id else [])
     manifest["perception"] = {
         "capabilities": dict(perception.capabilities),
