@@ -72,7 +72,7 @@ export function AnswerCard({ answer }: { answer: AssistantAnswer }) {
       <p className="flex flex-wrap items-center gap-2 text-sm text-muted">
         {answer.parsed_by === "live" ? (
           <>
-            <Provenance source="live" /> Claude parsed this question; the answer comes from the farm's records.
+            <Provenance source="live" /> The language model parsed this question; the answer comes from the farm's records.
           </>
         ) : (
           <>

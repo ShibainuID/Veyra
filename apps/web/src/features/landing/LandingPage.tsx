@@ -475,7 +475,8 @@ function Run() {
             </pre>
             <p>
               Serves on <span className="figures">http://localhost:8000</span>. Set{" "}
-              <span className="figures">ANTHROPIC_API_KEY</span> to turn on Claude's explanations; without it, answers are
+              <span className="figures">OPENAI_API_KEY</span> in <span className="figures">.env</span> to turn on GPT-6 Luna's
+              explanations; without it, answers are
               labeled offline templates.
             </p>
           </div>

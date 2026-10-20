@@ -70,7 +70,7 @@ export const JOURNEY: readonly JourneyStep[] = [
     stamp: "Covered · cover\u00a0active · 20\u00a0Oct",
     kind: "posted",
     body:
-      "Three fictional sample policies are checked by deterministic rules against her passport: eligible, needs a document, or ineligible, each with its terms reference. Claude explains the rules; it never decides them. The application and the premium are approved separately, and cover is active only once the insurer confirms it.",
+      "Three fictional sample policies are checked by deterministic rules against her passport: eligible, needs a document, or ineligible, each with its terms reference. The language model (GPT-6 Luna) explains the rules; it never decides them. The application and the premium are approved separately, and cover is active only once the insurer confirms it.",
     image: {
       src: "/pitch/covered.webp",
       width: 1440,
@@ -222,7 +222,7 @@ export const LIMITS: readonly string[] = [
   "Recording enrollment video from a device camera is untested on real devices; the prepared samples are the scripted path.",
   "Muzzle identity was tested on photos of US feedlot cattle, not on other breeds or phone video.",
   "Identity handoff has no held-out estimate yet.",
-  "Claude is offline unless an ANTHROPIC_API_KEY is set; explanations then read “Template explanation (offline)”.",
+  "The language model is offline unless an OPENAI_API_KEY is set; explanations then read “Template explanation (offline)”.",
 ];
 
 export const ROLES: readonly { role: string; person: string; can: string }[] = [

@@ -14,7 +14,7 @@ from domain.ids import new_id
 def test_settings_defaults(monkeypatch):
     for name in ("VEYRA_DATA_DIR", "VEYRA_DATABASE_URL", "VEYRA_SYNC_JOBS", "VEYRA_REPLAY_SPEED",
                  "VEYRA_PERCEPTION_MODE", "VEYRA_LLM_MODE", "VEYRA_DEMO_MODE", "VEYRA_MEDIA_SECRET",
-                 "VEYRA_SERVICE_TOKEN", "VEYRA_LLM_MODEL"):
+                 "VEYRA_SERVICE_TOKEN", "VEYRA_LLM_MODEL", "VEYRA_LLM_PROVIDER"):
         monkeypatch.delenv(name, raising=False)
     get_settings.cache_clear()
     settings = get_settings()
@@ -33,7 +33,8 @@ def test_settings_defaults(monkeypatch):
     assert settings.demo_mode is True
     assert re.fullmatch(r"[0-9a-f]{64}", settings.media_secret)
     assert settings.service_token == "demo-worker-token"
-    assert settings.llm_model == "claude-opus-5-5"
+    assert settings.llm_provider == "openai"
+    assert settings.llm_model == "gpt-6-luna"
     get_settings.cache_clear()
     assert get_settings().media_secret == settings.media_secret
 

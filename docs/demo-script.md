@@ -64,7 +64,7 @@ One continuous journey from a fresh herd to a sandbox claim, following PRD secti
 | If | Do |
 | --- | --- |
 | The camera or a video file isn't available | Use the prepared sample (step 2). It is the scripted path; it needs no camera. |
-| Claude is offline or no key is set | Nothing to do: explanations read "Template explanation (offline)" and the assistant answers from records with the offline parser. |
+| The language model is offline or no key is set | Nothing to do: explanations read "Template explanation (offline)" and the assistant answers from records with the offline parser. |
 | Enrollment goes wrong or time is short | Reset to **After enrollment** (Demo → After enrollment) and start at step 3: Sari is enrolled and valued. |
 | The replay alert doesn't appear | Wait for "Replay finished"; if there is still no alert, **Start again**. The alert also appears on Sari's passport and in the herd. |
 | A stamp fails with "records changed" | The approval went stale because a record changed. The screen says so; prepare it again and stamp the new version. |

@@ -5,6 +5,7 @@ Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 
 import logging
 import os
+import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,6 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from config import load_env_file
 from domain.actions import recover_stranded
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine, writer_scope
@@ -133,4 +135,7 @@ def _mount_web(app: FastAPI, dist: Path) -> None:
         return FileResponse(dist / "index.html")  # client-side routes such as /animals/:id
 
 
+# `uv run uvicorn main:app` reads the repo's .env like docker compose does; tests keep their own environment.
+if "pytest" not in sys.modules:
+    load_env_file()
 app = create_app()

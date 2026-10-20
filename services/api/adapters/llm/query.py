@@ -1,6 +1,6 @@
-"""Claude parses an assistant question into a `QueryIntent` (plan Section 4: assistant).
+"""The language model parses an assistant question into a `QueryIntent` (plan Section 4: assistant).
 
-Claude only maps the farm user's words to the schema. It sees the farm's animal ids and names as data, never
+The model only maps the farm user's words to the schema. It sees the farm's animal ids and names as data, never
 writes the answer, and its output is validated again by `domain.assistant` (animal refs outside the farm are
 dropped). Any failure returns None so the caller uses the offline parser.
 """
@@ -33,7 +33,7 @@ Leave it empty for farm-wide questions.
 Return intent unknown with empty lists when you are unsure or the question is not about these records."""
 
 
-def parse_with_claude(settings: Settings, text: str, animals: list[dict[str, str]], *,
+def parse_with_llm(settings: Settings, text: str, animals: list[dict[str, str]], *,
                       client: Any | None = None) -> LLMResult[QueryIntent]:
     records = json.dumps([{"id": a["id"], "name": a["name"]} for a in animals], ensure_ascii=False)
     user = f"<records>\n{records}\n</records>\n<user_text>\n{text}\n</user_text>"

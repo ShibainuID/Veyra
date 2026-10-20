@@ -25,7 +25,7 @@ docker compose up --build                # http://localhost:8000
 
 `/` is the pitch page; the app itself opens at `/herd` (the page's **Open the live demo** goes there).
 
-- **Claude:** set `ANTHROPIC_API_KEY` in your shell or a root `.env` file to turn on Claude's policy explanations and question parsing. Without it, every answer is a labeled offline template.
+- **Language model:** put `OPENAI_API_KEY` in the root `.env` (copy `.env.example`) to turn on GPT-6 Luna's policy explanations and question parsing. Without a key, every answer is a labeled offline template.
 - **Port:** `VEYRA_PORT=8090 docker compose up` serves on another port.
 - **Data:** the database and media live in the `veyra-data` volume. `docker compose down -v` deletes them; the Demo button resets them without a restart.
 - **Prototype ML path:** `VEYRA_PERCEPTION_BUILD=true docker compose up --build` adds torch, Ultralytics, and OpenCLIP. The image grows by several GB, and YOLO weights download on first use.
@@ -81,7 +81,7 @@ curl -X POST "http://localhost:8000/api/v1/demo/reset?scenario=fresh" -H "Author
 
 ## Configuration
 
-Every variable is optional; the defaults run the demo. `.env.example` lists them with safe values. The API reads the process environment (it does not load a `.env` file), so export them in the shell that starts uvicorn.
+Every variable is optional; the defaults run the demo. `.env.example` lists them with safe values. Copy `.env.example` to `.env` at the repo root: `uv run uvicorn main:app` and `docker compose` both read it, and a variable already set in the shell wins.
 
 | Variable | Default | Effect |
 | --- | --- | --- |
@@ -92,11 +92,13 @@ Every variable is optional; the defaults run the demo. `.env.example` lists them
 | `VEYRA_SYNC_JOBS` | `false` | Run background jobs inline (tests use this) |
 | `VEYRA_REPLAY_SPEED` | `10` | Camera replay speed multiplier; `0` ingests a whole replay at once |
 | `VEYRA_PERCEPTION_MODE` | `auto` | `auto` uses each ML capability that is installed, `prototype` asks for all of them and logs what is missing, `fixture` uses labeled fixtures only |
-| `VEYRA_LLM_MODE` | `auto` | `auto` uses Claude when `ANTHROPIC_API_KEY` is set, `live` always tries it, `offline` uses the template explanation and offline parser |
-| `VEYRA_LLM_MODEL` | `claude-opus-5-5` | Claude model for policy explanations and question parsing |
+| `VEYRA_LLM_MODE` | `auto` | `auto` goes live when the selected provider's key is set, `live` always tries it, `offline` uses the template explanation and offline parser |
+| `VEYRA_LLM_PROVIDER` | `openai` | `openai` or `anthropic` |
+| `VEYRA_LLM_MODEL` | `gpt-6-luna` | Model for policy explanations and question parsing (`claude-opus-5-5` when the provider is `anthropic`) |
 | `VEYRA_DEMO_MODE` | `true` | Exposes `/api/v1/demo/*` (reset, replays, sandbox switches); off hides them |
 | `VEYRA_YOLO_WEIGHTS` | `yolov8x-seg.pt` | Segmentation weights for the weight step: an Ultralytics name or a local path |
-| `ANTHROPIC_API_KEY` | unset | Enables live Claude; without it every explanation is labeled "Template explanation (offline)" |
+| `OPENAI_API_KEY` | unset | Enables the live model with the `openai` provider; without it every explanation is labeled "Template explanation (offline)" |
+| `ANTHROPIC_API_KEY` | unset | The same for the `anthropic` provider |
 | `VEYRA_API_TARGET` (web) | `http://127.0.0.1:8000` | Where the Vite dev and preview servers proxy `/api` |
 
 ## Tests

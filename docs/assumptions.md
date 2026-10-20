@@ -70,7 +70,7 @@ All thresholds are illustrative and camera-specific; none has been validated in 
 
 | Output | Label | Notes |
 | --- | --- | --- |
-| Policy explanations and question parsing | `live` with an `ANTHROPIC_API_KEY`, otherwise "Template explanation (offline)" / "Parsed offline" | Claude only explains or parses; eligibility, prices, identity, and every answer's facts come from the records |
+| Policy explanations and question parsing | `live` with the selected provider's key (`OPENAI_API_KEY` for the default `gpt-6-luna`), otherwise "Template explanation (offline)" / "Parsed offline" | The model only explains or parses; eligibility, prices, identity, and every answer's facts come from the records |
 | Muzzle identity, weight | `prototype` when the ML extra (`uv sync --extra perception`) and model files are present, otherwise `simulated` fixtures | Per-capability fallback in `adapters/perception.py` |
 | Age | `simulated` (fixture) or `documented` (from a birth date) | No age model |
 | Camera tracks, movement alerts | `simulated` | Recorded synthetic scenarios replayed through the real association and movement rules |

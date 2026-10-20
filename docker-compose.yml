@@ -1,5 +1,5 @@
 # docker compose up --build   →   http://localhost:8000
-# Set ANTHROPIC_API_KEY in your shell or a .env file to turn on Claude's explanations and query parsing;
+# Put OPENAI_API_KEY in the root .env (or your shell) to turn on GPT-6 Luna's explanations and query parsing;
 # without it the app runs fully offline with labeled template answers.
 services:
   veyra:
@@ -11,9 +11,11 @@ services:
     ports:
       - "${VEYRA_PORT:-8000}:8000"
     environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      VEYRA_LLM_PROVIDER: ${VEYRA_LLM_PROVIDER:-openai}
       VEYRA_LLM_MODE: ${VEYRA_LLM_MODE:-auto}
-      VEYRA_LLM_MODEL: ${VEYRA_LLM_MODEL:-claude-opus-5-5}
+      VEYRA_LLM_MODEL: ${VEYRA_LLM_MODEL:-gpt-6-luna}
       VEYRA_PERCEPTION_MODE: ${VEYRA_PERCEPTION_MODE:-auto}
       VEYRA_REPLAY_SPEED: ${VEYRA_REPLAY_SPEED:-10}
       VEYRA_MEDIA_SECRET: ${VEYRA_MEDIA_SECRET:-}

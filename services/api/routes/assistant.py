@@ -1,6 +1,6 @@
 """The natural-language locator (plan Section 5: `POST /assistant/query`). Any role may ask about its own farm.
 
-Claude (when live) only parses the question; the answer text and every fact come from the farm's records.
+The language model (when live) only parses the question; the answer text and every fact come from the farm's records.
 """
 
 from fastapi import APIRouter, Depends

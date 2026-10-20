@@ -51,7 +51,7 @@ describe("AnswerCard", () => {
       "/monitor?camera=cam-pen-a&animal=animal-demo-001",
     );
     expect(screen.getByRole("link", { name: /Open passport/ })).toHaveAttribute("href", "/animals/animal-demo-001");
-    expect(screen.getByText(/Claude parsed this question/)).toBeInTheDocument();
+    expect(screen.getByText(/The language model parsed this question/)).toBeInTheDocument();
     expect(screen.queryByText(/Parsed offline/)).not.toBeInTheDocument();
   });
 });

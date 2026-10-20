@@ -1,7 +1,7 @@
 """The natural-language locator (plan Section 4: assistant).
 
 Two steps, and only the first may use a language model:
-1. `parse` turns the question into a `QueryIntent`. Claude does it when live (`adapters/llm/query.py`); the regex
+1. `parse` turns the question into a `QueryIntent`. The language model does it when live (`adapters/llm/query.py`); the regex
    parser does it offline or whenever the live call fails. Either way, animal refs are validated against the
    farm's animals and anything else is dropped (and reported as not found).
 2. `resolve` reads the farm's records and writes the answer itself, sentence by sentence from those records, with
@@ -19,7 +19,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from adapters.llm.query import QueryIntent, parse_with_claude
+from adapters.llm.query import QueryIntent, parse_with_llm
 from config import Settings
 from domain import alerts as alert_rules
 from domain import clock
@@ -145,7 +145,7 @@ def parse_offline(text: str, animals: list[dict]) -> tuple[QueryIntent, list[str
 
 
 def parse(settings: Settings, text: str, animals: list[dict], *, client: Any | None = None) -> ParsedQuery:
-    live = parse_with_claude(settings, text, animals, client=client)
+    live = parse_with_llm(settings, text, animals, client=client)
     if live.output is not None:
         ids, dropped = validate_refs(live.output.animal_refs, animals)
         wants = [w for w in WANT_ORDER if w in live.output.wants] or DEFAULT_WANTS.get(live.output.intent, [])
