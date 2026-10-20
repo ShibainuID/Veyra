@@ -80,8 +80,8 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
     group.forEach((animal, i) => {
       markers.push({
         key: `rest-${animal.id}`,
-        x: clamp01(camera.map_x + (i - (group.length - 1) / 2) * 0.06),
-        y: clamp01(camera.map_y + FIELD_OF_VIEW.height / 2 - 0.07),
+        x: clamp01(camera.map_x + (i - (group.length - 1) / 2) * 0.065),
+        y: clamp01(camera.map_y + FIELD_OF_VIEW.height / 2 - 0.1),
         animalId: animal.id,
         name: animal.name,
         state: animal.identity_status === "pending_review" ? "pending" : "confirmed",
@@ -96,7 +96,9 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
 
   return (
     <figure className="flex flex-col gap-3">
-      <div className="relative w-full overflow-hidden rounded-panel border-2 border-line bg-surface" style={{ aspectRatio: `${W} / ${H}` }}>
+      {/* Below ~640px the map keeps a legible scale and scrolls sideways inside its frame instead of shrinking. */}
+      <div role="region" aria-label="Pen map" tabIndex={0} className="overflow-x-auto rounded-panel border-2 border-line bg-surface">
+      <div className="relative w-full min-w-[640px] overflow-hidden" style={{ aspectRatio: `${W} / ${H}` }}>
         <svg viewBox={`0 0 ${W} ${H}`} className="absolute inset-0 size-full" aria-hidden="true">
           {cameras.map((camera) => {
             const cx = camera.map_x * W;
@@ -118,11 +120,12 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
                   strokeWidth={isLast ? 4 : 2}
                   strokeDasharray={isLast || isActive ? undefined : "8 6"}
                 />
-                <rect x={cx - 11} y={cy - 9} width={22} height={18} rx={4} fill="var(--ink)" />
-                <circle cx={cx} cy={cy} r={4.5} fill="var(--tag)" />
+                {/* The camera hangs on the pen's top edge, looking in. */}
+                <rect x={cx - 13} y={cy - fh / 2 - 11} width={26} height={22} rx={5} fill="var(--ink)" />
+                <circle cx={cx} cy={cy - fh / 2} r={5} fill="var(--tag)" />
                 <text
-                  x={cx - fw / 2}
-                  y={cy - fh / 2 - 10}
+                  x={cx - fw / 2 + 4}
+                  y={cy - fh / 2 - 12}
                   fontSize={22}
                   fontWeight={700}
                   fill="var(--ink)"
@@ -163,6 +166,7 @@ export function PenMap({ cameras, animals, live, selectedAnimalId, activeCameraI
             </button>
           );
         })}
+      </div>
       </div>
       <figcaption className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted">
         {selected ? (

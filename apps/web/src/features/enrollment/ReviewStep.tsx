@@ -9,6 +9,7 @@ import { cn } from "../../lib/cn";
 import { identityReasonCopy, reviewReasons, type ReasonCopy } from "./review-copy";
 import {
   REQUIRED_VIEWS,
+  candidateTagState,
   missingViews,
   proposedCandidate,
   registersPending,
@@ -307,7 +308,7 @@ function IdentityPanel({ enrollment, onDecide, onRetake, retaking }: ReviewStepP
       <>
         <StatusPill tone="uncertain" label="Possible duplicate" />
         <div className="flex items-center gap-4">
-          <EarTag animalId={candidate.animal_id} state="confirmed" size="md" />
+          <EarTag animalId={candidate.animal_id} state={candidateTagState(candidate)} size="md" />
           <div className="min-w-0">
             <p className="text-md font-bold">{name}</p>
             <p className="figures text-sm text-muted">{candidate.animal_id}</p>

@@ -48,12 +48,23 @@ export function overrideReasons(enrollment: Decidable, decision: Decision, linkT
   return [];
 }
 
-export const OVERRIDE_COPY: Record<OverrideReason, string> = {
+export const OVERRIDE_COPY: Record<string, string> = {
   possible_duplicate: "the muzzle matches an animal already on the farm",
   required_views_missing: "a required view is missing",
   identity_uncertain: "the identity is uncertain",
   not_matching_candidate: "this isn't the animal the muzzle matched",
+  unverified_link: "the matcher did not verify this animal",
+  herd_changed_since_processing: "animals were added to the herd after this enrollment was checked",
 };
+
+export function overrideCopy(reason: string): string {
+  return OVERRIDE_COPY[reason] ?? reason.replace(/_/g, " ");
+}
+
+/** The candidate's own identity status, when the server sends it (candidates may be pending animals). */
+export function candidateTagState(candidate: Candidate): "confirmed" | "pending" {
+  return candidate.identity_status === "pending_review" ? "pending" : "confirmed";
+}
 
 /** A new animal is created pending review (no financial actions) without a muzzle view or with an uncertain identity. */
 export function registersPending(enrollment: Decidable): boolean {
