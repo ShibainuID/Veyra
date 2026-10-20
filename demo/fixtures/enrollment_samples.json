@@ -1,0 +1,104 @@
+{
+  "sample-enrollment-001": {
+    "label": "Sari · guided video",
+    "views": {
+      "muzzle": {"time_s": 1.5},
+      "teeth": {"time_s": 3.2},
+      "body": {"time_s": 6.0}
+    },
+    "identity": {
+      "source": "simulated",
+      "method_version": "muzzle_hybrid_v1",
+      "outcome": "new",
+      "reason": "no_verified_match",
+      "accept_inliers": 5,
+      "candidates": [
+        {"animal_id": "animal-demo-006", "cosine": 0.4412, "inliers": 3},
+        {"animal_id": "animal-demo-002", "cosine": 0.3981, "inliers": 1}
+      ]
+    },
+    "weight": {
+      "source": "simulated",
+      "method_version": "weight_side_view_v2",
+      "path": "image_withers_height",
+      "point_kg": 520.0,
+      "range_low": 480.0,
+      "range_high": 560.0,
+      "unit": "kg",
+      "band": 0.121,
+      "measurements": [
+        {"name": "withers_height", "value": 121.4, "unit": "cm", "source": "image_estimate"}
+      ],
+      "review_required": false,
+      "review_reason": null
+    },
+    "proposed_animal": {"name": "Sari", "breed": "Bali cattle", "breed_category": "beef", "sex": "F"}
+  },
+  "sample-enrollment-dup": {
+    "label": "Duplicate check · Bima again",
+    "views": {
+      "muzzle": {"time_s": 1.5},
+      "teeth": {"time_s": 3.2},
+      "body": {"time_s": 6.0}
+    },
+    "identity": {
+      "source": "simulated",
+      "method_version": "muzzle_hybrid_v1",
+      "outcome": "candidate",
+      "reason": null,
+      "animal_id": "animal-demo-002",
+      "accept_inliers": 5,
+      "candidates": [
+        {"animal_id": "animal-demo-002", "cosine": 0.8123, "inliers": 31},
+        {"animal_id": "animal-demo-006", "cosine": 0.4021, "inliers": 2}
+      ]
+    },
+    "weight": {
+      "source": "simulated",
+      "method_version": "weight_side_view_v2",
+      "path": "image_withers_height",
+      "point_kg": 560.0,
+      "range_low": 520.0,
+      "range_high": 600.0,
+      "unit": "kg",
+      "band": 0.071,
+      "measurements": [
+        {"name": "withers_height", "value": 132.8, "unit": "cm", "source": "image_estimate"}
+      ],
+      "review_required": false,
+      "review_reason": null
+    },
+    "proposed_animal": {"name": "Unnamed", "breed": "Ongole", "breed_category": "beef", "sex": "M"}
+  },
+  "sample-enrollment-unclear": {
+    "label": "Unclear muzzle · retry needed",
+    "views": {
+      "teeth": {"time_s": 3.0},
+      "body": {"time_s": 5.5}
+    },
+    "identity": {
+      "source": "simulated",
+      "method_version": "muzzle_hybrid_v1",
+      "outcome": "uncertain",
+      "reason": "insufficient_quality",
+      "accept_inliers": 5,
+      "candidates": []
+    },
+    "weight": {
+      "source": "simulated",
+      "method_version": "weight_side_view_v2",
+      "path": "image_withers_height",
+      "point_kg": 490.0,
+      "range_low": 450.0,
+      "range_high": 530.0,
+      "unit": "kg",
+      "band": 0.082,
+      "measurements": [
+        {"name": "withers_height", "value": 118.9, "unit": "cm", "source": "image_estimate"}
+      ],
+      "review_required": false,
+      "review_reason": null
+    },
+    "proposed_animal": {"name": "Unnamed", "breed": "Bali cattle", "breed_category": "beef", "sex": "F"}
+  }
+}

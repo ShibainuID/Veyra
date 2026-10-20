@@ -1,4 +1,5 @@
-"""Shared fixtures: every test gets an isolated data dir, synchronous jobs, offline LLM, and fixture perception."""
+"""Shared fixtures: every test gets an isolated data dir and database, synchronous jobs, offline LLM, and fixture
+perception. `client` enters the app lifespan, so the database is created and seeded."""
 
 import pytest
 from fastapi.testclient import TestClient
@@ -6,6 +7,7 @@ from fastapi.testclient import TestClient
 from config import get_settings
 from domain import clock
 from main import create_app
+from persistence.db import reset_engine
 
 
 @pytest.fixture(autouse=True)
@@ -17,6 +19,7 @@ def settings_env(tmp_path, monkeypatch):
     monkeypatch.setenv("VEYRA_PERCEPTION_MODE", "fixture")
     get_settings.cache_clear()
     yield get_settings()
+    reset_engine()
     get_settings.cache_clear()
     clock.reset()
 

@@ -1,0 +1,145 @@
+{
+  "farms": [
+    {"id": "farm-wahyu", "name": "Wahyu Farms"},
+    {"id": "farm-other", "name": "Other Farm"}
+  ],
+  "users": [
+    {"id": "user-manager", "farm_id": "farm-wahyu", "name": "W. Santoso", "role": "manager", "token": "demo-manager"},
+    {"id": "user-operator", "farm_id": "farm-wahyu", "name": "A. Pratama", "role": "operator", "token": "demo-operator"},
+    {"id": "user-vet", "farm_id": "farm-wahyu", "name": "dr. R. Lestari", "role": "vet", "token": "demo-vet"},
+    {"id": "user-assessor", "farm_id": "farm-wahyu", "name": "Sandbox Mutual Assessor", "role": "assessor", "token": "demo-assessor"},
+    {"id": "user-other-manager", "farm_id": "farm-other", "name": "Other Manager", "role": "manager", "token": "other-farm-manager"}
+  ],
+  "cameras": [
+    {"id": "cam-pen-a", "farm_id": "farm-wahyu", "name": "Pen A · feed line", "location": "Pen A", "map_x": 0.22, "map_y": 0.30},
+    {"id": "cam-pen-b", "farm_id": "farm-wahyu", "name": "Pen B · water trough", "location": "Pen B", "map_x": 0.64, "map_y": 0.28},
+    {"id": "cam-pen-c", "farm_id": "farm-wahyu", "name": "Pen C · shade", "location": "Pen C", "map_x": 0.42, "map_y": 0.74}
+  ],
+  "price": {
+    "unit_price_minor_per_kg": 520,
+    "currency": "USD",
+    "price_source": "Demo reference price (fictional)",
+    "price_date": "2026-10-01"
+  },
+  "animals": [
+    {
+      "id": "animal-demo-002",
+      "farm_id": "farm-wahyu",
+      "name": "Bima",
+      "breed": "Ongole",
+      "breed_category": "beef",
+      "sex": "M",
+      "birth_date": "2023-08-14",
+      "ownership_doc_refs": [],
+      "weight_kg": {"low": 520, "high": 600},
+      "policy": {
+        "product_id": "basic-mortality",
+        "provider_id": "sandbox-insurer",
+        "terms_version": "sample-v1",
+        "insured_value_minor": 270400,
+        "premium_minor": 9464,
+        "deductible_minor": 27040,
+        "effective_date": "2026-09-01",
+        "expiry_date": "2027-08-31"
+      },
+      "last_observation": {"camera_id": "cam-pen-a", "minutes_ago": 2, "visibility": 0.9},
+      "alerts": []
+    },
+    {
+      "id": "animal-demo-003",
+      "farm_id": "farm-wahyu",
+      "name": "Melati",
+      "breed": "Brahman cross",
+      "breed_category": "beef",
+      "sex": "F",
+      "birth_date": "2024-04-02",
+      "ownership_doc_refs": ["doc-ownership-003"],
+      "weight_kg": {"low": 440, "high": 512},
+      "policy": {
+        "product_id": "mortality-theft",
+        "provider_id": "sandbox-insurer",
+        "terms_version": "sample-v1",
+        "insured_value_minor": 228800,
+        "premium_minor": 11898,
+        "deductible_minor": 15000,
+        "effective_date": "2026-09-15",
+        "expiry_date": "2027-09-14"
+      },
+      "last_observation": {"camera_id": "cam-pen-b", "minutes_ago": 11, "visibility": 0.9},
+      "alerts": []
+    },
+    {
+      "id": "animal-demo-004",
+      "farm_id": "farm-wahyu",
+      "name": "Gatot",
+      "breed": "Limousin cross",
+      "breed_category": "beef",
+      "sex": "M",
+      "birth_date": "2022-11-20",
+      "ownership_doc_refs": [],
+      "weight_kg": {"low": 580, "high": 660},
+      "policy": null,
+      "last_observation": {"camera_id": "cam-pen-b", "minutes_ago": 1010, "visibility": 0.41},
+      "alerts": [
+        {
+          "kind": "observation_quality",
+          "camera_id": "cam-pen-b",
+          "window_start_minutes_ago": 1020,
+          "window_end_minutes_ago": 1010,
+          "rule": {
+            "name": "observation_quality_v1",
+            "reason": "low_visibility",
+            "mean_visibility": 0.41,
+            "min_visibility": 0.6,
+            "source": "simulated"
+          }
+        }
+      ]
+    },
+    {
+      "id": "animal-demo-005",
+      "farm_id": "farm-wahyu",
+      "name": "Dewi",
+      "breed": "Friesian Holstein",
+      "breed_category": "dairy",
+      "sex": "F",
+      "birth_date": "2023-02-09",
+      "ownership_doc_refs": [],
+      "weight_kg": {"low": 560, "high": 640},
+      "policy": null,
+      "last_observation": null,
+      "alerts": []
+    },
+    {
+      "id": "animal-demo-006",
+      "farm_id": "farm-wahyu",
+      "name": "Rama",
+      "breed": "Bali cattle",
+      "breed_category": "beef",
+      "sex": "M",
+      "birth_date": "2024-06-18",
+      "ownership_doc_refs": [],
+      "weight_kg": {"low": 470, "high": 548},
+      "policy": null,
+      "last_observation": {"camera_id": "cam-pen-c", "minutes_ago": 44, "visibility": 0.9},
+      "alerts": []
+    },
+    {
+      "id": "animal-other-001",
+      "farm_id": "farm-other",
+      "name": "Other Farm Cow",
+      "breed": "Bali cattle",
+      "breed_category": "beef",
+      "sex": "F",
+      "birth_date": "2024-01-01",
+      "ownership_doc_refs": [],
+      "weight_kg": {"low": 450, "high": 520},
+      "policy": null,
+      "last_observation": null,
+      "alerts": []
+    }
+  ],
+  "wallet": [
+    {"farm_id": "farm-wahyu", "entry_type": "credit", "amount_minor": 1000000, "description": "Sandbox top-up"}
+  ]
+}
