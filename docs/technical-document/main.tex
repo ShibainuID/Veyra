@@ -17,6 +17,8 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
 \usepackage{makecell}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
 
 \setlist{itemsep=2pt,topsep=4pt}
 \setlength{\parskip}{4pt}
@@ -220,7 +222,7 @@ The in-app VEYRA agent guides three journeys: finding insurance for an uninsured
 
 \subsection{Implementation}
 
-Figure~\ref{fig:stack} summarises the technology. The backend is a FastAPI service with 61 endpoints across 21 route modules, Pydantic schemas, and SQLAlchemy~2 persistence; the CCTV pipeline service runs on PostgreSQL. The API contract is exported as OpenAPI, and the web client generates its TypeScript types from it, so the two cannot drift. The web app uses React~19, TypeScript, Vite, Tailwind CSS~4, TanStack Query, and React Router; it is installable as a progressive web app and is designed for tablets in daylight, with high contrast and large touch targets. Role-based access separates the manager (approves and declines), the operator (enrolls and reviews tracks), the veterinarian (adds findings, no payment authority), and the assessor (reads submissions). A perception facade selects each ML capability independently and labels every output \texttt{live}, \texttt{prototype}, \texttt{simulated}, or \texttt{documented}, so the interface always states the provenance of a result. The whole platform ships as one Docker image. All computer-vision models were trained on Kaggle with two NVIDIA T4 GPUs, and the muzzle embedding is served with ONNX Runtime.
+Figure~\ref{fig:stack} summarises the technology. The backend is a FastAPI service with 61 endpoints across 19 route modules, Pydantic schemas, and SQLAlchemy~2 persistence; the CCTV pipeline service runs on PostgreSQL. The API contract is exported as OpenAPI, and the web client generates its TypeScript types from it, so the two cannot drift. The web app uses React~19, TypeScript, Vite, Tailwind CSS~4, TanStack Query, and React Router; it is installable as a progressive web app and is designed for tablets in daylight, with high contrast and large touch targets. Role-based access separates the manager (approves and declines), the operator (enrolls and reviews tracks), the veterinarian (adds findings, no payment authority), and the assessor (reads submissions). A perception facade selects each ML capability independently and labels every output \texttt{live}, \texttt{prototype}, \texttt{simulated}, or \texttt{documented}, so the interface always states the provenance of a result. The whole platform ships as one Docker image. All computer-vision models were trained on Kaggle with two NVIDIA T4 GPUs, and the muzzle embedding is served with ONNX Runtime.
 
 \subsection{Datasets}
 
@@ -290,6 +292,174 @@ Export & ONNX, dynamic batch & Ultralytics \texttt{.pt} \\
 \subsection{Evaluation Protocol}
 
 Every model was evaluated on data it never saw during training or threshold selection. The muzzle matcher uses an animal-level split of the Beef Cattle Muzzle database \cite{li2022muzzle}, so test animals are new identities, and its acceptance threshold is chosen on validation animals at an unknown-animal false-match rate of at most 5\% and reported once on test animals. The detector is split by recording day, and tracking is scored on the held-out test session \texttt{pmfeed\_4\_3\_16} of 8-Calves (12{,}000 frames, ten minutes at 20~fps) with MOTA \cite{bernardin2008mota} and IDF1 \cite{ristani2016idf1}. Weight is evaluated with 6-fold cross-validation on 71 side photographs of tape-measured cattle \cite{mendeley_r11}. The platform's behaviour is verified by automated tests.
+
+\section{Core Algorithm Description}
+
+This section specifies the five algorithms that carry VEYRA's guarantees, in the order an animal meets them: identification, camera continuity, movement assessment, policy recommendation, and approval-bound execution. They share one design rule: when the evidence is not strong enough, an algorithm returns an explicit \emph{uncertain} or \emph{blocked} state instead of a guess, because a wrong identity, a false alert, or an unintended payment costs far more than a request to retake a scan or approve again.
+
+\subsection{Open-Set Muzzle Identification}
+
+\paragraph{Purpose.} Algorithm~\ref{alg:muzzle} decides which registered animal, if any, a muzzle belongs to. It runs at enrollment, to detect duplicates and register new animals, and at claim time, to prove that the animal in a death claim is the animal that was insured. The problem is \emph{open-set}: the query may come from an animal that has never been enrolled, so the algorithm must be able to answer ``none of them''.
+
+\paragraph{How it works.} The crop is first checked for quality, so a blurred or partial muzzle is sent back for a retake rather than matched badly (lines 1--2). The DINOv3 embedding then compares the query with every animal in the farm's gallery and keeps the five most similar animals (lines 3--4). This step is fast and ranks the correct animal first 96.6\% of the time, but a similarity score alone cannot tell a near-duplicate from the same animal. Each shortlisted animal is therefore verified geometrically (lines 5--6): SIFT keypoints found on the edges of the muzzle beads are matched between the query and the animal's reference images, and RANSAC keeps only the matches that agree on a single geometric transformation. Two photographs of the same muzzle produce many such inliers (164 in the example of Figure~\ref{fig:datasets}), while two different animals produce only a handful.
+
+\begin{algorithm}[H]
+\caption{Open-set muzzle identification (enrollment and claim-time check)}
+\label{alg:muzzle}
+\begin{algorithmic}[1]
+\Require muzzle crop $q$ from the capture guide box; gallery $\mathcal{G}$ of confirmed animals of the farm
+\State $Q \gets \textsc{CropQuality}(q)$
+\If{$Q < 0.6$} \Return \textsc{Uncertain} (retake) \EndIf
+\State $z_q \gets f(q)$ \Comment{DINOv3 ViT-S/16 + ArcFace, L2-normalised, ONNX}
+\State $S \gets$ top-5 animals $a \in \mathcal{G}$ by $\cos(z_q, z_a)$
+\ForAll{$a \in S$}
+  \State $n(a) \gets$ RANSAC-homography inliers of SIFT matches (ratio 0.75, CLAHE) between $q$ and $a$'s references
+\EndFor
+\State $a^{*} \gets \arg\max_{a \in S} n(a)$
+\If{$\exists a' \neq a^{*}: n(a') \ge 0.8\, n(a^{*})$} \Return \textsc{Uncertain} (ambiguous) \EndIf
+\If{$n(a^{*}) > 5$} \Return \textsc{Candidate}$(a^{*}, n(a^{*}))$ for human confirmation \EndIf
+\State \Return \textsc{NewAnimal}
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Decision.} The best-supported animal becomes a candidate only if it has more than five inliers and no rival comes within 80\% of its support (lines 7--9); a close rival makes the result ambiguous and asks for another scan. With no verified match the animal is reported as new (line 10). The threshold of five inliers was chosen on validation animals and transferred unchanged to test animals, which is why the unknown-animal false-match rate stays at 1.4\%. Every candidate is shown to a person with its evidence before an identity is confirmed.
+
+\subsection{Scan-Zone Identity Handoff and Continuity}
+
+\paragraph{Purpose.} Barn cameras see cattle from above, where the muzzle is not visible, so a camera cannot identify an animal on its own. Algorithm~\ref{alg:handoff} solves this in two parts: a muzzle scan in a marked \emph{scan zone} hands an identity to one camera track, and the continuity policy decides how long the track may keep it.
+
+\begin{algorithm}[H]
+\caption{Scan-zone identity handoff and continuity (\texttt{handoff\_v2})}
+\label{alg:handoff}
+\begin{algorithmic}[1]
+\Require camera with scan zone $Z$; tracks with boxes $b_i(t)$ and last-seen times $t_i$
+\Procedure{OnZoneScan}{$t_s$, scan}
+  \If{\textsc{MuzzleMatch}(scan) is not a confirmed animal $a$ of this farm} \State \Return \EndIf
+  \State $P \gets \{\, i : \mathrm{centre}(b_i) \in Z,\ t_s - t_i \le 1\,\text{s} \,\}$
+  \If{$|P| = 1$} \State assign $a$ to the track in $P$ (method \texttt{zone\_handoff})
+  \ElsIf{$|P| \ge 2$} \State mark every track in $P$ \textsc{Uncertain} \Comment{scan one animal at a time}
+  \EndIf
+\EndProcedure
+\Procedure{OnObservation}{track $i$, $t$}
+  \If{$t - t_i > 1.0\,\text{s}$ \textbf{or} $\exists j \ne i$: $\mathrm{IoU}(b_i, b_j) > 0.6$ for $\ge 0.25\,\text{s}$}
+    \State release the identity of $i$; downgrade its observations since the overlap began to \textsc{Uncertain}
+  \EndIf
+  \State store the observation with the track's association at ingest time
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Handoff.} When an operator scans a muzzle at the scan zone, the scan must first pass the same identification bar as enrollment (line 2). The identity is then given to the track whose box centre is inside the zone at the moment of the scan, provided it is the only one there (lines 4--6). If two animals stand in the zone, the algorithm cannot know which one was scanned, so nothing is handed over and both tracks become uncertain (lines 7--8).
+
+\paragraph{Continuity.} A tracker can silently swap two animals when they touch or when one disappears for a moment. The continuity rule therefore releases an identity as soon as a track has been missing for more than one second, or has overlapped another animal strongly (IoU above 0.6) for at least a quarter of a second (lines 10--11). Observations stored since the overlap began are downgraded too, so no alert can be attached to the wrong animal after the fact. A released identity is never re-attached automatically; the next scan restores it. These parameters were selected on real barn footage with a safety-first objective, which is why the policy produced zero wrong identities (Table~\ref{tab:handoff}).
+
+\subsection{Reduced-Movement Assessment}
+
+\paragraph{Purpose.} Algorithm~\ref{alg:movement} turns the tracks of an identified animal into a health observation. Reduced activity is one of the earliest behavioural signs of illness in cattle, so the algorithm watches for a sharp drop in how much an animal moves.
+
+\begin{algorithm}[H]
+\caption{Reduced-movement assessment}
+\label{alg:movement}
+\begin{algorithmic}[1]
+\Require samples of an associated track on one camera, split into windows $w$
+\ForAll{windows $w$}
+  \State $v_w \gets$ mean centroid displacement per second (normalised frame units)
+  \If{visibility$_w < 0.6$ \textbf{or} coverage$_w < 0.7$} \State raise \textsc{ObservationQuality}; \textbf{continue} \EndIf
+  \If{no baseline for (animal, camera)} \State $v_{\text{base}} \gets v_w$; \textbf{continue} \EndIf
+  \If{$v_w < v_{\text{base}}\,(1 - 0.6)$ \textbf{and} no alert for (animal, camera, kind) in the last 10 min}
+    \State raise \textsc{ReducedMovement} with window, baseline, drop $1 - v_w / v_{\text{base}}$, camera, and clip
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{How it works.} The track is cut into time windows, and in each window the speed is the average distance the box centre moves per second (line 2). Before judging movement, the algorithm checks that the animal was actually visible for enough of the window (line 3): an animal hidden behind others would otherwise look motionless and be mistaken for a sick one, so a poorly observed window raises an observation-quality notice instead. The first usable window becomes the animal's own baseline on that camera (lines 5--6). Comparing each animal with itself, rather than with a herd average, removes differences of breed, age, and temperament that would otherwise cause false alarms. A window whose speed falls below 40\% of the baseline raises a reduced-movement alert (lines 7--8), at most once per ten minutes per animal and camera, and the alert carries everything a person needs to check it: the window, the baseline, the measured drop, the camera, and the clip. The alert requests an inspection; diagnosis remains with the veterinarian.
+
+\subsection{Policy Eligibility and Recommendation}
+
+\paragraph{Purpose.} Algorithm~\ref{alg:recommend} answers the farmer's question ``which policy should I buy for this animal?'' with a deterministic, explainable result, so that the same records always produce the same recommendation.
+
+\begin{algorithm}[H]
+\caption{Policy eligibility and recommendation}
+\label{alg:recommend}
+\begin{algorithmic}[1]
+\Require passport facts $F$ of animal $x$; catalog products $\mathcal{P}$; confirmed value range $[V_{\text{lo}}, V_{\text{hi}}]$
+\State $V \gets V_{\text{lo}}$ \Comment{insured value}
+\ForAll{$p \in \mathcal{P}$}
+  \State evaluate every rule $r$ of $p$ on $F$ as \textsc{Pass}, \textsc{Fail}, or \textsc{Unknown} (missing fact or range straddling a limit)
+  \State outcome$(p) \gets$ \textsc{Ineligible} if any \textsc{Fail}, else \textsc{Unknown} if any \textsc{Unknown}, else \textsc{Eligible}
+  \State premium$(p) \gets \mathrm{round\_half\_up}(\mathrm{rate}(p) \times V)$; record each rule's terms reference
+\EndFor
+\State $E \gets$ eligible products sorted by premium, ties in catalog order
+\State ask at most three questions for facts behind \textsc{Unknown} outcomes
+\State \Return recommendation $E[1]$ with cited reasons; the language model only phrases the explanation
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{How it works.} The insured value is the lower bound of the animal's confirmed value range, the conservative choice that avoids over-insurance (line 1). Every rule of every product (identity confirmed, age band, valuation confirmed, ownership document, breed category, recent health check, open alerts) is evaluated against the passport with three possible results (line 3). The third result, unknown, is what makes the algorithm honest: a missing fact, or an estimated range that straddles a limit, is never silently treated as a pass. A product is ineligible if any rule fails, needs review if any rule is unknown, and is eligible otherwise (line 4), and its premium is computed from its rate and the insured value (line 5). The recommendation is the eligible product with the lowest premium, and every reason cites the terms reference of the rule behind it (lines 6--8). When a fact is missing, the agent asks for it with at most three short questions instead of guessing. The language model receives these results only to phrase the explanation, and its text is checked against them before it is shown.
+
+\subsection{Approval-Bound, Idempotent Execution}
+
+\paragraph{Purpose.} Algorithm~\ref{alg:execute} is the safety core of the agent wallet. It guarantees that an insurance application, premium payment, insurer notification, or claim submission executes only as approved, only once, and only while the records it was based on are unchanged.
+
+\begin{algorithm}[H]
+\caption{Approval-bound, idempotent action execution}
+\label{alg:execute}
+\begin{algorithmic}[1]
+\Procedure{Propose}{action type, references}
+  \State build payload $\pi$ from current records; $h \gets \mathrm{SHA256}(\mathrm{canonical\_json}(\pi))$; version $\gets 1$; expires $\gets$ now $+ 30$ min
+\EndProcedure
+\Procedure{Decide}{action, $h'$, version$'$, principal}
+  \Require principal.role $=$ manager; $h' = h$; version$' =$ version; now $<$ expires
+  \State record approval or decline as its own audit event
+\EndProcedure
+\Procedure{Execute}{action, idempotency key $k$}
+  \State \textbf{tx1:} check approved, not expired, $\mathrm{SHA256}(\text{rebuild}(\pi)) = h$ (else \texttt{approval\_stale}), funds; insert execution$(k)$ unique per action and key; hold funds
+  \State call the sandbox provider with $k$ in its own session \Comment{provider stores its record under $k$}
+  \State \textbf{tx2:} success $\Rightarrow$ release hold, post debit, apply domain effect; decline $\Rightarrow$ release hold; timeout $\Rightarrow$ keep hold, state \textsc{Unknown}
+  \State a retry with the same $k$ reconciles from the provider record; a new $k$ after success is a duplicate
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+
+\paragraph{Propose.} The server, never the client, builds the payload from current records and fingerprints it with a SHA-256 hash of its canonical JSON form (lines 1--2). Any change to a single field would change the hash, so the hash identifies exactly what the manager will see.
+
+\paragraph{Decide.} Only a manager can approve, and the approval must quote the hash and version that were displayed, before the 30-minute expiry (lines 3--4). An approval therefore authorises one specific payload, not an action type.
+
+\paragraph{Execute.} Execution is split into three short steps so that a database transaction is never held open while waiting for a provider (lines 5--9). The first step re-checks everything: the approval, the expiry, the funds, and, critically, that the payload rebuilt from current records still has the approved hash; if a valuation, policy term, or piece of evidence changed in the meantime, the approval is stale and execution stops. It then records the execution under the caller's idempotency key and places a hold on the sandbox balance. The second step calls the provider with the same key. The third step applies the provider's answer: a success releases the hold and posts the debit, a decline releases the hold, and a timeout keeps the hold and leaves the state unknown. Because the provider stores its result under the key, a retry with the same key reconciles from that record instead of paying again, and any attempt to reuse a key for another action, or to execute again after success, is rejected as a duplicate.
+
+\section{Security Design}
+
+Figure~\ref{fig:security} shows how every consequential insurance action moves through VEYRA. The agent prepares the action, the farm manager reviews and approves it, and the backend runs its security checks before anything reaches a provider. Only an action that passes is executed by the sandbox provider and returns a receipt and an audit record; an action that the manager declines or that fails a check is blocked. This insurance workflow is supported by security controls designed to keep every insurance action accountable and under farmer control.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/security_workflow.png}
+\caption{The approval-bound insurance workflow and its four security controls.}
+\label{fig:security}
+\end{figure}
+
+\subsection{Workflow}
+
+The workflow has two places where an action can stop, and both are deliberate. The first is the manager: the agent never acts on its own, so nothing leaves VEYRA until a person with authority has reviewed exactly what will happen. The second is the backend: even an approved action is checked again at the moment of execution, because records can change between approval and execution and a stale approval must not move money. Only when both gates pass does the provider execute, and the receipt is stored together with the audit record. Each of the four controls below protects one part of this path.
+
+\subsection{Identity and Evidence Validation}
+
+\emph{Confirm the animal identity and required policy evidence before submission.} Insurance fails when the wrong animal is covered or a claim is filed without the evidence the policy requires, so VEYRA checks both before anything is submitted. Every action is tied to one animal that has been biometrically confirmed and belongs to the caller's farm. For a claim, the checklist is generated from the policy's own requirements (passport reference, linked camera observation, incident facts, farmer declaration, and veterinary assessment), and a submission with any item missing is refused with the list of what is missing. Every death claim adds a biometric check: a fresh muzzle scan must match the claimed animal and no other animal on the farm (Algorithm~\ref{alg:muzzle}), which closes the classic fraud of claiming for a different carcass. Uploaded evidence is accepted only in allowed formats, verified by its file signature, limited in size, and fingerprinted with SHA-256 so that the evidence an insurer receives is the evidence that was recorded.
+
+\subsection{Farmer Authorization}
+
+\emph{Only authorized managers can approve payments and external insurance submissions.} Authority is decided by the server, never by the client. Each request carries a bearer token that the backend compares in constant time and resolves to a user, a role, and a farm. Roles are separated by duty: operators enroll animals and prepare actions, veterinarians add professional findings, assessors read submissions, and only the manager can approve, decline, execute, or reconcile an action. An operator cannot approve even an action they prepared themselves, and the AI agent has no identity of its own, so it can prepare but never approve. Records of another farm are reported as not found, so one farm can neither change nor even detect another farm's animals.
+
+\subsection{Approval Integrity}
+
+\emph{Bind approval to exact action details; changes or expiry require renewed approval.} An approval in VEYRA is not a general permission but a signature on one specific payload. The server builds the payload from the records and fixes it with a SHA-256 hash, and the manager's approval must quote that hash and its version. Approvals expire after 30 minutes. Immediately before execution the backend rebuilds the payload from the current records and compares the hashes; if the amount, the recipient, the policy terms, the animal, or the evidence has changed, the approval is cancelled as stale and the manager must review the new version (Algorithm~\ref{alg:execute}). What the manager saw is therefore always what executes.
+
+\subsection{Duplicate Execution Protection}
+
+\emph{Use unique execution keys and reconcile uncertain results before retrying.} Networks fail, and a payment whose answer never arrives is the most dangerous case: retrying blindly could pay twice. Every execution therefore carries an idempotency key that is unique to the action. Funds are placed on hold while the provider is called, and the provider stores its result under the same key. If the answer times out, the hold stays in place and the action is marked unknown; a retry with the same key asks the provider what actually happened and settles the action from that record. A key reused for another action, or a second execution after success, is rejected as a duplicate, so each approved action can affect the ledger exactly once.
+
+Every step writes its own audit event: the agent's proposal, the manager's decision, and the provider's result are recorded separately and tied to the same animal, so each insurance action can be traced from preparation to receipt. The controls are verified by automated tests, including \texttt{test\_\allowbreak{}operator\_\allowbreak{}cannot\_\allowbreak{}approve}, \texttt{test\_\allowbreak{}execution\_\allowbreak{}blocked\_\allowbreak{}after\_\allowbreak{}stale\_\allowbreak{}approval}, \texttt{test\_\allowbreak{}charge\_\allowbreak{}is\_\allowbreak{}idempotent\_\allowbreak{}per\_\allowbreak{}key}, \texttt{test\_\allowbreak{}cross\_\allowbreak{}farm\_\allowbreak{}action\_\allowbreak{}access\_\allowbreak{}is\_\allowbreak{}not\_\allowbreak{}found}, and \texttt{test\_\allowbreak{}sample\_\allowbreak{}mismatch\_\allowbreak{}blocks\_\allowbreak{}submission\_\allowbreak{}with\_\allowbreak{}the\_\allowbreak{}reason}.
 
 \section{Results and Discussion}
 
