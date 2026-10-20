@@ -2,11 +2,14 @@
 
 Files live at `<media_dir>/<farm_id>/<media_id>.<ext>`; the row stores that path relative to `media_dir`,
 plus the SHA-256 that evidence manifests cite. A URL carries `exp` and `sig = HMAC-SHA256(secret, "id:exp")`,
-and the signature is the only credential, so `GET /media/{id}` needs no bearer token.
+and the signature is the only credential, so `GET /media/{id}` needs no bearer token. Inputs are checked
+before anything is written: the farm id and extension must be plain tokens, the target must stay inside
+`media_dir`, and the content type must be on the allow-list for the media kind.
 """
 
 import hashlib
 import hmac
+import re
 import shutil
 from pathlib import Path
 
@@ -17,18 +20,40 @@ from domain import clock
 from domain.ids import new_id
 from persistence.models import Media
 
-MEDIA_KINDS = ("video", "frame", "crop", "clip", "document")
+IMAGE_TYPES = frozenset({"image/jpeg", "image/png", "image/webp"})
+CONTENT_TYPES: dict[str, frozenset[str]] = {
+    "video": frozenset({"video/mp4", "video/webm", "video/quicktime"}),
+    "frame": IMAGE_TYPES,
+    "crop": IMAGE_TYPES,
+    "clip": frozenset({"video/mp4", "video/webm", "image/jpeg"}),
+    "document": frozenset({"application/pdf", "image/jpeg", "image/png"}),
+}
+MEDIA_KINDS = tuple(CONTENT_TYPES)
+_FARM_ID = re.compile(r"[a-z0-9-]{1,64}")
+_EXT = re.compile(r"[a-z0-9]{1,8}")
 _CHUNK = 1 << 20
 
 
-def _new_media(farm_id: str, kind: str, ext: str) -> tuple[str, str, Path]:
-    if kind not in MEDIA_KINDS:
+def _new_media(farm_id: str, kind: str, content_type: str, ext: str) -> tuple[str, str, str, Path]:
+    """Validate the inputs and return (media_id, relative path, normalized content type, target path)."""
+    if kind not in CONTENT_TYPES:
         raise ValueError(f"unknown media kind {kind!r}")
+    content_type = content_type.split(";")[0].strip().lower()
+    if content_type not in CONTENT_TYPES[kind]:
+        raise ValueError(f"content type {content_type!r} is not allowed for {kind} media")
+    ext = ext.lstrip(".").lower()
+    if not _EXT.fullmatch(ext):
+        raise ValueError(f"unsafe media extension {ext!r}")
+    if not _FARM_ID.fullmatch(farm_id):
+        raise ValueError(f"unsafe farm id {farm_id!r}")
     media_id = new_id("media")
-    relative = f"{farm_id}/{media_id}.{ext.lstrip('.').lower()}"
-    target = get_settings().media_dir / relative
+    relative = f"{farm_id}/{media_id}.{ext}"
+    media_dir = get_settings().media_dir.resolve()
+    target = media_dir / relative
+    if not target.resolve().is_relative_to(media_dir):
+        raise ValueError(f"media path escapes the media dir: {relative!r}")
     target.parent.mkdir(parents=True, exist_ok=True)
-    return media_id, relative, target
+    return media_id, relative, content_type, target
 
 
 def _file_sha256(path: Path) -> str:
@@ -39,25 +64,31 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _add_row(session: Session, media: Media, target: Path) -> Media:
+    try:
+        session.add(media)
+        session.flush()
+    except Exception:
+        target.unlink(missing_ok=True)
+        raise
+    return media
+
+
 def store_bytes(session: Session, farm_id: str, kind: str, data: bytes, content_type: str, ext: str) -> Media:
-    media_id, relative, target = _new_media(farm_id, kind, ext)
+    media_id, relative, content_type, target = _new_media(farm_id, kind, content_type, ext)
     target.write_bytes(data)
     media = Media(id=media_id, farm_id=farm_id, kind=kind, path=relative, sha256=hashlib.sha256(data).hexdigest(),
                   content_type=content_type, bytes=len(data))
-    session.add(media)
-    session.flush()
-    return media
+    return _add_row(session, media, target)
 
 
 def store_file(session: Session, farm_id: str, kind: str, src_path: Path, content_type: str) -> Media:
     src_path = Path(src_path)
-    media_id, relative, target = _new_media(farm_id, kind, src_path.suffix or "bin")
+    media_id, relative, content_type, target = _new_media(farm_id, kind, content_type, src_path.suffix or "bin")
     shutil.copyfile(src_path, target)
     media = Media(id=media_id, farm_id=farm_id, kind=kind, path=relative, sha256=_file_sha256(target),
                   content_type=content_type, bytes=target.stat().st_size)
-    session.add(media)
-    session.flush()
-    return media
+    return _add_row(session, media, target)
 
 
 def media_path(media: Media) -> Path:

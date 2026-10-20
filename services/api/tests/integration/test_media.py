@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from domain import clock
 from persistence.db import SessionLocal
@@ -94,3 +95,51 @@ def test_verify_signature_rejects_empty_and_expired(stored):
     assert verify_signature("", exp, query["sig"]) is False
     assert verify_signature("media-other", exp, query["sig"]) is False
     assert verify_signature(stored.id, int(clock.now().timestamp()) - 1, query["sig"]) is False
+
+
+@pytest.mark.parametrize("ext", ["png/../../../escaped", "", "p ng", "toolongext"])
+def test_store_rejects_unsafe_extension(client, ext, settings_env):
+    with SessionLocal() as session, pytest.raises(ValueError):
+        store_bytes(session, "farm-wahyu", "frame", PNG, "image/png", ext)
+    assert not (settings_env.data_dir / "escaped").exists()
+
+
+@pytest.mark.parametrize("farm_id", ["../escaped", "farm/wahyu", "Farm-Wahyu", ""])
+def test_store_rejects_unsafe_farm_id(client, farm_id):
+    with SessionLocal() as session, pytest.raises(ValueError):
+        store_bytes(session, farm_id, "frame", PNG, "image/png", "png")
+
+
+@pytest.mark.parametrize(("kind", "content_type"), [
+    ("frame", "text/html"), ("frame", "image/svg+xml"), ("video", "image/png"), ("document", "text/html"),
+])
+def test_store_rejects_content_type_outside_allow_list(client, kind, content_type):
+    with SessionLocal() as session, pytest.raises(ValueError):
+        store_bytes(session, "farm-wahyu", kind, PNG, content_type, "png")
+
+
+def test_failed_flush_removes_written_file(client, settings_env):
+    with SessionLocal() as session, pytest.raises(IntegrityError):
+        store_bytes(session, "farm-missing", "frame", PNG, "image/png", "png")
+    assert list((settings_env.media_dir / "farm-missing").glob("*")) == []
+
+
+def test_media_response_is_not_sniffed_and_inline(client, stored):
+    response = client.get(signed_url(stored.id))
+
+    assert response.headers["x-content-type-options"] == "nosniff"
+    assert "content-disposition" not in response.headers
+
+
+def test_document_is_served_as_attachment(client, tmp_path):
+    source = tmp_path / "ownership.pdf"
+    source.write_bytes(b"%PDF-1.7 ownership")
+    with SessionLocal() as session:
+        media = store_file(session, "farm-wahyu", "document", source, "application/pdf")
+        session.commit()
+
+    response = client.get(signed_url(media.id))
+
+    assert response.status_code == 200
+    assert response.headers["content-disposition"].startswith("attachment")
+    assert response.headers["x-content-type-options"] == "nosniff"

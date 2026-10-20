@@ -5,6 +5,7 @@ environment and call `get_settings.cache_clear()` to pick up the change.
 """
 
 import os
+import secrets
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -14,6 +15,9 @@ REPO_ROOT = API_DIR.parents[1]
 
 PERCEPTION_MODES = ("auto", "prototype", "fixture")
 LLM_MODES = ("auto", "live", "offline")
+
+# Without VEYRA_MEDIA_SECRET, signed media URLs use a per-process secret: they stop working after a restart.
+_PROCESS_MEDIA_SECRET = secrets.token_hex(32)
 
 
 @dataclass(frozen=True)
@@ -66,7 +70,7 @@ def get_settings() -> Settings:
         data_dir=data_dir,
         database_url=os.environ.get("VEYRA_DATABASE_URL") or f"sqlite:///{(data_dir / 'veyra.db').as_posix()}",
         media_dir=data_dir / "media",
-        media_secret=os.environ.get("VEYRA_MEDIA_SECRET") or "dev-media-secret",
+        media_secret=os.environ.get("VEYRA_MEDIA_SECRET") or _PROCESS_MEDIA_SECRET,
         service_token=os.environ.get("VEYRA_SERVICE_TOKEN") or "demo-worker-token",
         sync_jobs=_env_bool("VEYRA_SYNC_JOBS", False),
         replay_speed=_env_replay_speed(),

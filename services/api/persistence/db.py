@@ -2,18 +2,41 @@
 
 The engine is built lazily and cached per `database_url`, so nothing connects at import time and a test
 with a fresh data dir gets a fresh database. Callers own the transaction: `get_session` never commits.
+
+SQLite transactions are real: pysqlite's own transaction handling is turned off and SQLAlchemy emits
+`BEGIN` itself (the documented pysqlite recipe), so a session reads one snapshot and `begin_nested()`
+savepoints roll back with their outer transaction. `BEGIN` is deferred: the write lock is taken at the first
+write. A read-modify-write path that must not interleave with another writer uses `immediate_session()`,
+which takes the write lock at `BEGIN IMMEDIATE`; a second writer waits up to the 15 s busy timeout.
+
+JSON columns track in-place changes to the top-level dict or list (`notes.append(...)` is saved), but not
+changes nested deeper; reassign the attribute for those. A JSON `None` is stored as SQL `NULL`.
+
+Session rules for workers (the API runs as a single uvicorn worker process):
+- One `SessionLocal()` per job or thread; never share a session across threads.
+- Never hold a transaction open across slow calls (perception, sandbox providers): commit first, call, then
+  open a new transaction to record the result.
+- Make state transitions guarded updates, `UPDATE ... WHERE id = :id AND status = :expected`, and check the
+  rowcount instead of reading the status and then writing it.
+- Do not use `begin_nested()` to recover from an `IntegrityError`; roll back the whole session and start over.
 """
 
+import threading
 from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 
 from sqlalchemy import JSON, DateTime, Engine, create_engine, event
 from sqlalchemy.engine import make_url
+from sqlalchemy.ext.mutable import MutableDict, MutableList
 from sqlalchemy.orm import DeclarativeBase, Session
 from sqlalchemy.types import TypeDecorator
 
 from config import get_settings
+
+SQLITE_BUSY_TIMEOUT_S = 15
+_BEGIN_OPTION = "sqlite_begin"
 
 
 class UTCDateTime(TypeDecorator):
@@ -34,43 +57,67 @@ class UTCDateTime(TypeDecorator):
 
 
 class Base(DeclarativeBase):
-    type_annotation_map = {datetime: UTCDateTime, dict: JSON, list: JSON}
+    type_annotation_map = {
+        datetime: UTCDateTime,
+        dict: MutableDict.as_mutable(JSON(none_as_null=True)),
+        list: MutableList.as_mutable(JSON(none_as_null=True)),
+    }
 
 
 _engines: dict[str, Engine] = {}
+_engines_lock = threading.Lock()
 
 
-def _sqlite_pragmas(dbapi_connection, connection_record) -> None:
+def _sqlite_connect(dbapi_connection, connection_record) -> None:
+    dbapi_connection.isolation_level = None
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.close()
 
 
-def get_engine() -> Engine:
-    url = get_settings().database_url
-    engine = _engines.get(url)
-    if engine is None:
-        parsed = make_url(url)
-        if parsed.get_backend_name() == "sqlite":
-            if parsed.database and parsed.database != ":memory:":
-                Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
-            engine = create_engine(url, connect_args={"check_same_thread": False})
-            event.listen(engine, "connect", _sqlite_pragmas)
-        else:
-            engine = create_engine(url)
-        _engines[url] = engine
+def _sqlite_begin(connection) -> None:
+    mode = connection.get_execution_options().get(_BEGIN_OPTION, "DEFERRED")
+    connection.exec_driver_sql(f"BEGIN {mode}")
+
+
+def _create_engine(url: str) -> Engine:
+    parsed = make_url(url)
+    if parsed.get_backend_name() != "sqlite":
+        return create_engine(url)
+    if parsed.database and parsed.database != ":memory:":
+        Path(parsed.database).parent.mkdir(parents=True, exist_ok=True)
+    engine = create_engine(url, connect_args={"check_same_thread": False, "timeout": SQLITE_BUSY_TIMEOUT_S})
+    event.listen(engine, "connect", _sqlite_connect)
+    event.listen(engine, "begin", _sqlite_begin)
     return engine
 
 
+def get_engine() -> Engine:
+    url = get_settings().database_url
+    with _engines_lock:
+        if url not in _engines:
+            _engines[url] = _create_engine(url)
+        return _engines[url]
+
+
 def reset_engine() -> None:
-    for engine in _engines.values():
-        engine.dispose()
-    _engines.clear()
+    with _engines_lock:
+        for engine in _engines.values():
+            engine.dispose()
+        _engines.clear()
 
 
 def SessionLocal() -> Session:
     return Session(bind=get_engine(), expire_on_commit=False)
+
+
+@contextmanager
+def immediate_session() -> Iterator[Session]:
+    """A session whose transactions start with `BEGIN IMMEDIATE`. The caller commits; leaving rolls back."""
+    with Session(bind=get_engine().execution_options(**{_BEGIN_OPTION: "IMMEDIATE"}),
+                 expire_on_commit=False) as session:
+        yield session
 
 
 def get_session() -> Iterator[Session]:

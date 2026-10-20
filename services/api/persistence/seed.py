@@ -19,7 +19,8 @@ from adapters.age import estimate_age
 from config import get_settings
 from domain import clock
 from domain.ids import new_id
-from persistence.db import SessionLocal, drop_all, init_db
+from persistence.db import Base, SessionLocal, immediate_session, init_db
+from persistence.lifecycle import run_reset_hooks
 from persistence.models import (
     Alert, Animal, AnimalReference, AuditEvent, Camera, DemoSettings, Enrollment, Estimate, Farm, Observation,
     Policy, Track, User, Valuation, WalletEntry,
@@ -35,6 +36,11 @@ SARI_ID = "animal-demo-001"
 SARI_SAMPLE = "sample-enrollment-001"
 SARI_TEETH_FRAMES = ["frame_0006"]
 _AGE_COLUMNS = ("range_low", "range_high", "unit", "source", "method_version", "review_required", "review_reason")
+
+
+def _check_scenario(scenario: str) -> None:
+    if scenario not in SCENARIOS:
+        raise ValueError(f"unknown scenario {scenario!r}; expected one of {', '.join(SCENARIOS)}")
 
 
 def _load(name: str) -> dict:
@@ -175,8 +181,7 @@ def _seed_enrolled_sari(session: Session, price: dict, now: datetime) -> None:
 
 def seed(session: Session, scenario: str = "fresh") -> None:
     """Insert the demo records into an empty schema. The caller commits."""
-    if scenario not in SCENARIOS:
-        raise ValueError(f"unknown scenario {scenario!r}; expected one of {', '.join(SCENARIOS)}")
+    _check_scenario(scenario)
     herd = _load("herd.json")
     price = herd["price"]
     now = clock.now()
@@ -195,16 +200,21 @@ def seed(session: Session, scenario: str = "fresh") -> None:
 
 
 def reset_database(scenario: str = "fresh") -> int:
-    """Drop every table, wipe stored media, and reseed. Returns the demo farm's animal count."""
-    if scenario not in SCENARIOS:
-        raise ValueError(f"unknown scenario {scenario!r}; expected one of {', '.join(SCENARIOS)}")
-    drop_all()
-    shutil.rmtree(get_settings().media_dir, ignore_errors=True)
+    """Stop background writers, then empty every table and reseed in one transaction; stored media is wiped
+    after the commit. Returns the demo farm's animal count."""
+    _check_scenario(scenario)
+    run_reset_hooks()
     init_db()
-    with SessionLocal() as session:
+    with immediate_session() as session:
+        for table in reversed(Base.metadata.sorted_tables):
+            session.execute(table.delete())
         seed(session, scenario)
         session.commit()
-        return session.scalar(select(func.count()).select_from(Animal).where(Animal.farm_id == DEMO_FARM_ID))
+        animals = session.scalar(select(func.count()).select_from(Animal).where(Animal.farm_id == DEMO_FARM_ID))
+    media_dir = get_settings().media_dir
+    shutil.rmtree(media_dir, ignore_errors=True)
+    media_dir.mkdir(parents=True, exist_ok=True)
+    return animals
 
 
 def seed_if_empty() -> bool:

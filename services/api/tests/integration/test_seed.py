@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 
 from domain import clock
 from persistence.db import SessionLocal
+from persistence.lifecycle import register_reset_hook, unregister_reset_hook
 from persistence.models import (
     Alert, Animal, AuditEvent, Camera, DemoSettings, Estimate, Farm, Observation, Policy, Valuation, WalletEntry,
 )
@@ -90,6 +91,23 @@ def test_reset_is_idempotent(client):
         assert response.json() == {"status": "reset", "scenario": "fresh", "animals": 5}
     with SessionLocal() as session:
         _assert_fresh_counts(session)
+
+
+def test_reset_runs_registered_hooks_first(client):
+    calls: list[int] = []
+
+    def hook() -> None:
+        with SessionLocal() as session:
+            calls.append(_animal_count(session, "farm-wahyu"))
+
+    register_reset_hook(hook)
+    try:
+        client.post("/api/v1/demo/reset", params={"scenario": "post-enrollment"})
+        client.post("/api/v1/demo/reset")
+    finally:
+        unregister_reset_hook(hook)
+
+    assert calls == [5, 6]
 
 
 def test_reset_post_enrollment_adds_sari(client):

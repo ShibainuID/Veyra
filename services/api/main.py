@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
-from persistence.db import init_db
+from persistence.db import init_db, reset_engine
 from persistence.seed import seed_if_empty
 from routes import demo, health, media
 
@@ -59,6 +59,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db()
     seed_if_empty()
     yield
+    reset_engine()
 
 
 def create_app() -> FastAPI:

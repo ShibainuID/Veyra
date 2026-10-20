@@ -1,7 +1,8 @@
 """Every ORM table (plan Section 2: data model).
 
 Status and kind columns are plain strings; the domain modules validate them. `Mapped[datetime]` is stored
-as `UTCDateTime` and `Mapped[dict]`/`Mapped[list]` as JSON through `Base.type_annotation_map`.
+as `UTCDateTime` and `Mapped[dict]`/`Mapped[list]` as mutation-tracked JSON through `Base.type_annotation_map`.
+Inserts are not ordered by foreign key (there are no `relationship()`s): flush parents before children.
 Money is integer minor units plus a currency code.
 """
 
@@ -328,6 +329,7 @@ class Replay(Base):
 
 class Track(Base):
     __tablename__ = "tracks"
+    __table_args__ = (UniqueConstraint("replay_id", "camera_id", "track_key"),)
 
     id: Mapped[str] = mapped_column(primary_key=True)
     replay_id: Mapped[str | None] = mapped_column(ForeignKey("replays.id"), index=True)
