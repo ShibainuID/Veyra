@@ -369,12 +369,6 @@ export function CameraStage({ scenario, replay, clock, selectedAnimalId, cameraN
               No footage attached · track data only (simulated)
             </span>
           )}
-          {clip && (
-            <span className="inline-flex items-center gap-2 rounded-control bg-shell/85 py-1 pr-2.5 pl-1 text-sm font-bold">
-              <Provenance source={scenario?.source === "prototype" ? "prototype" : "simulated" satisfies Source} className="border-on-shell-muted! text-on-shell!" />
-              Tracked on this footage
-            </span>
-          )}
         </div>
         {!active && (
           <div className={cn("absolute inset-0 flex flex-col items-center justify-center gap-2 p-6 text-center", clip && "bg-shell/70")}>
@@ -387,6 +381,7 @@ export function CameraStage({ scenario, replay, clock, selectedAnimalId, cameraN
       </div>
       {clip && (
         <figcaption className="text-sm text-muted">
+          <Provenance source={scenario?.source === "prototype" ? "prototype" : "simulated" satisfies Source} className="mr-2 align-middle" />
           Boxes come from {footage?.tracker ?? "a tracker"} run on this clip; identity and the scan zone are VEYRA's own
           rules drawn on top.
         </figcaption>
