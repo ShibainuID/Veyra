@@ -16,7 +16,9 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from domain.errors import CODE_BY_HTTP_STATUS, HTTP_ERROR, DomainError
 from persistence.db import init_db, reset_engine, writer_scope
 from persistence.seed import seed_if_empty
-from routes import animals, audit, auth_routes, demo, enrollments, health, jobs, media
+from routes import (
+    alerts, animals, assistant, audit, auth_routes, demo, enrollments, health, jobs, media, monitoring,
+)
 
 API_PREFIX = "/api/v1"
 
@@ -29,6 +31,9 @@ ROUTERS = [
     jobs.router,
     media.router,
     demo.router,
+    monitoring.router,
+    alerts.router,
+    assistant.router,
 ]
 
 logger = logging.getLogger("veyra.api")
