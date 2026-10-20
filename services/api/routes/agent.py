@@ -69,6 +69,14 @@ def execute(action_id: str, idempotency_key: str | None = Header(default=None, a
         return actions.action_view(session, actions.farm_action(session, principal.farm_id, action_id))
 
 
+@router.post("/{action_id}/reconcile", response_model=ActionOut, responses=error_responses(401, 403, 404, 409))
+def reconcile(action_id: str, principal: Principal = Depends(require_roles(*APPROVERS))) -> dict:
+    """Re-ask the sandbox provider about an `unknown` action under its stored Idempotency-Key and apply the answer."""
+    actions.reconcile(principal, action_id)
+    with read_session() as session:
+        return actions.action_view(session, actions.farm_action(session, principal.farm_id, action_id))
+
+
 @router.post("/{action_id}/revise", response_model=ActionOut, status_code=201,
              responses=error_responses(401, 403, 404, 409, 422))
 def revise(action_id: str, principal: Principal = Depends(require_roles(*ENROLLERS)),

@@ -117,6 +117,15 @@ def alert_items(session: Session, alert: Alert) -> list[dict]:
     return items
 
 
+def alert_review_item(alert: Alert) -> dict:
+    """The alert's review state: its status and a digest of its notes, so a review after approval changes the
+    manifest (an acknowledgement or a vet assessment makes an approved insurer notification stale)."""
+    notes = list(alert.notes or [])
+    assessments = sum(1 for note in notes if note.get("kind") == "assessment")
+    label = f"Alert review: {alert.status}, {len(notes)} note(s), {assessments} assessment(s)"
+    return item("alert_review", alert.id, label, sha256_hex({"status": alert.status, "notes": notes}))
+
+
 _FINDING_WORDS = {"vet_assessment": "Vet assessment", "vet_health_record": "Vet health record"}
 
 
