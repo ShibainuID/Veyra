@@ -6,10 +6,12 @@ committed and closed before `jobs.submit`. Large uploads are streamed to a temp 
 transaction opens.
 """
 
+import hashlib
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi.routing import APIRoute
 from sqlalchemy.orm import Session
 
 import workers.enrollment_job  # noqa: F401  (registers the `enrollment.process` handler)
@@ -18,6 +20,7 @@ from domain import enrollment as enrollments
 from domain.auth import ENROLLERS, Principal
 from domain.errors import DomainError
 from persistence.db import SessionLocal, get_read_session, read_session
+from persistence.media import media_path, place_file
 from routes.deps import require_roles
 from schemas import error_responses
 from schemas_enrollment import (
@@ -34,6 +37,7 @@ from workers import jobs
 router = APIRouter(prefix="/enrollments", tags=["enrollments"])
 enroller = require_roles(*ENROLLERS)
 _CHUNK = 1 << 20
+MULTIPART_OVERHEAD = 1 << 20  # boundaries and part headers on top of the file itself
 
 
 def _created(enrollment) -> dict:
@@ -67,26 +71,54 @@ def get_enrollment(enrollment_id: str, principal: Principal = Depends(enroller),
     return enrollments.get_enrollment(session, principal.farm_id, enrollment_id)
 
 
-def _spool(upload: UploadFile, ext: str) -> Path:
-    """Copy the upload to a temp file named `*.ext` (the stored media takes its extension), enforcing the cap."""
+def _spool(upload: UploadFile, ext: str) -> tuple[Path, str, int]:
+    """Copy the upload to `<data_dir>/uploads/*.ext`, hashing as it goes and enforcing the cap.
+
+    The spool sits on the same volume as the media dir, so `place_file` can move it in with `os.replace`.
+    """
     upload_dir = get_settings().data_dir / "uploads"
     upload_dir.mkdir(parents=True, exist_ok=True)
-    handle = tempfile.NamedTemporaryFile(dir=upload_dir, suffix=f".{ext}", delete=False)
-    size = 0
+    handle = tempfile.NamedTemporaryFile(dir=upload_dir, suffix=f".{ext}", delete=False)  # noqa: SIM115
+    digest, size = hashlib.sha256(), 0
     try:
         with handle:
             while chunk := upload.file.read(_CHUNK):
                 size += len(chunk)
                 if size > enrollments.MAX_VIDEO_BYTES:
-                    raise DomainError("VALIDATION_FAILED", "The video is larger than 200 MB.",
-                                      {"max_bytes": enrollments.MAX_VIDEO_BYTES})
+                    raise _too_large()
+                digest.update(chunk)
                 handle.write(chunk)
         if size == 0:
             raise DomainError("VALIDATION_FAILED", "The uploaded video is empty.", {"bytes": 0})
     except BaseException:
         Path(handle.name).unlink(missing_ok=True)
         raise
-    return Path(handle.name)
+    return Path(handle.name), digest.hexdigest(), size
+
+
+def _too_large() -> DomainError:
+    return DomainError("VALIDATION_FAILED", "The video is larger than 200 MB.",
+                       {"max_bytes": enrollments.MAX_VIDEO_BYTES})
+
+
+class _UploadLimitRoute(APIRoute):
+    """Refuses an oversize video upload from its `Content-Length` before the multipart body is read."""
+
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+        if self.name != "upload_video":
+            return handler
+
+        async def limited(request: Request):
+            length = request.headers.get("content-length", "")
+            if length.isdigit() and int(length) > enrollments.MAX_VIDEO_BYTES + MULTIPART_OVERHEAD:
+                raise _too_large()
+            return await handler(request)
+
+        return limited
+
+
+router.route_class = _UploadLimitRoute
 
 
 @router.put("/{enrollment_id}/video", response_model=EnrollmentOut,
@@ -95,13 +127,21 @@ def upload_video(enrollment_id: str, file: UploadFile = File(...), principal: Pr
     with read_session() as session:
         enrollments.check_uploadable(session, principal.farm_id, enrollment_id)
     content_type, ext = enrollments.resolve_video_type(file.content_type, file.filename)
-    spooled = _spool(file, ext)
+    spooled, sha256, size = _spool(file, ext)
+    # Move the file into the media dir before the writing transaction: only the row insert holds the lock.
     try:
-        with SessionLocal() as session:
-            enrollments.attach_video(session, principal, enrollment_id, spooled, content_type)
-            session.commit()
+        media = place_file(principal.farm_id, "video", spooled, content_type, sha256, size)
     finally:
         spooled.unlink(missing_ok=True)
+    try:
+        with SessionLocal() as session:
+            replaced = enrollments.attach_video(session, principal, enrollment_id, media)
+            session.commit()
+    except BaseException:
+        media_path(media).unlink(missing_ok=True)
+        raise
+    if replaced is not None:
+        replaced.unlink(missing_ok=True)
     return _detail(principal.farm_id, enrollment_id)
 
 

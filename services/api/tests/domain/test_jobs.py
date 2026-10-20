@@ -1,6 +1,7 @@
 """The persisted job runner: success, failure, sync versus pool mode, and the reset drain."""
 
 import threading
+import time
 
 import pytest
 
@@ -108,7 +109,7 @@ def test_pool_mode_runs_on_a_worker_thread(client, handlers, monkeypatch):
     job_id = _enqueue("test.pool")
 
     jobs.submit(job_id)
-    jobs.drain(timeout_s=10)
+    assert jobs.wait_idle(timeout_s=10)
 
     assert _job(job_id).status == "succeeded"
     assert threads and threads[0].startswith("veyra-job")
@@ -127,7 +128,7 @@ def test_pool_failure_does_not_break_the_pool(client, handlers, monkeypatch):
 
     jobs.submit(bad_id)
     jobs.submit(good_id)
-    jobs.drain(timeout_s=10)
+    assert jobs.wait_idle(timeout_s=10)
 
     assert _job(bad_id).status == "failed"
     assert _job(good_id).status == "succeeded"
@@ -167,3 +168,54 @@ def test_get_job_is_farm_scoped(client, handlers):
         with pytest.raises(DomainError) as err:
             jobs.get_job(session, "farm-other", job_id)
     assert err.value.code == "NOT_FOUND"
+
+
+def test_handler_error_text_is_not_exposed(client, handlers):
+    def handler(job_id):
+        raise RuntimeError("secret internal detail")
+
+    handlers("test.secret", handler)
+    job_id = _enqueue("test.secret")
+
+    jobs.submit(job_id)
+
+    assert _job(job_id).error == {"code": "INTERNAL_ERROR", "message": jobs.GENERIC_FAILURE}
+
+
+def test_recover_interrupted_fails_stuck_jobs_and_repairs_subjects(client, handlers):
+    handlers("test.stuck", lambda job_id: {})
+    repaired = []
+    jobs.register_recovery("test.stuck", repaired.extend)
+    queued, running, done = _enqueue("test.stuck", "a"), _enqueue("test.stuck", "b"), _enqueue("test.stuck", "c")
+    assert jobs._transition(running, "queued", "running")
+    jobs.run_job(done)
+
+    try:
+        assert jobs.recover_interrupted() == 2
+    finally:
+        jobs._recovery_hooks.pop("test.stuck", None)
+
+    for job_id in (queued, running):
+        job = _job(job_id)
+        assert job.status == "failed" and job.error["code"] == "interrupted"
+    assert _job(done).status == "succeeded"
+    assert sorted(repaired) == ["a", "b"]
+
+
+def test_pool_logs_a_crashed_runner(client, handlers, monkeypatch, caplog):
+    monkeypatch.setenv("VEYRA_SYNC_JOBS", "0")
+    get_settings.cache_clear()
+
+    def crash(job_id):
+        raise RuntimeError("database went away")
+
+    monkeypatch.setattr(jobs, "run_job", crash)
+
+    with caplog.at_level("ERROR", logger="veyra.jobs"):
+        jobs.submit("job-x")
+        assert jobs.wait_idle(timeout_s=10)
+        deadline = time.monotonic() + 5  # done-callbacks run just after waiters are woken
+        while time.monotonic() < deadline and not any("crashed" in r.getMessage() for r in caplog.records):
+            time.sleep(0.01)
+
+    assert any("job runner crashed" in r.getMessage() for r in caplog.records)

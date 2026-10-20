@@ -90,6 +90,7 @@ class ReplayStarted(BaseModel):
     scenario_id: str
     status: ReplayStatus
     started_at: UTCDateTime
+    anchor_at: UTCDateTime = Field(description="Observation time of scenario t=0: replays are footage ending by now.")
     speed: float
     duration_s: float
 
@@ -138,6 +139,7 @@ class ReplayOut(BaseModel):
     speed: float
     started_at: UTCDateTime
     finished_at: UTCDateTime | None
+    anchor_at: UTCDateTime
     duration_s: float
     progress_s: float
     tracks: list[TrackOut]
