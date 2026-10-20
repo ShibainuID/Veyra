@@ -88,6 +88,16 @@ def test_scan_handoff_links_track_and_updates_passport(client, farm, worker):
     assert {"camera.zone_scan_recorded", "camera.identity_confirmed"} <= actions
 
 
+def test_short_clip_reports_last_seen_from_the_confirmed_link(client, farm, worker):
+    rec = replay(farm, client, worker, duration_s=40)
+    link = rec["links"][0]
+    assert link["status"] == "confirmed"
+    passport = client.get(f"{API}/animals/{farm['animal']}/passport", headers=farm["op"]).json()
+    seen = passport["last_observed"]
+    assert seen["track_id"] == link["track_id"] and seen["source"] == "simulated"
+    assert datetime.fromisoformat(seen["observed_at"]) == START + timedelta(seconds=40)
+
+
 def test_reduced_movement_raises_alert_with_evidence_pack(client, farm, worker):
     rec = replay(farm, client, worker, **ANOMALY)
     decision = rec["summary"]["decisions"][0]
