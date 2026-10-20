@@ -226,6 +226,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/demo/footage/{name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Footage
+         * @description Stream one of the demo's AI-generated clips (read-only, demo mode only, no sign-in: a `<video>` element
+         *     cannot send a bearer token, and these clips hold no farm data). Unknown names are 404; so is a clip whose Git LFS
+         *     content was never pulled.
+         */
+        get: operations["footage_api_v1_demo_footage__name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/demo/reset": {
         parameters: {
             query?: never;
@@ -341,7 +363,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Ingest Observation */
+        /**
+         * Ingest Observation
+         * @description A track observation, or a `zone_scan`: a muzzle scan in the camera's scan zone, handed to the one track inside
+         *     the zone (`handoff` says what happened; `observation` and `track` are null unless exactly one track was there).
+         */
         post: operations["ingest_observation_api_v1_cameras__camera_id__observations_post"];
         delete?: never;
         options?: never;
@@ -1248,6 +1274,8 @@ export interface components {
             map_x: number;
             /** Map Y */
             map_y: number;
+            /** @description The calibrated scan zone, if the camera has one. */
+            scan_zone: components["schemas"]["ScanZone"] | null;
             last_observation: components["schemas"]["CameraLastObservation"] | null;
         };
         /** CameraSeen */
@@ -2058,26 +2086,33 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
-        /** ObservationIn */
+        /**
+         * ObservationIn
+         * @description One track observation, or (`event: "zone_scan"`) a muzzle scan in the camera's scan zone, which needs no
+         *     track, box, or visibility: it is handed to the one track inside the zone at `observed_at`, or to none.
+         */
         ObservationIn: {
             /** Track Key */
-            track_key: string;
+            track_key?: string | null;
             /**
              * Observed At
              * Format: date-time
              */
             observed_at: string;
             /** Bbox */
-            bbox: number[];
+            bbox?: number[] | null;
             /** Visibility */
-            visibility: number;
+            visibility?: number | null;
             /**
              * Event
              * @default frame
              * @enum {string}
              */
-            event: "frame" | "muzzle_match" | "track_lost";
-            /** Candidate Animal Id */
+            event: "frame" | "muzzle_match" | "track_lost" | "zone_scan";
+            /**
+             * Candidate Animal Id
+             * @description The matched animal; for a zone_scan, the scanned one.
+             */
             candidate_animal_id?: string | null;
             /** Inliers */
             inliers?: number | null;
@@ -2092,8 +2127,11 @@ export interface components {
         };
         /** ObservationIngested */
         ObservationIngested: {
-            observation: components["schemas"]["ObservationOut"];
-            track: components["schemas"]["TrackOut"];
+            /** @description Null for a zone_scan without exactly one track in the zone. */
+            observation: components["schemas"]["ObservationOut"] | null;
+            track: components["schemas"]["TrackOut"] | null;
+            /** @description What a zone_scan did. */
+            handoff?: components["schemas"]["ZoneHandoffOut"] | null;
         };
         /** ObservationOut */
         ObservationOut: {
@@ -2495,6 +2533,7 @@ export interface components {
             duration_s: number;
             /** Progress S */
             progress_s: number;
+            scan_zone: components["schemas"]["ScanZone"] | null;
             /** Tracks */
             tracks: components["schemas"]["TrackOut"][];
             /** Alerts */
@@ -2558,6 +2597,23 @@ export interface components {
             /** Detail */
             detail: string;
         };
+        /** ScanZone */
+        ScanZone: {
+            /**
+             * Polygon
+             * @description [[x, y], ...] normalized 0-1 to the camera frame.
+             */
+            polygon: number[][];
+            /** Label */
+            label: string;
+            /** Source */
+            source: string;
+            /**
+             * Calibrated At
+             * Format: date-time
+             */
+            calibrated_at: string;
+        };
         /** Scenario */
         Scenario: {
             /** Id */
@@ -2580,8 +2636,37 @@ export interface components {
             window_s: number;
             /** Clip */
             clip: string | null;
+            footage?: components["schemas"]["ScenarioFootage"] | null;
+            /**
+             * Events
+             * @default []
+             */
+            events: components["schemas"]["ScenarioCameraEvent"][];
+            scan_zone?: components["schemas"]["ScanZone"] | null;
             /** Tracks */
             tracks: components["schemas"]["ScenarioTrack"][];
+        };
+        /**
+         * ScenarioCameraEvent
+         * @description A camera event: a muzzle scan made in the scan zone, handed to the one track inside it (or to none).
+         */
+        ScenarioCameraEvent: {
+            /** T */
+            t: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "zone_scan";
+            /**
+             * Animal Id
+             * @description Who the muzzle matcher says was scanned.
+             */
+            animal_id?: string | null;
+            /** Inliers */
+            inliers?: number | null;
+            /** Quality */
+            quality?: number | null;
         };
         /** ScenarioEvent */
         ScenarioEvent: {
@@ -2600,6 +2685,27 @@ export interface components {
             quality?: number | null;
             /** Reason */
             reason?: string | null;
+        };
+        /** ScenarioFootage */
+        ScenarioFootage: {
+            /**
+             * Label
+             * @description The caption shown with the clip, e.g. that it is AI-generated.
+             */
+            label: string;
+            /** Generator */
+            generator: string;
+            /**
+             * Kind
+             * @constant
+             */
+            kind: "ai_generated";
+            /** Tracker */
+            tracker: string;
+            /** Tracks */
+            tracks: string;
+            /** Prompts */
+            prompts: string;
         };
         /** ScenarioFrame */
         ScenarioFrame: {
@@ -2855,6 +2961,24 @@ export interface components {
             /** Role */
             role: string;
             farm: components["schemas"]["FarmRef"];
+        };
+        /** ZoneHandoffOut */
+        ZoneHandoffOut: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "associated" | "already_associated" | "rejected" | "no_track" | "crowded" | "track_uncertain" | "conflict";
+            /** Reason */
+            reason: string | null;
+            /** Message */
+            message: string;
+            /** Track Ids */
+            track_ids: string[];
+            /** Track Keys */
+            track_keys: string[];
+            /** Tracks In Zone */
+            tracks_in_zone: number;
         };
     };
     responses: never;
@@ -3553,6 +3677,46 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    footage_api_v1_demo_footage__name__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The clip; supports HTTP Range. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "video/mp4": unknown;
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorEnvelope"];
+                };
             };
             /** @description Validation Error */
             422: {

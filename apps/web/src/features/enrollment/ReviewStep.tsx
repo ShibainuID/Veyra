@@ -164,7 +164,7 @@ function Checks({ enrollment }: { enrollment: Enrollment }) {
                   ? "One continuous take, no cuts"
                   : `Cut at ${cuts.map((c) => `${(c as number).toFixed(1)} s`).join(", ")}`}
             </p>
-            {cuts === null && <p className="text-sm text-muted">There was no footage to check.</p>}
+            {cuts === null && <p className="text-sm text-muted">Cut detection didn&apos;t run for this enrollment, so check the video is one take.</p>}
           </CheckRow>
           <CheckRow ok={times.length < 2 ? null : inOrder}>
             <p className="font-bold">{inOrder ? "Views in the guided order" : "Views out of the guided order"}</p>
