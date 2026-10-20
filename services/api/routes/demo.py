@@ -1,6 +1,7 @@
 """Demo controls: reset to a scenario and the sandbox provider switches (plan Section 5: `/demo/*`).
 
-Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on.
+Hidden (`NOT_FOUND`) unless `VEYRA_DEMO_MODE` is on; that check runs before auth. Reset and changing the settings
+need a manager; any signed-in user may read their farm's settings.
 """
 
 from datetime import datetime
@@ -12,10 +13,13 @@ from sqlalchemy.orm import Session
 
 from config import get_settings
 from domain import clock
+from domain.auth import APPROVERS, Principal
 from domain.errors import DomainError
 from persistence.db import get_read_session, get_session
 from persistence.models import DemoSettings
-from persistence.seed import DEMO_FARM_ID, reset_database
+from persistence.seed import reset_database
+from routes.deps import current_principal, require_roles
+from schemas import error_responses
 
 Scenario = Literal["fresh", "post-enrollment"]
 PaymentMode = Literal["succeed", "fail", "timeout"]
@@ -27,7 +31,6 @@ def require_demo_mode() -> None:
         raise DomainError("NOT_FOUND", "Resource not found.")
 
 
-# B3: require manager
 router = APIRouter(prefix="/demo", tags=["demo"], dependencies=[Depends(require_demo_mode)])
 
 
@@ -47,8 +50,8 @@ class DemoSettingsOut(DemoSettingsUpdate):
     updated_at: datetime
 
 
-def _settings_row(session: Session) -> DemoSettings:
-    row = session.get(DemoSettings, DEMO_FARM_ID)
+def _settings_row(session: Session, farm_id: str) -> DemoSettings:
+    row = session.get(DemoSettings, farm_id)
     if row is None:
         raise DomainError("NOT_FOUND", "Demo settings are not seeded; reset the demo first.")
     return row
@@ -59,19 +62,22 @@ def _out(row: DemoSettings) -> DemoSettingsOut:
                            insurer_activation=row.insurer_activation, updated_at=row.updated_at)
 
 
-@router.post("/reset")
+@router.post("/reset", dependencies=[Depends(require_roles(*APPROVERS))],
+             responses=error_responses(401, 403, 404, 422))
 def reset(scenario: Scenario = "fresh") -> ResetResult:
     return ResetResult(status="reset", scenario=scenario, animals=reset_database(scenario))
 
 
-@router.get("/settings")
-def get_demo_settings(session: Session = Depends(get_read_session)) -> DemoSettingsOut:
-    return _out(_settings_row(session))
+@router.get("/settings", responses=error_responses(401, 404))
+def get_demo_settings(principal: Principal = Depends(current_principal),
+                      session: Session = Depends(get_read_session)) -> DemoSettingsOut:
+    return _out(_settings_row(session, principal.farm_id))
 
 
-@router.put("/settings")
-def put_demo_settings(body: DemoSettingsUpdate, session: Session = Depends(get_session)) -> DemoSettingsOut:
-    row = _settings_row(session)
+@router.put("/settings", responses=error_responses(401, 403, 404, 422))
+def put_demo_settings(body: DemoSettingsUpdate, principal: Principal = Depends(require_roles(*APPROVERS)),
+                      session: Session = Depends(get_session)) -> DemoSettingsOut:
+    row = _settings_row(session, principal.farm_id)
     row.payment_mode = body.payment_mode
     row.insurer_activation = body.insurer_activation
     row.updated_at = clock.now()

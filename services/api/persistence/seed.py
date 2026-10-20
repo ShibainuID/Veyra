@@ -17,12 +17,12 @@ from sqlalchemy.orm import Session
 
 from adapters.age import estimate_age
 from config import get_settings
-from domain import clock
+from domain import audit, clock
 from domain.ids import new_id
 from persistence.db import Base, SessionLocal, init_db
 from persistence.lifecycle import run_reset_hooks
 from persistence.models import (
-    Alert, Animal, AnimalReference, AuditEvent, Camera, DemoSettings, Enrollment, Estimate, Farm, Observation,
+    Alert, Animal, AnimalReference, Camera, DemoSettings, Enrollment, Estimate, Farm, Observation,
     Policy, Track, User, Valuation, WalletEntry,
 )
 
@@ -30,6 +30,7 @@ SCENARIOS = ("fresh", "post-enrollment")
 DEMO_FARM_ID = "farm-wahyu"
 SEED_CONFIRMER = "user-operator"
 SEED_VALUER = "user-manager"
+SEED_ACTOR = "seed"
 REFERENCE_VIEWS = ("muzzle", "teeth", "body")
 SEED_BBOX = [0.4, 0.4, 0.2, 0.25]
 SARI_ID = "animal-demo-001"
@@ -47,11 +48,10 @@ def _load(name: str) -> dict:
     return json.loads((get_settings().fixtures_dir / name).read_text(encoding="utf-8"))
 
 
-def _audit(session: Session, farm_id: str, event_type: str, subject_type: str, subject_id: str, at: datetime,
+def _audit(session: Session, farm_id: str, event_type: str, subject_type: str, subject_id: str,
            animal_id: str | None = None, data: dict | None = None) -> None:
-    session.add(AuditEvent(id=new_id("evt"), farm_id=farm_id, actor_type="system", actor_id="seed",
-                           event_type=event_type, subject_type=subject_type, subject_id=subject_id,
-                           animal_id=animal_id, data=data or {}, created_at=at))
+    audit.record(session, farm_id=farm_id, actor_type="system", actor_id=SEED_ACTOR, event_type=event_type,
+                 subject_type=subject_type, subject_id=subject_id, animal_id=animal_id, data=data)
 
 
 def _references(session: Session, animal_id: str, now: datetime, quality_note: str,
@@ -95,8 +95,10 @@ def _policy(session: Session, animal: Animal, spec: dict, currency: str, now: da
     session.add(WalletEntry(id=new_id("wal"), farm_id=animal.farm_id, entry_type="debit",
                             amount_minor=spec["premium_minor"], currency=currency, created_at=now,
                             description=f"Premium · {animal.id} · {spec['product_id']} (seeded history)"))
-    _audit(session, animal.farm_id, "seed.policy_created", "policy", policy.id, now, animal_id=animal.id,
-           data={"product_id": policy.product_id, "status": policy.status})
+    _audit(session, animal.farm_id, "seed.policy_created", "policy", policy.id, animal_id=animal.id,
+           data={"product_id": policy.product_id, "provider_id": policy.provider_id,
+                 "terms_version": policy.terms_version, "status": policy.status,
+                 "insured_value_minor": policy.insured_value_minor, "currency": policy.currency})
 
 
 def _last_observation(session: Session, animal: Animal, spec: dict, now: datetime) -> Track:
@@ -129,7 +131,7 @@ def _seed_animal(session: Session, spec: dict, price: dict, now: datetime) -> No
                   now)
     session.flush()
     _valuation(session, animal.id, weight, price, now)
-    _audit(session, animal.farm_id, "seed.animal_created", "animal", animal.id, now, animal_id=animal.id,
+    _audit(session, animal.farm_id, "seed.animal_created", "animal", animal.id, animal_id=animal.id,
            data={"name": animal.name, "identity_status": animal.identity_status})
     if spec["policy"]:
         _policy(session, animal, spec["policy"], price["currency"], now)
@@ -172,9 +174,9 @@ def _seed_enrolled_sari(session: Session, price: dict, now: datetime) -> None:
     _age_estimate(session, SARI_ID, age_out, now)
     session.flush()
     _valuation(session, SARI_ID, weight, price, now)
-    _audit(session, DEMO_FARM_ID, "seed.enrollment_confirmed", "enrollment", enrollment_id, now, animal_id=SARI_ID,
+    _audit(session, DEMO_FARM_ID, "seed.enrollment_confirmed", "enrollment", enrollment_id, animal_id=SARI_ID,
            data={"sample_key": SARI_SAMPLE, "outcome": "new_animal"})
-    _audit(session, DEMO_FARM_ID, "seed.animal_created", "animal", SARI_ID, now, animal_id=SARI_ID,
+    _audit(session, DEMO_FARM_ID, "seed.animal_created", "animal", SARI_ID, animal_id=SARI_ID,
            data={"name": animal.name, "identity_status": animal.identity_status, "enrollment_id": enrollment_id})
     session.flush()
 

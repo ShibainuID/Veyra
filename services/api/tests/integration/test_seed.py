@@ -11,6 +11,7 @@ from persistence.lifecycle import register_reset_hook, unregister_reset_hook
 from persistence.models import (
     Alert, Animal, AuditEvent, Camera, DemoSettings, Estimate, Farm, Observation, Policy, Valuation, WalletEntry,
 )
+from tests.support import MANAGER
 
 
 def _animal_count(session, farm_id: str) -> int:
@@ -86,7 +87,7 @@ def test_seeded_age_estimates_come_from_ml_adapter(client):
 
 def test_reset_is_idempotent(client):
     for _ in range(2):
-        response = client.post("/api/v1/demo/reset")
+        response = client.post("/api/v1/demo/reset", headers=MANAGER)
         assert response.status_code == 200
         assert response.json() == {"status": "reset", "scenario": "fresh", "animals": 5}
     with SessionLocal() as session:
@@ -102,8 +103,8 @@ def test_reset_runs_registered_hooks_first(client):
 
     register_reset_hook(hook)
     try:
-        client.post("/api/v1/demo/reset", params={"scenario": "post-enrollment"})
-        client.post("/api/v1/demo/reset")
+        client.post("/api/v1/demo/reset", params={"scenario": "post-enrollment"}, headers=MANAGER)
+        client.post("/api/v1/demo/reset", headers=MANAGER)
     finally:
         unregister_reset_hook(hook)
 
@@ -111,7 +112,7 @@ def test_reset_runs_registered_hooks_first(client):
 
 
 def test_reset_post_enrollment_adds_sari(client):
-    response = client.post("/api/v1/demo/reset", params={"scenario": "post-enrollment"})
+    response = client.post("/api/v1/demo/reset", params={"scenario": "post-enrollment"}, headers=MANAGER)
 
     assert response.status_code == 200
     assert response.json() == {"status": "reset", "scenario": "post-enrollment", "animals": 6}
@@ -127,7 +128,7 @@ def test_reset_post_enrollment_adds_sari(client):
 
 
 def test_reset_rejects_unknown_scenario(client):
-    response = client.post("/api/v1/demo/reset", params={"scenario": "chaos"})
+    response = client.post("/api/v1/demo/reset", params={"scenario": "chaos"}, headers=MANAGER)
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_FAILED"
@@ -138,23 +139,25 @@ def test_reset_wipes_media(client, settings_env):
     stray.parent.mkdir(parents=True, exist_ok=True)
     stray.write_bytes(b"x")
 
-    client.post("/api/v1/demo/reset")
+    client.post("/api/v1/demo/reset", headers=MANAGER)
 
     assert not stray.exists()
 
 
 def test_demo_settings_round_trip(client):
-    assert client.get("/api/v1/demo/settings").json()["payment_mode"] == "succeed"
+    assert client.get("/api/v1/demo/settings", headers=MANAGER).json()["payment_mode"] == "succeed"
 
-    response = client.put("/api/v1/demo/settings", json={"payment_mode": "timeout", "insurer_activation": "withhold"})
+    response = client.put("/api/v1/demo/settings", json={"payment_mode": "timeout", "insurer_activation": "withhold"},
+                          headers=MANAGER)
 
     assert response.status_code == 200
-    body = client.get("/api/v1/demo/settings").json()
+    body = client.get("/api/v1/demo/settings", headers=MANAGER).json()
     assert (body["payment_mode"], body["insurer_activation"]) == ("timeout", "withhold")
 
 
 def test_demo_settings_reject_invalid_value(client):
-    response = client.put("/api/v1/demo/settings", json={"payment_mode": "maybe", "insurer_activation": "confirm"})
+    response = client.put("/api/v1/demo/settings", json={"payment_mode": "maybe", "insurer_activation": "confirm"},
+                          headers=MANAGER)
 
     assert response.status_code == 422
     assert response.json()["error"]["code"] == "VALIDATION_FAILED"
