@@ -60,7 +60,7 @@
    "correct_match": 0.9394812680115274,
    "wrong_match_registered": 0.011527377521613832,
    "unknown_fmr": 0.05054151624548736,
-   "threshold": 0.4797682762145996
+   "threshold": 0.4796581268310547
   },
   "test": {
    "rank1": 0.9661190965092402,
@@ -68,7 +68,25 @@
    "correct_match": 0.9517453798767967,
    "wrong_match_registered": 0.00513347022587269,
    "unknown_fmr": 0.32386363636363635,
-   "threshold": 0.4797682762145996
+   "threshold": 0.4796581268310547
+  }
+ },
+ "hybrid_dinov3_sift": {
+  "val": {
+   "rank1": 0.9193083573487032,
+   "top5": 0.9365994236311239,
+   "correct_match": 0.9077809798270894,
+   "wrong_match_registered": 0.002881844380403458,
+   "unknown_fmr": 0.02527075812274368,
+   "threshold": 5.0
+  },
+  "test": {
+   "rank1": 0.9271047227926078,
+   "top5": 0.9271047227926078,
+   "correct_match": 0.9250513347022588,
+   "wrong_match_registered": 0.00513347022587269,
+   "unknown_fmr": 0.014204545454545454,
+   "threshold": 5.0
   }
  }
 }
