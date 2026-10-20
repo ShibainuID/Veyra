@@ -1,4 +1,4 @@
-"""PRD critical verification for the Agent Wallet: approval, idempotent execution, ledger, and activation."""
+"""Critical verification for the Agent Wallet: approval, idempotent execution, ledger, and activation."""
 
 from datetime import timedelta
 

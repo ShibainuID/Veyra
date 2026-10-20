@@ -1,4 +1,4 @@
-"""API response models, the source of the OpenAPI contract (plan Section 1: `schemas.py`).
+"""API response models, the source of the OpenAPI contract.
 
 Money fields are integers in minor units named `*_minor`, next to a `currency`. Datetimes serialize as ISO 8601
 UTC ending in `Z` (`UTCDateTime`); passbook lines already carry ISO strings (`IsoTimestamp`). Routes list

@@ -1,4 +1,4 @@
-"""Camera monitoring: scenarios, replays, cameras, observations, and track review (plan Section 5).
+"""Camera monitoring: scenarios, replays, cameras, observations, and track review.
 
 Any signed-in role may read. Starting a replay and reviewing tracks needs a manager or operator; the internal
 observation feed needs `X-Service-Token`. Every read is scoped to the principal's farm.

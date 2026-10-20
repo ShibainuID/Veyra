@@ -1,4 +1,4 @@
-"""Valuation confirmation (plan Section 5: `POST /animals/{id}/valuations`). Managers and operators confirm."""
+"""Valuation confirmation (`POST /animals/{id}/valuations`). Managers and operators confirm."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

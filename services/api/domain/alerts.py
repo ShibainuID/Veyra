@@ -1,4 +1,4 @@
-"""Monitoring alerts: creation with cooldown, review, and the plain summary (plan Section 4: movement rule).
+"""Monitoring alerts: creation with cooldown, review, and the plain summary.
 
 An alert is a reviewable prompt, never a diagnosis. Review rules:
 - status moves only forward: `open → acknowledged → resolved`; anything else is `INVALID_STATE`;

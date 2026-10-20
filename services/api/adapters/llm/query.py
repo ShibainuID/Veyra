@@ -1,4 +1,4 @@
-"""The language model parses an assistant question into a `QueryIntent` (plan Section 4: assistant).
+"""The language model parses an assistant question into a `QueryIntent`.
 
 The model only maps the farm user's words to the schema. It sees the farm's animal ids and names as data, never
 writes the answer, and its output is validated again by `domain.assistant` (animal refs outside the farm are

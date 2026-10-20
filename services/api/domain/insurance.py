@@ -1,4 +1,4 @@
-"""Insurance recommendations and policy reads (plan Section 4: eligibility; Section 5: `/policies`).
+"""Insurance recommendations and policy reads (`/policies`).
 
 A recommendation is the deterministic evaluation of every catalog product plus its price. Insured value is the
 lower bound of the latest confirmed valuation (`insured_value_rule: valuation_low`). Prices are computed for

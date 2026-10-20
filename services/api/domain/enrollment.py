@@ -1,4 +1,4 @@
-"""Guided-video enrollment (PRD Section 4.1; plan Section 5: `/enrollments`).
+"""Guided-video enrollment (`/enrollments`).
 
 States: `created → uploaded → processing → review → confirmed | rejected`, plus `failed` when processing
 could not produce anything to review. Every transition is a guarded update on the expected status. A retry

@@ -1,4 +1,4 @@
-"""Passport documents (PRD: ownership-document references; plan Section 5: `/animals/{id}/documents`).
+"""Passport documents (ownership-document references; `/animals/{id}/documents`).
 
 A document is a PDF, JPEG, or PNG kept on the animal's passport, stored as `document` media (downloaded as an
 attachment, never rendered in the app's origin). Its declared type must match the file's leading bytes. Adding an

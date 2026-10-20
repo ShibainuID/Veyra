@@ -1,4 +1,4 @@
-"""Camera replay runner (plan Section 3: `demo/scenarios`, Section 4: association and movement rules).
+"""Camera replay runner (`demo/scenarios`; association and movement rules).
 
 A replay steps through a simulated scenario and feeds every frame and event through the same ingest function the
 internal `POST /cameras/{id}/observations` endpoint uses, so association, observations, and alerts are produced

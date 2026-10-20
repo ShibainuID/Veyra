@@ -1,4 +1,4 @@
-"""Agent Wallet routes (plan Section 5: `/agent/actions`).
+"""Agent Wallet routes (`/agent/actions`).
 
 Managers and operators prepare and cancel; only managers approve and execute. Execution opens its own short
 sessions (claim, provider call, apply), so it takes no request session and holds no transaction across the call.

@@ -1,4 +1,4 @@
-"""Strict camera identity association (plan Section 4: identity association) and identity continuity.
+"""Strict camera identity association and identity continuity.
 
 A track becomes `associated` with an animal only from
 - a `zone_scan`: an animal's muzzle is scanned inside the camera's calibrated scan zone, and exactly one track's

@@ -1,4 +1,4 @@
-"""Sandbox wallet (plan Section 5: `GET /wallet`). Any role of the farm may read it."""
+"""Sandbox wallet (`GET /wallet`). Any role of the farm may read it."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

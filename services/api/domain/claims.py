@@ -1,4 +1,4 @@
-"""Incidents and claims (plan Section 4: claims).
+"""Incidents and claims.
 
 An incident records what happened; observed behavior (linked alerts), the farmer's report (description and
 facts), and professional findings (vet notes) stay in distinct fields. An alert alone never creates a claim.
@@ -30,7 +30,7 @@ from persistence.models import (
 )
 
 FINDING_TYPES = ("vet_assessment", "vet_health_record")
-# Only a vet authors a professional finding, so it stays distinct from the farm's own report (PRD 3, 8).
+# Only a vet authors a professional finding, so it stays distinct from the farm's own report.
 FINDING_AUTHORS = ("vet",)
 OPEN_CLAIM_STATUSES = ("draft", "ready")
 CHECKLIST_LABELS = {

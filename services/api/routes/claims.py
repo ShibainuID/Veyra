@@ -1,4 +1,4 @@
-"""Claims (plan Section 5: `/claims`). Managers and operators draft from an incident; only a manager confirms the
+"""Claims (`/claims`). Managers and operators draft from an incident; only a manager confirms the
 farmer declaration; any role of the farm (including the assessor) may read. Submission is a `CLAIM_SUBMISSION`
 agent action.
 

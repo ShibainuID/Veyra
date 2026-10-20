@@ -1,4 +1,4 @@
-"""The audit trail (plan Section 0: audit).
+"""The audit trail.
 
 Every state change records one event in the caller's transaction: `record` only adds the row, and the caller
 commits it together with the change it describes. Actor types are `user`, `agent`, `system`, and `provider`;

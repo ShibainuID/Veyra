@@ -1,4 +1,4 @@
-"""Request and response models for monitoring, alerts, and the assistant (plan Section 5; OpenAPI source).
+"""Request and response models for monitoring, alerts, and the assistant (OpenAPI source).
 
 Kept apart from `schemas.py` so parallel tasks do not edit one file. Datetimes serialize as UTC ending in `Z`.
 """

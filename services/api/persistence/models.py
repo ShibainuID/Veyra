@@ -1,4 +1,4 @@
-"""Every ORM table (plan Section 2: data model).
+"""Every ORM table.
 
 Status and kind columns are plain strings; the domain modules validate them. `Mapped[datetime]` is stored
 as `UTCDateTime` and `Mapped[dict]`/`Mapped[list]` as mutation-tracked JSON through `Base.type_annotation_map`.

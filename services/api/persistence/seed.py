@@ -1,4 +1,4 @@
-"""Demo seed and reset (plan Section 3: fixtures).
+"""Demo seed and reset.
 
 `fresh` loads `demo/fixtures/herd.json`: two farms, the demo users, cameras, five confirmed animals with
 references, estimates, valuations, two active policies, last observations, one open alert, and the wallet.

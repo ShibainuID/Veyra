@@ -1,4 +1,4 @@
-"""FastAPI auth dependencies (plan Section 0: auth). Failures raise `DomainError`, so they use the error envelope.
+"""FastAPI auth dependencies. Failures raise `DomainError`, so they use the error envelope.
 
 `current_principal` reads `Authorization: Bearer <token>` and looks the user up in its own short read session,
 so it never holds the write lock. `require_roles(*roles)` builds a dependency that also checks the role.

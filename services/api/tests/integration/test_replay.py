@@ -1,4 +1,4 @@
-"""Camera replay, monitoring endpoints, and the PRD's identity and movement verification (replay speed 0)."""
+"""Camera replay, monitoring endpoints, and the identity and movement verification (replay speed 0)."""
 
 import time
 from datetime import timedelta

@@ -1,4 +1,4 @@
-"""The natural-language locator (plan Section 5: `POST /assistant/query`). Any role may ask about its own farm.
+"""The natural-language locator (`POST /assistant/query`). Any role may ask about its own farm.
 
 The language model (when live) only parses the question; the answer text and every fact come from the farm's records.
 """

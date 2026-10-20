@@ -1,4 +1,4 @@
-"""Job status (plan Section 5: processing endpoints return `202 {job_id}`, polled here). Any role; farm-scoped."""
+"""Job status (processing endpoints return `202 {job_id}`, polled here). Any role; farm-scoped."""
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session

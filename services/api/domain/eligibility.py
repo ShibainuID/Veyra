@@ -1,4 +1,4 @@
-"""Deterministic insurance eligibility (plan Section 4: eligibility).
+"""Deterministic insurance eligibility.
 
 Each catalog rule is checked against facts gathered from the records. A rule fails, passes, or is unknown when
 the fact is missing or an estimated range straddles the limit. Any failed rule makes the product `ineligible`;

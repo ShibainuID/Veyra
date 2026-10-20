@@ -1,4 +1,4 @@
-"""Persisted background jobs on an in-process thread pool (plan Section 1: processing runs as persisted jobs).
+"""Persisted background jobs on an in-process thread pool (processing runs as persisted jobs).
 
 Usage from a route or domain function:
 

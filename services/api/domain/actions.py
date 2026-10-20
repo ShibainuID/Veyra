@@ -1,4 +1,4 @@
-"""The Agent Wallet: proposed actions, human approval, and idempotent sandbox execution (plan Section 4).
+"""The Agent Wallet: proposed actions, human approval, and idempotent sandbox execution.
 
 The agent prepares an action; the server builds its payload from current records (the client never supplies
 amounts) and hashes it as canonical JSON. Only a manager approves, naming the exact hash and version they saw.

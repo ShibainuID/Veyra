@@ -1,4 +1,4 @@
-"""Record IDs (plan Section 0): `<prefix>-<uuid4 hex[:12]>`, e.g. `act-1a2b3c4d5e6f`."""
+"""Record IDs: `<prefix>-<uuid4 hex[:12]>`, e.g. `act-1a2b3c4d5e6f`."""
 
 from uuid import uuid4
 

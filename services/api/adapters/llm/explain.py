@@ -1,4 +1,4 @@
-"""Grounded policy explanations (plan Section 6: language model, grounding check).
+"""Grounded policy explanations (language model, grounding check).
 
 The language model explains eligibility and price results that the rules already computed; it never changes an outcome or a
 number. Its output is checked against the inputs: items for products that were not supplied are dropped, and

@@ -1,4 +1,4 @@
-"""Demo authentication and role capabilities (plan Section 0: auth and roles).
+"""Demo authentication and role capabilities.
 
 People present a seeded bearer token; the internal worker presents `X-Service-Token`. A token is looked up and
 then compared in constant time. Every farm-scoped query uses `Principal.farm_id`, and a record of another farm

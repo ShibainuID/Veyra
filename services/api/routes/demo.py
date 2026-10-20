@@ -1,4 +1,4 @@
-"""Demo controls: reset to a scenario and the sandbox provider switches (plan Section 5: `/demo/*`).
+"""Demo controls: reset to a scenario and the sandbox provider switches (`/demo/*`).
 
 `POST /demo/claims/{id}/insurer-update` (managers) plays the sandbox insurer's assessment of a submitted claim.
 

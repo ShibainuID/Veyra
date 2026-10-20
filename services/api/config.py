@@ -1,4 +1,4 @@
-"""Service settings from the environment (plan Section 0: run, tests, auth).
+"""Service settings from the environment (run, tests, auth).
 
 Every value has a demo-safe default so `uv run uvicorn main:app` works with no setup. Tests set the
 environment and call `get_settings.cache_clear()` to pick up the change.

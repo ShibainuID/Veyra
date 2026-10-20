@@ -1,4 +1,4 @@
-"""Build the simulated camera replay scenarios (plan Section 3: `demo/scenarios/*.json`).
+"""Build the simulated camera replay scenarios (`demo/scenarios/*.json`).
 
 Run from the repo root: `python demo/scenarios/build_scenarios.py`. Output is deterministic (seeded random) and
 committed, so the replay, the movement rule, and the frontend overlay all read the same tracks. Every scenario is

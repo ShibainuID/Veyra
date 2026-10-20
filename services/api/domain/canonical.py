@@ -1,4 +1,4 @@
-"""Canonical JSON and SHA-256 (plan Section 4: payloads are hashed as keys-sorted, compact JSON)."""
+"""Canonical JSON and SHA-256 (payloads are hashed as keys-sorted, compact JSON)."""
 
 import hashlib
 import json

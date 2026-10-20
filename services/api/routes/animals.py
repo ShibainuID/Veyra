@@ -1,4 +1,4 @@
-"""Herd list, Digital Livestock Passport, and passport documents (plan Section 5: `/animals`,
+"""Herd list, Digital Livestock Passport, and passport documents (`/animals`,
 `/animals/{id}/passport`, `/animals/{id}/documents`). Any role may read; managers and operators add documents;
 every query is scoped to the principal's farm."""
 

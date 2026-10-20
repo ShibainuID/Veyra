@@ -1,4 +1,4 @@
-"""The sandbox wallet ledger (plan Section 4: agent actions, step 5).
+"""The sandbox wallet ledger.
 
 Entries are append-only: `credit` and `debit` move the balance; `hold` reserves funds for an executing payment
 and `release` returns the reservation. A successful payment releases its hold and posts the debit; a declined one

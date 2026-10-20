@@ -1,6 +1,6 @@
-"""PRD Section 8 "Critical verification", one test per check, in one place.
+"""The critical verification checks, one test per check, in one place.
 
-Each test quotes the PRD line it verifies and reuses the flows and helpers of the detailed suites
+Each test states the check it verifies and reuses the flows and helpers of the detailed suites
 (test_financial_flow, test_claims, test_replay, test_assistant_api).
 """
 
@@ -31,7 +31,7 @@ def _application(client) -> dict:
 
 
 def test_duplicate_execution_is_rejected(sari):
-    """PRD: "Reject duplicate execution and prevent operator-role approvals." (duplicate execution)"""
+    """Reject duplicate execution and prevent operator-role approvals (duplicate execution)."""
     apply_basic(sari)
     pay = approved(sari, **payment_body(sari))
     first = execute(sari, pay["id"], "pay-key").json()
@@ -43,7 +43,7 @@ def test_duplicate_execution_is_rejected(sari):
 
 
 def test_operator_cannot_approve(sari):
-    """PRD: "Reject duplicate execution and prevent operator-role approvals." (operator approvals)"""
+    """Reject duplicate execution and prevent operator-role approvals (operator approvals)."""
     action = _application(sari)
     response = decide(sari, action, headers=OPERATOR)
     assert response.status_code == 403 and error_code(response) == "FORBIDDEN_ROLE"
@@ -52,7 +52,7 @@ def test_operator_cannot_approve(sari):
 
 
 def test_execution_blocked_after_declined_approval(sari):
-    """PRD: "Block execution after declined, expired, or stale approval." (declined)"""
+    """Block execution after declined, expired, or stale approval (declined)."""
     action = _application(sari)
     assert decide(sari, action, "decline", note="Not this season").json()["status"] == "declined"
     response = execute(sari, action["id"])
@@ -61,7 +61,7 @@ def test_execution_blocked_after_declined_approval(sari):
 
 
 def test_execution_blocked_after_expired_approval(sari):
-    """PRD: "Block execution after declined, expired, or stale approval." (expired)"""
+    """Block execution after declined, expired, or stale approval (expired)."""
     action = approved(sari, action_type="POLICY_APPLICATION", animal_id=SARI, product_id="basic-mortality")
     later = clock.now() + timedelta(minutes=31)
     clock.set_now(lambda: later)
@@ -72,7 +72,7 @@ def test_execution_blocked_after_expired_approval(sari):
 
 
 def test_execution_blocked_after_stale_approval(sari):
-    """PRD: "Block execution after declined, expired, or stale approval." (stale)"""
+    """Block execution after declined, expired, or stale approval (stale)."""
     apply_basic(sari)
     pay = approved(sari, **payment_body(sari))
     valuation = sari.post(f"{API}/animals/{SARI}/valuations", headers=MANAGER, json={
@@ -85,7 +85,7 @@ def test_execution_blocked_after_stale_approval(sari):
 
 
 def test_unresolved_track_does_not_inherit_a_passport(sari):
-    """PRD: "Confirm an unresolved track cannot silently inherit an animal's passport." """
+    """Confirm an unresolved track cannot silently inherit an animal's passport."""
     started = _start(sari, "lost_identity")
     replay = sari.get(f"{API}/replays/{started['replay_id']}", headers=MANAGER).json()
     tracks = {t["track_key"]: t for t in replay["tracks"]}
@@ -102,7 +102,7 @@ def test_unresolved_track_does_not_inherit_a_passport(sari):
 
 
 def test_payment_success_does_not_activate_coverage_by_itself(sari):
-    """PRD: "Confirm payment success does not independently activate coverage." """
+    """Confirm payment success does not independently activate coverage."""
     apply_basic(sari)
     set_demo(sari, insurer_activation="withhold")
     paid = run(sari, key="pay-key", **payment_body(sari))
@@ -113,7 +113,7 @@ def test_payment_success_does_not_activate_coverage_by_itself(sari):
 
 
 def test_claim_missing_a_required_item_is_blocked_and_the_reason_kept(client):
-    """PRD: "Block a claim missing a configured required item; preserve the reason." """
+    """Block a claim missing a configured required item; preserve the reason."""
     incident = _incident(client, linked_alert_ids=[_bima_alert()]).json()
     claim = _draft(client, incident["id"]).json()
     client.patch(f"{API}/claims/{claim['id']}", json={"declaration_confirmed": True}, headers=MANAGER)
@@ -125,7 +125,7 @@ def test_claim_missing_a_required_item_is_blocked_and_the_reason_kept(client):
 
 
 def test_observed_behavior_farmer_report_and_professional_findings_stay_distinct(client):
-    """PRD: "Keep observed behavior, farmer-reported incident, and confirmed professional findings distinct." """
+    """Keep observed behavior, farmer-reported incident, and confirmed professional findings distinct."""
     alert_id = _bima_alert()
     incident = _incident(client, linked_alert_ids=[alert_id]).json()
     assert _finding(client, incident["id"]).status_code == 201
@@ -143,7 +143,7 @@ def test_observed_behavior_farmer_report_and_professional_findings_stay_distinct
 
 
 def test_location_query_returns_last_seen_or_missing_evidence(sari):
-    """PRD: "Return last-seen time or missing evidence for unsupported location queries." """
+    """Return last-seen time or missing evidence for unsupported location queries."""
     seen = _ask(sari, "Where was Bima last seen?")
     assert seen["intent"] == "location_lookup" and seen["missing"] == []
     assert _facts(seen)["Last observed on"][2] == "cam-pen-a"

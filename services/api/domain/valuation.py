@@ -1,4 +1,4 @@
-"""Indicative valuation (plan Section 4: valuation).
+"""Indicative valuation.
 
 `value = floor(weight_kg × unit_price_minor_per_kg)` in minor units, for both ends of the weight range. The
 weight range is the latest (or a chosen) weight estimate, or a manager/operator override; an override keeps the

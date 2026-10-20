@@ -1,4 +1,4 @@
-"""Evidence manifests (plan Section 4: a matching evidence manifest version is created or reused).
+"""Evidence manifests (a matching evidence manifest version is created or reused).
 
 A manifest lists the records an agent action relies on: `{type, ref, label, sha256?}` items, hashed as canonical
 JSON. Each subject keeps its own version sequence. Proposing reuses the latest version when the hash is

@@ -1,4 +1,4 @@
-"""Structured language-model calls for grounded explanations and query parsing (plan Section 6).
+"""Structured language-model calls for grounded explanations and query parsing.
 
 The provider comes from settings: OpenAI (default model gpt-6-luna, through the Responses API) or Anthropic
 (claude-opus-5-5, through the Messages API). The model never decides eligibility, prices, identity, or

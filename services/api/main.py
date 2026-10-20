@@ -1,4 +1,4 @@
-"""VEYRA API app factory: routers under `/api/v1`, one error envelope, and DB setup on startup (plan Sections 0-1).
+"""VEYRA API app factory: routers under `/api/v1`, one error envelope, and DB setup on startup.
 
 Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 """

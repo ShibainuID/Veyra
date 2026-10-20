@@ -1,4 +1,4 @@
-"""The natural-language locator (plan Section 4: assistant).
+"""The natural-language locator.
 
 Two steps, and only the first may use a language model:
 1. `parse` turns the question into a `QueryIntent`. The language model does it when live (`adapters/llm/query.py`); the regex
