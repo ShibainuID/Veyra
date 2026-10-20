@@ -1,0 +1,282 @@
+[
+ {
+  "i": 0,
+  "text": "For a livestock farm, every cow is a valuable asset.",
+  "s": 0,
+  "e": 5.122,
+  "w0": 0,
+  "w1": 9
+ },
+ {
+  "i": 1,
+  "text": "But information about that animal is often scattered across records, camera footage, and insurance documents.",
+  "s": 5.342,
+  "e": 13.845,
+  "w0": 10,
+  "w1": 24
+ },
+ {
+  "i": 2,
+  "text": "When something goes wrong, finding the right evidence and taking action can take too long.",
+  "s": 14.065,
+  "e": 22,
+  "w0": 25,
+  "w1": 39
+ },
+ {
+  "i": 3,
+  "text": "Meet VEYRA, an AI-powered platform that connects livestock identity, health observations, and insurance in one place.",
+  "s": 22,
+  "e": 29.526,
+  "w0": 40,
+  "w1": 55
+ },
+ {
+  "i": 4,
+  "text": "Our goal is simple: know every animal, understand its financial value, and protect it with clearer, faster workflows.",
+  "s": 29.746,
+  "e": 38,
+  "w0": 56,
+  "w1": 73
+ },
+ {
+  "i": 5,
+  "text": "We begin at the herd dashboard, where a farm manager can see registered cattle, estimated asset values, insurance status, and alerts.",
+  "s": 38,
+  "e": 46.334,
+  "w0": 74,
+  "w1": 94
+ },
+ {
+  "i": 6,
+  "text": "To add a cow, the operator uploads one guided video showing its nose, teeth, and full body.",
+  "s": 46.554,
+  "e": 52.981,
+  "w0": 95,
+  "w1": 111
+ },
+ {
+  "i": 7,
+  "text": "VEYRA extracts useful images, then asks a person to confirm the animal's identity.",
+  "s": 53.201,
+  "e": 58.185,
+  "w0": 112,
+  "w1": 124
+ },
+ {
+  "i": 8,
+  "text": "If the match is unclear, the record stays unconfirmed instead of guessing.",
+  "s": 58.405,
+  "e": 63,
+  "w0": 125,
+  "w1": 136
+ },
+ {
+  "i": 9,
+  "text": "Once confirmed, the cow receives a Digital Livestock Passport.",
+  "s": 63,
+  "e": 66.769,
+  "w0": 137,
+  "w1": 145
+ },
+ {
+  "i": 10,
+  "text": "This page brings together its identity images, age and weight estimates, observation history, and supporting documents.",
+  "s": 66.989,
+  "e": 73.978,
+  "w0": 146,
+  "w1": 161
+ },
+ {
+  "i": 11,
+  "text": "VEYRA also calculates an estimated value range using the confirmed weight and a selected price per kilogram.",
+  "s": 74.198,
+  "e": 80.957,
+  "w0": 162,
+  "w1": 178
+ },
+ {
+  "i": 12,
+  "text": "The calculation is transparent, and it is not presented as a guaranteed selling price or insurance payout.",
+  "s": 81.177,
+  "e": 88,
+  "w0": 179,
+  "w1": 195
+ },
+ {
+  "i": 13,
+  "text": "Next, the insurance assistant compares three example policies.",
+  "s": 88,
+  "e": 92.717,
+  "w0": 196,
+  "w1": 203
+ },
+ {
+  "i": 14,
+  "text": "It checks eligibility rules and shows premiums, coverage, exclusions, and possible gaps.",
+  "s": 92.937,
+  "e": 100.026,
+  "w0": 204,
+  "w1": 215
+ },
+ {
+  "i": 15,
+  "text": "Instead of simply recommending the cheapest option, VEYRA explains the tradeoffs, helping the farm manager make an informed choice.",
+  "s": 100.246,
+  "e": 111,
+  "w0": 216,
+  "w1": 234
+ },
+ {
+  "i": 16,
+  "text": "Once the manager selects a policy, the AI agent prepares an application and a separate premium payment.",
+  "s": 111,
+  "e": 117.111,
+  "w0": 235,
+  "w1": 251
+ },
+ {
+  "i": 17,
+  "text": "Nothing important happens without approval.",
+  "s": 117.331,
+  "e": 119.311,
+  "w0": 252,
+  "w1": 256
+ },
+ {
+  "i": 18,
+  "text": "The manager checks the details, approves each action, and sees the test provider's response.",
+  "s": 119.531,
+  "e": 124.788,
+  "w0": 257,
+  "w1": 270
+ },
+ {
+  "i": 19,
+  "text": "This demo uses a sandbox, not real money.",
+  "s": 125.008,
+  "e": 127.813,
+  "w0": 271,
+  "w1": 278
+ },
+ {
+  "i": 20,
+  "text": "And successful payment does not mean coverage is active until the insurer confirms it.",
+  "s": 128.033,
+  "e": 133,
+  "w0": 279,
+  "w1": 292
+ },
+ {
+  "i": 21,
+  "text": "VEYRA also connects each passport to camera observations.",
+  "s": 133,
+  "e": 136.29,
+  "w0": 293,
+  "w1": 300
+ },
+ {
+  "i": 22,
+  "text": "In this demo, a recorded camera feed shows cattle tracks and their last known locations.",
+  "s": 136.51,
+  "e": 142.429,
+  "w0": 301,
+  "w1": 315
+ },
+ {
+  "i": 23,
+  "text": "If an identified cow moves noticeably less than expected, VEYRA creates an alert with a timestamp and supporting footage.",
+  "s": 142.649,
+  "e": 150.297,
+  "w0": 316,
+  "w1": 334
+ },
+ {
+  "i": 24,
+  "text": "This is a reason to inspect the animal, not a medical diagnosis.",
+  "s": 150.517,
+  "e": 155.154,
+  "w0": 335,
+  "w1": 346
+ },
+ {
+  "i": 25,
+  "text": "The manager can even ask, 'Where was this cow last seen?' and receive an answer based on recorded observations.",
+  "s": 155.374,
+  "e": 163,
+  "w0": 347,
+  "w1": 365
+ },
+ {
+  "i": 26,
+  "text": "If the manager later records an incident, the insurance agent helps prepare a claim.",
+  "s": 163,
+  "e": 168.676,
+  "w0": 366,
+  "w1": 379
+ },
+ {
+  "i": 27,
+  "text": "It gathers the passport, relevant observations, policy details, and available evidence into one checklist.",
+  "s": 168.896,
+  "e": 175.191,
+  "w0": 380,
+  "w1": 393
+ },
+ {
+  "i": 28,
+  "text": "Missing documents are flagged before submission.",
+  "s": 175.411,
+  "e": 178.027,
+  "w0": 394,
+  "w1": 399
+ },
+ {
+  "i": 29,
+  "text": "Only after the manager checks the facts and approves does VEYRA send the claim to the simulated insurer, where its status becomes pending assessment.",
+  "s": 178.247,
+  "e": 188,
+  "w0": 400,
+  "w1": 423
+ },
+ {
+  "i": 30,
+  "text": "Every important step leaves an audit trail: who confirmed an identity, which action was approved, and what the provider returned.",
+  "s": 188,
+  "e": 196.68,
+  "w0": 424,
+  "w1": 443
+ },
+ {
+  "i": 31,
+  "text": "If information is uncertain or approval is missing, VEYRA blocks the action.",
+  "s": 196.9,
+  "e": 202,
+  "w0": 444,
+  "w1": 455
+ },
+ {
+  "i": 32,
+  "text": "VEYRA connects animal identity with financial protection.",
+  "s": 202,
+  "e": 206.223,
+  "w0": 456,
+  "w1": 462
+ },
+ {
+  "i": 33,
+  "text": "Know every animal.",
+  "s": 206.443,
+  "e": 208.086,
+  "w0": 463,
+  "w1": 465
+ },
+ {
+  "i": 34,
+  "text": "Protect every asset.",
+  "s": 208.306,
+  "e": 210,
+  "w0": 466,
+  "w1": 468
+ }
+]
