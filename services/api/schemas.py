@@ -347,6 +347,29 @@ class Passport(BaseModel):
     passbook: Passbook
 
 
+DocumentKind = Literal["ownership", "purchase_receipt", "vet_record", "other"]
+
+
+class AnimalDocumentOut(BaseModel):
+    """A file on the passport. `url` is a signed, expiring download link; documents download as attachments."""
+
+    id: str
+    animal_id: str
+    kind: DocumentKind
+    title: str
+    filename: str
+    content_type: str
+    bytes: int
+    sha256: str
+    url: str
+    uploaded_by: str
+    created_at: UTCDateTime
+
+
+class AnimalDocumentList(BaseModel):
+    items: list[AnimalDocumentOut]
+
+
 class AuditEventOut(BaseModel):
     id: str
     created_at: UTCDateTime

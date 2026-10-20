@@ -6,6 +6,7 @@ import { Mono, Range } from "../../components/figures";
 import { Provenance, type Source } from "../../components/Provenance";
 import { StatusPill } from "../../components/StatusPill";
 import { cn } from "../../lib/cn";
+import { FrameQualityReadout } from "./QualityMeter";
 import { identityReasonCopy, reviewReasons, type ReasonCopy } from "./review-copy";
 import {
   REQUIRED_VIEWS,
@@ -103,6 +104,7 @@ function ReviewFrame({ view, spec, source }: { view: RequiredView; spec: ViewOut
           )}
           {spec && <Provenance source={source} />}
         </div>
+        {crop && <FrameQualityReadout src={crop} />}
       </figcaption>
     </figure>
   );

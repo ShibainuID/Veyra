@@ -4,6 +4,7 @@ Run from `services/api`: `uv run uvicorn main:app --reload --port 8000`.
 """
 
 import logging
+import mimetypes
 import os
 import sys
 from collections.abc import AsyncIterator
@@ -122,6 +123,7 @@ def create_app() -> FastAPI:
 
 def _mount_web(app: FastAPI, dist: Path) -> None:
     """Serve the built web app from the same origin (the Docker image); `/api` keeps its JSON 404s."""
+    mimetypes.add_type("application/manifest+json", ".webmanifest")  # the PWA manifest
     if (dist / "assets").is_dir():
         app.mount("/assets", StaticFiles(directory=dist / "assets"), name="assets")
 

@@ -93,6 +93,22 @@ class AnimalReference(Base):
     created_at: Mapped[datetime] = _created_at()
 
 
+class AnimalDocument(Base):
+    """A file kept on the passport (ownership certificate, purchase receipt, vet record); the bytes are `media`."""
+
+    __tablename__ = "animal_documents"
+
+    id: Mapped[str] = mapped_column(primary_key=True)
+    farm_id: Mapped[str] = _farm_fk()
+    animal_id: Mapped[str] = _animal_fk()
+    media_id: Mapped[str] = mapped_column(ForeignKey("media.id"))
+    kind: Mapped[str]
+    title: Mapped[str]
+    filename: Mapped[str]
+    uploaded_by: Mapped[str]
+    created_at: Mapped[datetime] = _created_at()
+
+
 class Enrollment(Base):
     __tablename__ = "enrollments"
 
