@@ -5,3 +5,6 @@ ml/.venv/
 __pycache__/
 ml/kaggle/dataset_li2022/*.zip
 ml/kaggle/kernel_muzzle/*.ipynb
+services/api/.venv/
+services/api/var/
+.pytest_cache/
