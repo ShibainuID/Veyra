@@ -3,8 +3,11 @@
 A test video's bytes contain `COW:<name>`; that name plays the role of the muzzle pattern. Extra tokens
 control the manifest: `CUT` adds a scene cut, `NOTEETH` drops the teeth view, `NOMARKER` drops the scale
 marker, `NOMUZZLE` drops the muzzle view, and `CRASH` raises to exercise job failure.
+
+A test camera recording's bytes are the tracks JSON itself, which `track_video` returns unchanged.
 """
 
+import json
 import re
 from pathlib import Path
 
@@ -63,3 +66,12 @@ class FakePerception:
     def estimate_weight(self, body_frame_path: Path, scale: dict, tape_heart_girth_cm: float | None) -> dict:
         return {"source": "prototype", "method_version": "fake_weight_v1", "range_low": 480.0, "range_high": 560.0,
                 "unit": "kg", "review_required": False, "review_reason": None}
+
+    def track_video(self, video_path: Path) -> dict:
+        return json.loads(video_path.read_text())
+
+    def extract_clip(self, video_path: Path, out_path: Path, start_s: float, end_s: float, track_id: str,
+                     tracks: dict) -> bool:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(f"clip {start_s:.0f}-{end_s:.0f} track {track_id}")
+        return True
