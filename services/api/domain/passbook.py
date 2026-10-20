@@ -1,8 +1,9 @@
 """The animal passbook (design authority: Passbook Ledger; plan Section 7 F3-F10: "full passbook with all entries").
 
 Every animal keeps a passbook. Its lines are the animal's audit events, numbered in the order they happened,
-followed by one `awaiting` line per agent action still waiting for a decision or for execution. A line reads like
-a bank passbook entry: a date, a title, an optional amount, and a stamp once a person or provider has acted.
+followed by one `awaiting` line per agent action still waiting for a decision, for execution, or for the
+provider. A line reads like a bank passbook entry: a date, a title, an optional amount, and a stamp once a person
+or provider has acted.
 
 Titles come from a formatter registry keyed by event type. A domain module registers the formatters for its own
 events when it is imported (`@register_formatter("action.approved")`), and the routes import the domain modules,
@@ -27,14 +28,15 @@ from persistence.models import AgentAction, AuditEvent, Policy, Valuation
 LINE_KINDS = ("event", "awaiting")
 LINE_STATUSES = ("posted", "awaiting", "void")
 STAMP_KINDS = ("approved", "declined", "posted", "failed", "unknown", "confirmed")
-AWAITING_STATUSES = ("pending_approval", "approved")
+AWAITING_STATUSES = ("pending_approval", "approved", "executing")
 ACTION_TITLES = {
     "POLICY_APPLICATION": "Policy application",
     "PREMIUM_PAYMENT": "Premium payment",
     "INSURER_NOTIFICATION": "Insurer notification",
     "CLAIM_SUBMISSION": "Claim submission",
 }
-AWAITING_DETAILS = {"pending_approval": "Waiting for manager approval", "approved": "Approved, waiting to execute"}
+AWAITING_DETAILS = {"pending_approval": "Waiting for manager approval", "approved": "Approved, waiting to execute",
+                    "executing": "Executing with the provider"}
 FORMATTER_FIELDS = frozenset({"title", "detail", "amount_minor", "currency", "stamp", "status", "action_id"})
 _ORIGIN_PREFIXES = ("seed",)
 
