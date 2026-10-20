@@ -12,8 +12,9 @@ import { useToast } from "../../components/Toast";
 import { tagStateFor } from "../../lib/animal";
 import { useRole } from "../../lib/role-store";
 import { Page } from "../../pages/Page";
-import { ActionReview, actionTitle, useActions, type AgentAction } from "../actions";
-import { refreshFinance, useAnimals, useReviseAction } from "../finance/api";
+import { ActionReview, actionTitle, receiptRef, useActions, type AgentAction } from "../actions";
+import { formatDate } from "../finance/dates";
+import { refreshFinance, useAnimals, usePolicies, useReviseAction } from "../finance/api";
 import "./approvals.css";
 import { canPrepareAgain, groupActions, lineNumbers, toLine, voidReason, type QueueGroup } from "./queue";
 import { WalletPanel } from "./WalletPanel";
@@ -121,6 +122,45 @@ function QueueSection({
   );
 }
 
+/**
+ * After a premium posts: whether the insurer has confirmed the cover yet. Payment alone never
+ * activates it, so the activation shows as its own confirmation, read from the current policy.
+ */
+function CoverAfterPayment({ action, animalHref }: { action: AgentAction; animalHref: string | null }) {
+  const queryClient = useQueryClient();
+  const { data: policies } = usePolicies(action.animal_id ?? undefined);
+  const policy = policies?.find((p) => p.application_id === action.subject_id || p.id === action.subject_id);
+  const waiting = policy?.status === "paid_pending_activation";
+  // The insurer answers after the payment posts; read the policy again until it does.
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = window.setInterval(() => void queryClient.invalidateQueries({ queryKey: ["policies"] }), 2000);
+    return () => window.clearInterval(timer);
+  }, [waiting, queryClient]);
+  if (policy?.status === "active") {
+    const ref = receiptRef(policy.activation_receipt);
+    return (
+      <div className="rounded-control border-2 border-ok bg-ok-soft p-4">
+        <p className="font-bold">Cover active · a separate insurer confirmation</p>
+        <p>
+          Sandbox Mutual confirmed activation{ref && <> under <Mono>{ref}</Mono></>}, from{" "}
+          <Mono>{formatDate(policy.effective_date)}</Mono>. The payment alone did not activate it.{" "}
+          {animalHref && <Link to={animalHref}>See the cover</Link>}
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-control border-2 border-uncertain bg-uncertain-soft p-4">
+      <p className="font-bold">Coverage is not active yet</p>
+      <p>
+        The premium posted to Sandbox Mutual. Cover starts only when the insurer confirms activation.{" "}
+        {animalHref && <Link to={animalHref}>See the cover status</Link>}
+      </p>
+    </div>
+  );
+}
+
 function ReviewExtras({ action, all, onSelect }: { action: AgentAction; all: readonly AgentAction[]; onSelect: (id: string) => void }) {
   const revise = useReviseAction();
   const toast = useToast();
@@ -140,13 +180,7 @@ function ReviewExtras({ action, all, onSelect }: { action: AgentAction; all: rea
   return (
     <div className="flex flex-col gap-3">
       {action.status === "succeeded" && action.action_type === "PREMIUM_PAYMENT" && (
-        <div className="rounded-control border-2 border-uncertain bg-uncertain-soft p-4">
-          <p className="font-bold">Coverage is not active yet</p>
-          <p>
-            The premium posted to Sandbox Mutual. Cover starts only when the insurer confirms activation.{" "}
-            {animalHref && <Link to={animalHref}>See the cover status</Link>}
-          </p>
-        </div>
+        <CoverAfterPayment action={action} animalHref={animalHref} />
       )}
       {action.status === "succeeded" && action.action_type === "POLICY_APPLICATION" && animalHref && (
         <ButtonLink to={animalHref} variant="secondary" icon={ArrowRight}>
@@ -244,7 +278,15 @@ export function ApprovalsPage() {
         title="Approvals"
         meta={
           <>
-            <Mono className="text-ink">{awaitingCount}</Mono> {awaitingCount === 1 ? "line waits" : "lines wait"} for a manager's stamp ·
+            {awaitingCount === 0 ? (
+              "Nothing waits for a manager's stamp"
+            ) : (
+              <>
+                <Mono className="text-ink">{awaitingCount}</Mono> {awaitingCount === 1 ? "line waits" : "lines wait"} for a
+                manager's stamp
+              </>
+            )}{" "}
+            ·
             everything here runs against the sandbox
           </>
         }

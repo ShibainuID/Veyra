@@ -1,5 +1,6 @@
 /** Groups the agent's actions for the approval queue and turns each into a passbook line. */
 import type { PassbookAmount, PassbookLineData, StampProps } from "../../components";
+import { providerName } from "../../lib/animal";
 import { actionTitle, type AgentAction } from "../actions";
 
 export type QueueGroupId = "awaiting" | "approved" | "unresolved" | "history";
@@ -93,7 +94,7 @@ function stampFor(action: AgentAction, press: boolean): Omit<StampProps, "classN
   const done = action.execution?.completed_at ?? action.updated_at;
   switch (action.status) {
     case "succeeded":
-      return { kind: "posted", at: done, by: "MGR", press };
+      return { kind: "posted", at: done, by: providerName(action.execution?.provider_id), press };
     case "failed":
       return { kind: "failed", at: done, press };
     case "declined":

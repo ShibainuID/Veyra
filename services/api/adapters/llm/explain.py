@@ -77,7 +77,7 @@ def offline_explanation(animal_name: str, results: list[dict], currency: str) ->
         items.append(ExplanationItemModel(product_id=result["product_id"], explanation=text, terms_refs=refs))
     counts = {outcome: sum(r["outcome"] == outcome for r in results) for outcome in ("eligible", "unknown", "ineligible")}
     summary = (f"Of {len(results)} sample products for {animal_name}, {counts['eligible']} eligible, "
-               f"{counts['unknown']} need review, and {counts['ineligible']} not eligible.")
+               f"{counts['unknown']} {'needs' if counts['unknown'] == 1 else 'need'} review, and {counts['ineligible']} not eligible.")
     return PolicyExplanation(summary=summary, items=items, caveats=list(OFFLINE_CAVEATS))
 
 

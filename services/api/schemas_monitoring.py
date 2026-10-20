@@ -230,6 +230,9 @@ class AlertReview(BaseModel):
 
 class AssistantQuery(BaseModel):
     text: str = Field(min_length=1, max_length=500)
+    # The asker's UTC offset in minutes east of UTC (Jakarta is 420), so times in the answer read as local
+    # time; UTC when absent.
+    utc_offset_minutes: int | None = Field(default=None, ge=-840, le=840)
 
 
 class AssistantFact(BaseModel):

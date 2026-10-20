@@ -8,6 +8,7 @@ import { inMore, MoreSheet } from "./MoreSheet";
 import { NAV_ITEMS, type NavItem } from "./nav";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { TagLogo } from "./TagLogo";
+import { useScrollOnNavigate } from "./use-scroll-on-navigate";
 import { useShellSummary, type HerdSummary } from "./use-shell-summary";
 
 function ApprovalsBadge({ count, active }: { count: number | undefined; active: boolean }) {
@@ -155,6 +156,7 @@ function BottomTabs({ pathname, count }: { pathname: string; count: number | und
 export function AppShell() {
   const { pathname } = useLocation();
   const { data: summary } = useShellSummary();
+  useScrollOnNavigate();
   return (
     <div className="flex min-h-dvh flex-col">
       <a

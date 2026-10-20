@@ -60,6 +60,11 @@ def _media_sha(session: Session, media_id: str | None) -> str | None:
     return media.sha256 if media else None
 
 
+def _num(value) -> str:
+    """A range bound without a trailing `.0` (480, not 480.0)."""
+    return f"{value:g}" if isinstance(value, float) else str(value)
+
+
 def identity_items(session: Session, animal: Animal) -> list[dict]:
     references = session.scalars(select(AnimalReference).where(AnimalReference.animal_id == animal.id)
                                  .order_by(AnimalReference.view, AnimalReference.id)).all()
@@ -74,7 +79,7 @@ def animal_items(session: Session, animal: Animal) -> list[dict]:
         estimate = latest_estimate(session, animal.id, kind)
         if estimate is not None:
             items.append(item(f"{kind}_estimate", estimate.id,
-                              f"{kind.title()} estimate {estimate.range_low}–{estimate.range_high} {estimate.unit} "
+                              f"{kind.title()} estimate {_num(estimate.range_low)}–{_num(estimate.range_high)} {estimate.unit} "
                               f"({estimate.source})"))
     valuation = latest_valuation(session, animal.id)
     if valuation is not None:
@@ -91,7 +96,7 @@ def ownership_items(animal: Animal) -> list[dict]:
 
 def application_items(application: PolicyApplication, policy: Policy) -> list[dict]:
     return [item("policy_application", application.id, f"Accepted application {application.provider_ref or ''}".strip()),
-            item("policy", policy.id, f"Policy {policy.product_id} ({policy.status})")]
+            item("policy", policy.id, f"Policy {policy.product_id} ({policy.status.replace('_', ' ')})")]
 
 
 def policy_item(policy: Policy) -> dict:

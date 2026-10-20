@@ -13,7 +13,7 @@ an observation older than `STALE_AFTER` adds "It may have moved since."
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone, tzinfo
 from typing import Any
 
 from sqlalchemy import select
@@ -23,6 +23,7 @@ from adapters.llm.query import QueryIntent, parse_with_claude
 from config import Settings
 from domain import alerts as alert_rules
 from domain import clock
+from domain.catalog import load_catalog, provider_name
 from domain.passbook import product_name
 from domain.passport import list_herd
 from persistence.db import read_session
@@ -162,7 +163,8 @@ def parse(settings: Settings, text: str, animals: list[dict], *, client: Any | N
 def _money(minor: int | None, currency: str | None) -> str:
     if minor is None:
         return "unknown"
-    return f"{currency or ''} {minor // 100:,}.{minor % 100:02d}".strip()
+    # Amount first, then the currency, as everywhere else in the app (2,496.00 USD).
+    return f"{minor // 100:,}.{minor % 100:02d} {currency or ''}".strip()
 
 
 def _ago(at: datetime, now: datetime) -> str:
@@ -178,8 +180,19 @@ def _ago(at: datetime, now: datetime) -> str:
     return f"{hours // 24} days ago"
 
 
-def _when(at: datetime, now: datetime) -> str:
-    return at.strftime("%H:%M UTC") if at.date() == now.date() else at.strftime("%Y-%m-%d %H:%M UTC")
+def _zone(offset_minutes: int | None) -> tzinfo:
+    """The asker's UTC offset (sent by the browser, minutes east of UTC), or UTC when it is missing."""
+    if not offset_minutes:
+        return UTC
+    hours, minutes = divmod(abs(offset_minutes), 60)
+    sign = "+" if offset_minutes > 0 else "-"
+    return timezone(timedelta(minutes=offset_minutes), f"UTC{sign}{hours}" + (f":{minutes:02d}" if minutes else ""))
+
+
+def _when(at: datetime, now: datetime, zone: tzinfo = UTC) -> str:
+    local, today = at.astimezone(zone), now.astimezone(zone)
+    clock_text = local.strftime("%H:%M") if local.date() == today.date() else local.strftime("%Y-%m-%d %H:%M")
+    return f"{clock_text} {local.tzname()}"
 
 
 def _fact(label: str, value: Any, record_type: str, record_id: str) -> dict:
@@ -218,8 +231,8 @@ def _passport(out: _Answer, card: dict) -> None:
                                    f"({estimate['source']})", "animal", card["id"]))
     valuation = card.get("valuation")
     if valuation:
-        value = (f"{_money(valuation['value_low_minor'], valuation['currency'])}–"
-                 f"{_money(valuation['value_high_minor'], None)}")
+        value = (f"{_money(valuation['value_low_minor'], None)}–"
+                 f"{_money(valuation['value_high_minor'], valuation['currency'])}")
         text += f" Indicative value {value} (valuation v{valuation['version']})."
         out.facts.append(_fact("Indicative value", value, "animal", card["id"]))
     else:
@@ -237,14 +250,14 @@ def _last_observation(session: Session, farm_id: str, animal_id: str) -> Observa
 
 
 def _location(out: _Answer, session: Session, farm_id: str, card: dict, cameras: dict[str, str],
-              now: datetime) -> None:
+              now: datetime, zone: tzinfo = UTC) -> None:
     observation = _last_observation(session, farm_id, card["id"])
     if observation is None:
         out.sentences.append(f"No camera observation is on record for {_label(card)}.")
         out.miss("last_observation")
         return
     camera = cameras.get(observation.camera_id, observation.camera_id)
-    text = (f"{_label(card)} was last observed on {camera} at {_when(observation.observed_at, now)} "
+    text = (f"{_label(card)} was last observed on {camera} at {_when(observation.observed_at, now, zone)} "
             f"({_ago(observation.observed_at, now)}).")
     if now - observation.observed_at > STALE_AFTER:
         text += " It may have moved since."
@@ -268,7 +281,7 @@ def _coverage(out: _Answer, session: Session, farm_id: str, card: dict) -> None:
         period = (f", {policy.effective_date.isoformat()} to {policy.expiry_date.isoformat()}"
                   if policy.effective_date and policy.expiry_date else "")
         insured = _money(policy.insured_value_minor, policy.currency)
-        out.sentences.append(f"Active coverage for {card['name']}: {name} with {policy.provider_id}, insured value "
+        out.sentences.append(f"Active coverage for {card['name']}: {name} with {provider_name(load_catalog(), policy.provider_id)}, insured value "
                              f"{insured}{period}.")
         out.facts += [_fact("Active policy", name, "policy", policy.id),
                       _fact("Insured value", insured, "policy", policy.id)]
@@ -332,8 +345,10 @@ def _alerts(out: _Answer, session: Session, farm_id: str, card: dict | None) -> 
                              f"not a registered animal.")
 
 
-def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetime | None = None) -> dict:
+def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetime | None = None,
+            utc_offset_minutes: int | None = None) -> dict:
     now = now or clock.now()
+    zone = _zone(utc_offset_minutes)
     intent = parsed.intent
     out = _Answer()
     for ref in parsed.unmatched_refs:
@@ -357,7 +372,7 @@ def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetim
                 _coverage(out, session, farm_id, card)
         elif "location" in wants:
             for card in cards.values():
-                _location(out, session, farm_id, card, cameras, now)
+                _location(out, session, farm_id, card, cameras, now, zone)
         else:
             out.sentences.append("Which animal do you mean? Name it or give its tag id, e.g. animal-demo-002.")
     for card in targets:
@@ -367,7 +382,7 @@ def resolve(session: Session, farm_id: str, parsed: ParsedQuery, *, now: datetim
             if want == "passport":
                 _passport(out, card)
             elif want == "location":
-                _location(out, session, farm_id, card, cameras, now)
+                _location(out, session, farm_id, card, cameras, now, zone)
             elif want == "coverage":
                 _coverage(out, session, farm_id, card)
             else:
@@ -382,10 +397,11 @@ def farm_animals(session: Session, farm_id: str) -> list[dict]:
     return [{"id": animal_id, "name": name} for animal_id, name in rows]
 
 
-def ask(settings: Settings, farm_id: str, text: str, *, client: Any | None = None) -> dict:
+def ask(settings: Settings, farm_id: str, text: str, *, client: Any | None = None,
+        utc_offset_minutes: int | None = None) -> dict:
     """Parse, then resolve in a fresh read snapshot: no transaction stays open across the model call."""
     with read_session() as session:
         animals = farm_animals(session, farm_id)
     parsed = parse(settings, text, animals, client=client)
     with read_session() as session:
-        return resolve(session, farm_id, parsed)
+        return resolve(session, farm_id, parsed, utc_offset_minutes=utc_offset_minutes)

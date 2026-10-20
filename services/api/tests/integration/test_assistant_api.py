@@ -30,7 +30,7 @@ def test_show_me_animal_002_returns_passport_facts(farm):
     facts = _facts(body)
     assert facts["Name"] == ("Bima", "animal", "animal-demo-002")
     assert facts["Breed"][0] == "Ongole" and facts["Identity status"][0] == "confirmed"
-    assert facts["Indicative value"][0] == "USD 2,704.00–3,120.00"
+    assert facts["Indicative value"][0] == "2,704.00–3,120.00 USD"
     assert body["answer"].startswith("Bima (animal-demo-002) is a male Ongole (beef); identity confirmed.")
     assert body["records"]["animals"][0]["id"] == "animal-demo-002" and body["missing"] == []
 
@@ -57,7 +57,7 @@ def test_location_and_active_coverage_from_seeded_data(farm):
     facts = _facts(body)
     assert facts["Last observed on"][2] == "cam-pen-a"
     assert facts["Active policy"][0] == "Basic Mortality & Accident" and facts["Active policy"][1] == "policy"
-    assert facts["Insured value"][0] == "USD 2,704.00"
+    assert facts["Insured value"][0] == "2,704.00 USD"
     assert facts["Coverage period"][0] == "2026-09-01 to 2027-08-31"
     assert body["missing"] == []
 

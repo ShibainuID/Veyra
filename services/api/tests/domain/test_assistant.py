@@ -1,3 +1,4 @@
+import re
 from datetime import timedelta
 from types import SimpleNamespace
 
@@ -101,10 +102,11 @@ def herd():
     reset_database("post-enrollment")
 
 
-def _resolve(intent: str, refs: list[str], wants: list[str], unmatched: list[str] | None = None) -> dict:
+def _resolve(intent: str, refs: list[str], wants: list[str], unmatched: list[str] | None = None,
+             utc_offset_minutes: int | None = None) -> dict:
     parsed = ParsedQuery(QueryIntent(intent=intent, animal_refs=refs, wants=wants), unmatched or [])
     with read_session() as session:
-        return resolve(session, "farm-wahyu", parsed)
+        return resolve(session, "farm-wahyu", parsed, utc_offset_minutes=utc_offset_minutes)
 
 
 def test_resolver_reports_missing_observation_evidence(herd):
@@ -126,8 +128,8 @@ def test_resolver_location_states_camera_and_time_and_flags_staleness(herd):
 
 def test_resolver_coverage_and_unknown_animal(herd):
     covered = _resolve("coverage_lookup", ["animal-demo-002"], ["coverage"])
-    assert covered["answer"].startswith("Active coverage for Bima: Basic Mortality & Accident with sandbox-insurer, "
-                                        "insured value USD 2,704.00, 2026-09-01 to 2027-08-31.")
+    assert covered["answer"].startswith("Active coverage for Bima: Basic Mortality & Accident with Sandbox Mutual, "
+                                        "insured value 2,704.00 USD, 2026-09-01 to 2027-08-31.")
     assert [f["record_type"] for f in covered["facts"]] == ["policy", "policy", "policy"]
 
     none = _resolve("coverage_lookup", ["animal-demo-001"], ["coverage"])
@@ -155,3 +157,12 @@ def test_resolver_uses_the_clock(herd):
     clock.set_now(lambda: clock._system_now() + timedelta(hours=2))
     result = _resolve("location_lookup", ["animal-demo-002"], ["location"])
     assert result["answer"].endswith("It may have moved since.")
+
+
+def test_resolver_states_the_time_in_the_askers_offset(herd):
+    utc = _resolve("location_lookup", ["animal-demo-002"], ["location"])
+    local = _resolve("location_lookup", ["animal-demo-002"], ["location"], utc_offset_minutes=420)
+    utc_clock = re.search(r"at (\S+) UTC ", utc["answer"]).group(1)
+    local_clock = re.search(r"at (\S+) UTC\+7 ", local["answer"]).group(1)
+    hours, minutes = map(int, utc_clock.split(":"))
+    assert local_clock == f"{(hours + 7) % 24:02d}:{minutes:02d}"

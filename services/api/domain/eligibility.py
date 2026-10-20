@@ -44,6 +44,8 @@ def facts_for(session: Session, animal: Animal) -> dict:
 
 
 def _fmt(value) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
     if isinstance(value, float) and value.is_integer():
         value = int(value)
     return str(value)

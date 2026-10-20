@@ -124,7 +124,7 @@ def test_rule_json_and_summary_are_transparent_and_not_a_diagnosis():
     start = datetime(2026, 10, 20, 9, 31, tzinfo=UTC)
     text = alert_summary(kind="reduced_movement", rule=rule, camera_name="Pen A · feed line", window_start=start,
                          window_end=start + timedelta(seconds=30), animal_name="Sari")
-    assert text == ("Movement 78% below Sari's earlier window on Pen A · feed line (09:31–09:31 UTC). "
+    assert text == ("Movement 78% below Sari's earlier window on Pen A · feed line (09:31:00–09:31:30 UTC). "
                     "Inspection recommended; this is not a diagnosis.")
 
     dim = _stats(_walk(0, 30, 0.01, visibility=0.45))

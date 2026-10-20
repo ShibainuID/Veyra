@@ -17,4 +17,4 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 
 @router.post("/query", response_model=AssistantAnswer, responses=error_responses(401, 422))
 def query(body: AssistantQuery, principal: Principal = Depends(current_principal)) -> dict:
-    return assistant.ask(get_settings(), principal.farm_id, body.text)
+    return assistant.ask(get_settings(), principal.farm_id, body.text, utc_offset_minutes=body.utc_offset_minutes)

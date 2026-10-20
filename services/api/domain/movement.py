@@ -159,7 +159,8 @@ def rule_json(assessment: Assessment, stats: WindowStats, window_s: float,
 
 
 def _hhmm(at: datetime) -> str:
-    return at.strftime("%H:%M")
+    # Seconds too: a 30 s window inside one minute would otherwise read 09:31–09:31.
+    return at.strftime("%H:%M:%S")
 
 
 def alert_summary(*, kind: str, rule: dict, camera_name: str, window_start: datetime, window_end: datetime,

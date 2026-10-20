@@ -9,7 +9,7 @@ import { Money, Mono, Range, Timestamp } from "../../components/figures";
 import { PageHeader, Section } from "../../components/layout";
 import { Provenance } from "../../components/Provenance";
 import { StatusPill, type StatusTone } from "../../components/StatusPill";
-import { alertKindLabel, asSource, humanize, identityPill, productName, sexWord, tagStateFor } from "../../lib/animal";
+import { alertKindLabel, asSource, humanize, identityPill, productName, providerName, sexWord, tagStateFor } from "../../lib/animal";
 import { toApiError } from "../../lib/errors";
 import { formatMoney, lineNumber } from "../../lib/format";
 import { useNow } from "../../lib/use-now";
@@ -202,7 +202,7 @@ function CoverageSection({ passport }: { passport: Passport }) {
                 </Fact>
               </Facts>
               <p className="mt-2 text-sm text-muted">
-                <Mono>{policy.id}</Mono> · terms <Mono>{policy.terms_version}</Mono> · {policy.provider_id}
+                <Mono>{policy.id}</Mono> · terms <Mono>{policy.terms_version}</Mono> · {providerName(policy.provider_id)}
               </p>
             </li>
           ))}

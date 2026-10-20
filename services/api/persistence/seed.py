@@ -192,8 +192,9 @@ def seed(session: Session, scenario: str = "fresh") -> None:
     session.add_all(User(**user) for user in herd["users"])
     session.add_all(Camera(**camera) for camera in herd["cameras"])
     session.add(DemoSettings(farm_id=DEMO_FARM_ID, updated_at=now))
-    session.add_all(WalletEntry(id=new_id("wal"), currency=price["currency"], created_at=now, **entry)
-                    for entry in herd["wallet"])
+    # The opening top-up lands a second before the seeded premiums, so the ledger reads in order.
+    session.add_all(WalletEntry(id=new_id("wal"), currency=price["currency"], created_at=now - timedelta(seconds=1),
+                                **entry) for entry in herd["wallet"])
     session.flush()
     for spec in herd["animals"]:
         _seed_animal(session, spec, price, now)

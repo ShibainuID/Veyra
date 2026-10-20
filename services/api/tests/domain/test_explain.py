@@ -77,7 +77,7 @@ def test_offline_template_states_outcomes_and_prices():
     assert items["mortality-theft"]["terms_refs"] == ["sample-v1 §2.4"]
     assert "not eligible" in items["dairy-health-plus"]["explanation"]
     assert items["dairy-health-plus"]["terms_refs"] == ["sample-v1 §2.5"]
-    assert "1 eligible, 1 need review, and 1 not eligible" in result["summary"]
+    assert "1 eligible, 1 needs review, and 1 not eligible" in result["summary"]
     assert any("not an insurer-agreed value" in caveat for caveat in result["caveats"])
     product = get_product(load_catalog(), "basic-mortality")
     assert product["premium"]["rate_bps"] == 350

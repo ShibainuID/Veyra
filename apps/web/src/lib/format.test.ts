@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError, ERROR_COPY, FALLBACK_ERROR_COPY, errorCopy } from "./errors";
 import {
   formatAbsolute,
+  formatClockSeconds,
   formatCountdown,
   formatMoney,
   formatMoneyRange,
@@ -166,5 +167,12 @@ describe("error copy", () => {
   it("survives bodies that aren't envelopes", () => {
     expect(ApiError.fromEnvelope(404, "<html>").code).toBe("NOT_FOUND");
     expect(ApiError.fromEnvelope(502, null).code).toBe("HTTP_ERROR");
+  });
+});
+
+describe("formatClockSeconds", () => {
+  it("keeps the seconds, so a 30 s window inside one minute reads as two times", () => {
+    expect(formatClockSeconds("2026-10-20T09:31:00Z", "UTC")).toBe("09:31:00");
+    expect(formatClockSeconds("2026-10-20T09:31:30Z", "UTC")).toBe("09:31:30");
   });
 });

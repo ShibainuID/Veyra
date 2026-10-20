@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from config import get_settings
 from domain import clock
 from domain.audit import actor_ref, list_events, user_names
+from domain.catalog import load_catalog, provider_name
 from persistence.models import AgentAction, AuditEvent, Policy, Valuation
 
 LINE_KINDS = ("event", "awaiting")
@@ -178,7 +179,7 @@ def _policy_created(event: AuditEvent, ctx: PassbookContext) -> dict:
     data = event.data
     terms = data.get("terms_version")
     return {"title": f"Policy active · {product_name(data.get('product_id'))}",
-            "detail": f"{data.get('provider_id')} · terms {terms}" if terms else None,
+            "detail": f"{provider_name(load_catalog(), data.get('provider_id'))} · terms {terms}" if terms else None,
             "amount_minor": data.get("insured_value_minor"), "currency": data.get("currency"),
             "stamp": {"kind": "posted"}}
 

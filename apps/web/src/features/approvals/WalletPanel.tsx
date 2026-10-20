@@ -8,6 +8,12 @@ import { formatMoney } from "../../lib/format";
 import { useWallet } from "../actions";
 import type { WalletEntry } from "../finance/api";
 
+/** "Release hold · Premium payment" under a "Release" label reads "Premium payment", not the word twice. */
+function withoutLeadingWord(description: string, word: string): string {
+  const [head, ...rest] = description.split(" · ");
+  return rest.length && head!.toLowerCase().startsWith(word.toLowerCase()) ? rest.join(" · ") : description;
+}
+
 const ENTRY: Record<WalletEntry["entry_type"], { icon: LucideIcon; word: string; sign: 1 | -1 | 0 }> = {
   credit: { icon: ArrowDownLeft, word: "Credit", sign: 1 },
   debit: { icon: ArrowUpRight, word: "Debit", sign: -1 },
@@ -79,7 +85,7 @@ export function WalletPanel({ className }: { className?: string }) {
                       <Icon aria-hidden="true" className="mt-0.5 size-5 text-muted" strokeWidth={2.25} />
                       <div className="flex min-w-0 flex-col gap-0.5">
                         <span>
-                          <span className="font-bold">{kind.word}</span> · {entry.description}
+                          <span className="font-bold">{kind.word}</span> · {withoutLeadingWord(entry.description, kind.word)}
                         </span>
                         <span className="text-sm text-muted">
                           <Timestamp value={entry.created_at} mode="absolute" />

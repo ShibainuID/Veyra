@@ -12,7 +12,7 @@ import { StatusPill } from "../../components/StatusPill";
 import { useToast } from "../../components/Toast";
 import { api } from "../../lib/api";
 import { cn } from "../../lib/cn";
-import { formatAbsolute, formatClock } from "../../lib/format";
+import { formatAbsolute, formatClockSeconds } from "../../lib/format";
 import { ApiError } from "../../lib/errors";
 import { useRole } from "../../lib/role-store";
 import { toSource } from "../enrollment/ReviewStep";
@@ -34,23 +34,21 @@ async function fetchAlert(alertId: string): Promise<AlertView> {
   return data;
 }
 
+/** A short observation window: the date once, then both ends to the second (they often share a minute). */
 function Window({ label, start, end }: { label: string; start: string | null; end: string | null }) {
   return (
     <div className="flex flex-col gap-0.5">
       <dt className="text-sm font-bold text-muted">{label}</dt>
       <dd>
         {start && end ? (
-          <span className="flex flex-wrap gap-x-2">
-            <Timestamp value={start} mode="absolute" />
-            <span aria-hidden="true">–</span>
-            <span className="sr-only">to</span>
-            {formatAbsolute(start).slice(0, -5) === formatAbsolute(end).slice(0, -5) ? (
-              <time dateTime={end} className="figures">
-                {formatClock(end)}
-              </time>
-            ) : (
-              <Timestamp value={end} mode="absolute" />
-            )}
+          <span className="flex flex-col">
+            <span className="figures">{formatAbsolute(start).split(",")[0]}</span>
+            <span className="figures whitespace-nowrap">
+              <time dateTime={start}>{formatClockSeconds(start)}</time>
+              <span aria-hidden="true"> – </span>
+              <span className="sr-only"> to </span>
+              <time dateTime={end}>{formatClockSeconds(end)}</time>
+            </span>
           </span>
         ) : (
           <span className="text-muted">None recorded</span>

@@ -73,6 +73,17 @@ export function productName(productId: string | null | undefined): string | null
   return PRODUCT_NAMES[productId] ?? humanize(productId.replace(/-/g, " "));
 }
 
+const PROVIDER_NAMES: Record<string, string> = {
+  "sandbox-insurer": "Sandbox Mutual",
+  "sandbox-payment": "Sandbox payments",
+};
+
+/** Sandbox provider names, for stamps and policy lines; unknown IDs pass through. */
+export function providerName(providerId: string | null | undefined): string | undefined {
+  if (!providerId) return undefined;
+  return PROVIDER_NAMES[providerId] ?? providerId;
+}
+
 /** Alert kinds in plain words. */
 export function alertKindLabel(kind: string): string {
   if (kind === "reduced_movement") return "Reduced movement";
