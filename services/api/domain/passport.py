@@ -10,7 +10,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from domain import audit
+from domain import audit, monitoring
 from domain.errors import APIError, ErrorCode
 from persistence.models import (
     Alert,
@@ -87,8 +87,10 @@ def build(session: Session, animal: Animal) -> dict:
         "last_observed": None if last_seen is None else {
             "camera_id": str(last_seen.camera_id), "observed_at": last_seen.observed_at, "track_id": last_seen.track_id,
             "source": last_seen.source},
-        "open_alerts": [{"id": str(a.id), "kind": a.kind, "window_start": a.window_start, "window_end": a.window_end}
-                        for a in session.scalars(select(Alert).where(where(Alert), Alert.status == "open"))],
+        "open_alerts": [{"id": str(a.id), "kind": a.kind, "status": a.status, "window_start": a.window_start,
+                         "window_end": a.window_end}
+                        for a in session.scalars(select(Alert).where(where(Alert), Alert.status.in_(("open", "acknowledged"))))],
+        "health": monitoring.health(session, animal),
         "policies": [{"id": str(p.id), "status": p.status, "insured_value_minor": p.insured_value_minor,
                       "premium_minor": p.premium_minor, "effective_from": p.effective_from, "effective_to": p.effective_to}
                      for p in policies],

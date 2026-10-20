@@ -29,7 +29,7 @@ class WorkerContext:
 Handler = Callable[[Session, Job, WorkerContext], dict]
 HANDLERS: dict[str, Handler] = {}
 # Modules that register handlers on import.
-HANDLER_MODULES = ("domain.enrollment",)
+HANDLER_MODULES = ("domain.enrollment", "domain.monitoring")
 log = logging.getLogger("veyra.worker")
 
 
