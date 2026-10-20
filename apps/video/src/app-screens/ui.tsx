@@ -16,7 +16,7 @@ import {
 import { APP, FONT } from "../theme";
 import { clamp, eo } from "../lib/h";
 
-// Recreations of the VEYRA app's "Ear Tag" design system (DESIGN.md, apps/web/src/styles/tokens.css):
+// Recreations of the VEYRA app's "Ear Tag" design system (apps/web/src/styles/tokens.css):
 // white ground, near-black ink, black shell bar + bottom tabs, tag-yellow ear tags as identity, double-ruled
 // mono stamps, Atkinson Hyperlegible Next/Mono. Sized up ~15 % from the app's ramp so they read on video.
 

@@ -463,7 +463,7 @@ function Run() {
           </div>
           <p>
             <span className="figures font-bold">{API_TESTS}</span> backend tests ·{" "}
-            <span className="figures font-bold">{WEB_TESTS}</span> web tests · the PRD's{" "}
+            <span className="figures font-bold">{WEB_TESTS}</span> web tests ·{" "}
             <span className="figures font-bold">10</span> critical-verification checks, one test each.
           </p>
         </div>
