@@ -64,7 +64,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom)+16px)] z-toast flex flex-col items-end gap-2 lg:right-6 lg:bottom-6 lg:left-auto"
+        className="pointer-events-none fixed inset-x-4 bottom-[calc(var(--tabbar-height)+env(safe-area-inset-bottom)+16px)] z-toast flex flex-col items-end gap-2 lg:right-auto lg:bottom-6 lg:left-6 lg:items-start"
       >
         {toasts.map((toast) => {
           const Icon = ICON[toast.tone];

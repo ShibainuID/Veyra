@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Lock, RefreshCw, RotateCw, Send, Stamp as StampIcon } from "lucide-react";
+import { ChevronRight, Lock, RefreshCw, RotateCw, Send, Stamp as StampIcon } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { Button } from "../../components/Button";
@@ -45,7 +45,7 @@ export interface ActionReviewProps {
   className?: string;
 }
 
-const BLOCKING_CODES = new Set(["APPROVAL_STALE", "ACTION_EXPIRED", "FORBIDDEN_ROLE"]);
+const BLOCKING_CODES = new Set(["APPROVAL_STALE", "ACTION_EXPIRED", "FORBIDDEN_ROLE", "IDENTITY_UNCONFIRMED"]);
 
 interface HerdIndexItem {
   id: string;
@@ -75,19 +75,25 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-/** Pick the action that replaced a stale one: the open action that supersedes it, else the newest open one. */
+/**
+ * The version to review instead of a stale or expired one: an open action that already
+ * supersedes it, else a fresh one prepared from current records (`revise`). Null if neither works.
+ */
 async function findNewVersion(action: AgentAction): Promise<string | null> {
   try {
     const query = new URLSearchParams();
     if (action.animal_id) query.set("animal_id", action.animal_id);
     const { items } = await request<{ items: AgentAction[] }>(`/agent/actions?${query.toString()}`);
-    const open = items.filter((item) => item.id !== action.id && item.status === "pending_approval");
-    const successor =
-      open.find((item) => item.supersedes_id === action.id) ??
-      open
-        .filter((item) => item.action_type === action.action_type)
-        .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
-    return successor?.id ?? null;
+    const successor = items.find(
+      (item) => item.id !== action.id && item.status === "pending_approval" && item.supersedes_id === action.id,
+    );
+    if (successor) return successor.id;
+  } catch {
+    // Fall through to preparing a new version.
+  }
+  try {
+    const revised = await request<AgentAction>(`/agent/actions/${encodeURIComponent(action.id)}/revise`, { method: "POST" });
+    return revised.id;
   } catch {
     return null;
   }
@@ -212,100 +218,44 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
     const next = await findNewVersion(action);
     await invalidateAfterAction(queryClient);
     if (next) await queryClient.prefetchQuery({ queryKey: queryKeys.action(next), queryFn: () => fetchAction(next) });
+    else toast.show({ title: "No new version could be prepared", body: "Ask the agent to prepare this action again.", tone: "danger" });
     setLookingUp(false);
     onNewVersion?.(next);
   };
 
-  const manifest = action.evidence_manifest;
-  const hashPrefix = action.payload_hash.slice(0, 8);
   const bar = variant === "bar";
-
-  const evidence = manifest ? (
-    <details className="group" open={!bar}>
-      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 font-bold [&::-webkit-details-marker]:hidden">
-        <span>
-          Evidence manifest <Mono>v{manifest.version}</Mono> · <Mono>{manifest.items.length}</Mono>{" "}
-          {manifest.items.length === 1 ? "item" : "items"}
-        </span>
-        <span className="text-sm font-normal text-muted underline underline-offset-4 group-open:hidden">Show</span>
-        <span className="hidden text-sm font-normal text-muted underline underline-offset-4 group-open:inline">Hide</span>
-      </summary>
-      <ul className="mt-1 flex flex-col border-t border-line">
-        {manifest.items.map((item) => (
-          <li key={`${item.type}-${item.ref}`} className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-line py-2">
-            <span>{item.label}</span>
-            <Mono className="text-sm text-muted">{item.ref}</Mono>
-          </li>
-        ))}
-      </ul>
-    </details>
-  ) : (
-    <p className="text-muted">No evidence manifest is attached.</p>
-  );
 
   return (
     <section aria-labelledby={headingId} className={cn("flex flex-col gap-4", className)}>
-      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-        <h3 id={headingId} className={cn("font-bold", bar ? "text-base" : "text-md")}>
-          {title}
-          {lineNo !== undefined && (
-            <span className="font-normal text-muted">
-              {" "}
-              · line <Mono>{lineNumber(lineNo)}</Mono>
-            </span>
-          )}
+      {bar ? (
+        <h3 id={headingId} className="sr-only">
+          Decision on {title.toLowerCase()}
         </h3>
-        <StatusLine action={action} expiresMs={expiresMs} expiredLocally={expiredLocally} />
-      </div>
-
-      {action.rationale && !bar && (
-        <p className="max-w-[70ch]">
-          <span className="text-muted">Prepared by the VEYRA agent: </span>
-          {action.rationale}
-        </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+            <h3 id={headingId} className="text-md font-bold">
+              {title}
+              {lineNo !== undefined && (
+                <span className="font-normal text-muted">
+                  {" "}
+                  · line <Mono>{lineNumber(lineNo)}</Mono>
+                </span>
+              )}
+            </h3>
+            <StatusLine action={action} expiresMs={expiresMs} expiredLocally={expiredLocally} />
+          </div>
+          {action.rationale && (
+            <p className="max-w-[70ch]">
+              <span className="text-muted">Prepared by the VEYRA agent: </span>
+              {action.rationale}
+            </p>
+          )}
+          <ActionDetails action={action} animal={resolvedAnimal} evidenceOpen />
+        </>
       )}
 
-      <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-5 gap-y-2.5">
-        <Row label="Recipient">
-          <span className="font-bold">{review.recipient}</span>
-        </Row>
-        {resolvedAnimal && (
-          <Row label="Animal">
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <EarTag animalId={resolvedAnimal.id} state={resolvedAnimal.tagState} />
-              <span className="font-bold">{resolvedAnimal.name}</span>
-              {bar ? (
-                <Mono className="text-sm text-muted">{resolvedAnimal.id}</Mono>
-              ) : (
-                <Link to={`/animals/${resolvedAnimal.id}`} className="figures text-sm">
-                  {resolvedAnimal.id}
-                </Link>
-              )}
-            </span>
-          </Row>
-        )}
-        <Row label="Amount">
-          {review.amount_minor != null ? (
-            <Money minor={review.amount_minor} currency={currency} className="font-bold" />
-          ) : (
-            <span className="text-muted">No amount</span>
-          )}
-        </Row>
-        <Row label="Terms">
-          {review.terms_version ? <Mono>{review.terms_version}</Mono> : <span className="text-muted">No terms attached</span>}
-        </Row>
-        <Row label="Payload">
-          <span>
-            <Mono className="font-bold">{hashPrefix}</Mono>
-            <span className="text-sm text-muted"> · version </span>
-            <Mono className="text-sm">{action.version}</Mono>
-          </span>
-        </Row>
-      </dl>
-
-      {evidence}
-
-      <div className="flex flex-col gap-3 border-t-2 border-ink pt-4">
+      <div className={cn("flex flex-col gap-3", !bar && "border-t-2 border-ink pt-4")}>
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
           <span>
             {lineNo !== undefined ? (
@@ -319,7 +269,7 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
           {review.balance_after_minor != null ? (
             <Money minor={review.balance_after_minor} currency={currency} className="text-md font-bold whitespace-nowrap" />
           ) : (
-            <span className="text-muted">No wallet payment in this step</span>
+            <span className="text-muted">No payment in this step</span>
           )}
         </div>
 
@@ -348,6 +298,111 @@ export function ActionReview({ actionId, variant = "full", lineNo, animal, onNew
         />
       </div>
     </section>
+  );
+}
+
+function EvidenceManifest({ manifest, open }: { manifest: AgentAction["evidence_manifest"]; open: boolean }) {
+  if (!manifest) return <p className="text-muted">No evidence manifest is attached.</p>;
+  return (
+    <details className="group" open={open}>
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 font-bold text-ink [&::-webkit-details-marker]:hidden">
+        <ChevronRight aria-hidden="true" className="size-4 flex-none transition-transform group-open:rotate-90" strokeWidth={2.5} />
+        <span>
+          Evidence manifest <Mono>v{manifest.version}</Mono> · <Mono>{manifest.items.length}</Mono>{" "}
+          {manifest.items.length === 1 ? "item" : "items"}
+        </span>
+      </summary>
+      <ul className="flex flex-col border-t border-line">
+        {manifest.items.map((item) => (
+          <li
+            key={`${item.type}-${item.ref}`}
+            className="flex flex-wrap items-baseline justify-between gap-x-3 border-b border-line py-2 text-ink"
+          >
+            <span>{item.label}</span>
+            <Mono className="text-sm text-muted">{item.ref}</Mono>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
+export interface ActionDetailsProps {
+  action: AgentAction;
+  /** Shown as a tag, name, and passport link; omit inside the animal's own passbook. */
+  animal?: ActionReviewAnimal | null;
+  evidenceOpen?: boolean;
+  className?: string;
+}
+
+/** Exactly what will execute: recipient, animal, amount, terms, payload hash, and the evidence manifest. */
+export function ActionDetails({ action, animal, evidenceOpen = false, className }: ActionDetailsProps) {
+  const review = action.review;
+  const currency = review.currency ?? "USD";
+  const manifest = action.evidence_manifest;
+  return (
+    <div className={cn("flex flex-col gap-3", className)}>
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-baseline gap-x-5 gap-y-2">
+        <Row label="Recipient">
+          <span className="font-bold text-ink">{review.recipient}</span>
+        </Row>
+        {animal && (
+          <Row label="Animal">
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <EarTag animalId={animal.id} state={animal.tagState} />
+              <span className="font-bold">{animal.name}</span>
+              <Link to={`/animals/${animal.id}`} className="figures text-sm">
+                {animal.id}
+              </Link>
+            </span>
+          </Row>
+        )}
+        <Row label="Amount">
+          {review.amount_minor != null ? (
+            <Money minor={review.amount_minor} currency={currency} className="font-bold text-ink" />
+          ) : (
+            <span className="text-muted">No amount</span>
+          )}
+        </Row>
+        <Row label="Terms">
+          {review.terms_version ? (
+            <Mono className="text-ink">{review.terms_version}</Mono>
+          ) : (
+            <span className="text-muted">No terms attached</span>
+          )}
+        </Row>
+        <Row label="Payload">
+          <span className="text-ink">
+            <Mono className="font-bold">{action.payload_hash.slice(0, 8)}</Mono>
+            <span className="text-sm text-muted"> · version </span>
+            <Mono className="text-sm">{action.version}</Mono>
+          </span>
+        </Row>
+      </dl>
+      <EvidenceManifest manifest={manifest} open={evidenceOpen} />
+    </div>
+  );
+}
+
+/** The awaiting passbook line's detail: what will execute, read from the action itself. */
+export function ActionLineSummary({ actionId }: { actionId: string }) {
+  const { data: action, isPending, error } = useAction(actionId);
+  if (isPending) return <Skeleton lines={2} className="mt-2" />;
+  if (error || !action) return <span>The action's details couldn't load.</span>;
+  return (
+    <div className="mt-1 flex flex-col">
+      <p>
+        To <span className="font-bold text-ink">{action.review.recipient}</span>
+        {action.review.terms_version && (
+          <>
+            {" "}
+            · terms <Mono className="text-ink">{action.review.terms_version}</Mono>
+          </>
+        )}{" "}
+        · payload <Mono className="font-bold text-ink">{action.payload_hash.slice(0, 8)}</Mono> v<Mono>{action.version}</Mono>
+      </p>
+      <EvidenceManifest manifest={action.evidence_manifest} open={false} />
+    </div>
   );
 }
 
@@ -411,10 +466,10 @@ function DecisionArea(props: DecisionAreaProps) {
     return (
       <div className="flex flex-col gap-3">
         <ErrorNotice code={blockingCode} />
-        {blockingCode === "APPROVAL_STALE" && (
+        {(blockingCode === "APPROVAL_STALE" || blockingCode === "ACTION_EXPIRED") && (
           <div>
-            <Button variant="primary" icon={RefreshCw} onClick={props.onReviewNewVersion} loading={props.lookingUp} loadingLabel="Finding it…">
-              Review the new version
+            <Button variant="primary" icon={RefreshCw} onClick={props.onReviewNewVersion} loading={props.lookingUp} loadingLabel="Preparing it…">
+              {blockingCode === "APPROVAL_STALE" ? "Review the new version" : "Prepare it again"}
             </Button>
           </div>
         )}
