@@ -103,6 +103,9 @@ def alert_items(session: Session, alert: Alert) -> list[dict]:
     clip = alert.clip or {}
     if clip.get("media_id"):
         items.append(item("clip", clip["media_id"], "Alert clip", _media_sha(session, clip["media_id"])))
+    elif clip:  # a replay window: {scenario_id, camera_id, start_s, end_s, video}
+        ref = f"{clip.get('scenario_id')}:{clip.get('camera_id')}:{clip.get('start_s')}-{clip.get('end_s')}"
+        items.append(item("clip", ref, f"Replay clip {clip.get('start_s')}–{clip.get('end_s')} s"))
     return items
 
 
